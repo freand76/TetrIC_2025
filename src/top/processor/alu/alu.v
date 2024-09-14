@@ -68,9 +68,9 @@ module alu(clk, nreset, A, B, ctrl, O, zero, overflow);
         endcase
      end
 
-   always @(posedge clk or posedge reset)
+   always @(posedge clk or negedge nreset)
      begin
-        if (reset)
+        if (!nreset)
           begin
              zero <= 0;
              overflow <= 0;
