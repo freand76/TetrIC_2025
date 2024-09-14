@@ -1,6 +1,6 @@
-module alu(clk, nreset, A, B, ctrl, O, zero, overflow);
+module alu(clk, n_reset, A, B, ctrl, O, zero, overflow);
 
-   input        clk, nreset;
+   input        clk, n_reset;
 
    input [31:0] A, B;
    input [4:0]  ctrl;
@@ -19,23 +19,23 @@ module alu(clk, nreset, A, B, ctrl, O, zero, overflow);
    wire [31:0]   fix_lshifter_out;
    wire [31:0]   var_lshifter_out;
 
-   rshifter fix_rshifter(.A (A),
-                         .shift (B[10:6]),
-                         .arithmetic (ctrl[0]),
-                         .O (fix_rshifter_out));
+   rshifter fix_rshifter(.A(A),
+                         .shift(B[10:6]),
+                         .arithmetic(ctrl[0]),
+                         .O(fix_rshifter_out));
 
-   rshifter var_rshifter(.A (B),
-                         .shift (A[4:0]),
-                         .arithmetic (ctrl[0]),
-                         .O (var_rshifter_out));
+   rshifter var_rshifter(.A(B),
+                         .shift(A[4:0]),
+                         .arithmetic(ctrl[0]),
+                         .O(var_rshifter_out));
 
-   lshifter fix_lshifter(.A (A),
-                         .shift (B[10:6]),
-                         .O (fix_lshifter_out));
+   lshifter fix_lshifter(.A(A),
+                         .shift(B[10:6]),
+                         .O(fix_lshifter_out));
 
-   lshifter var_lshifter(.A (B),
-                         .shift (A[4:0]),
-                         .O (var_lshifter_out));
+   lshifter var_lshifter(.A(B),
+                         .shift(A[4:0]),
+                         .O(var_lshifter_out));
 
    assign add_result[32:0] = {1'b0, A[31:0]} + {1'b0, B[31:0]};
    assign sub_result[32:0] = {1'b0, A[31:0]} - {1'b0, B[31:0]};
@@ -68,9 +68,9 @@ module alu(clk, nreset, A, B, ctrl, O, zero, overflow);
         endcase
      end
 
-   always @(posedge clk or negedge nreset)
+   always @(posedge clk or negedge n_reset)
      begin
-        if (!nreset)
+        if (!n_reset)
           begin
              zero <= 0;
              overflow <= 0;

@@ -1,6 +1,6 @@
 module pipereg #(parameter WIDTH = 8)
 (
- input              clk, nreset, enable,
+ input              clk, n_reset, enable,
  input [WIDTH-1:0]  D,
  output [WIDTH-1:0] Q
 );
@@ -9,9 +9,9 @@ module pipereg #(parameter WIDTH = 8)
 
    assign Q = val;
 
-   always @(posedge clk or negedge nreset)
+   always @(posedge clk or negedge n_reset)
      begin
-        if(!nreset)
+        if(!n_reset)
           val <= 0;
         else if (enable)
           val <= D;

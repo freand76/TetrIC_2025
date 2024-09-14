@@ -15,7 +15,7 @@ class DutTester:
         self._circuit = circuit
         self._dut = dut
         self._dut.clk.value = 0
-        self._dut.nreset.value = 0
+        self._dut.n_reset.value = 0
         self._dut.A.value = 0
         self._dut.B.value = 0
         self._dut.ctrl.value = 0
@@ -23,9 +23,9 @@ class DutTester:
         self.clock()
 
     def reset(self):
-        self._dut.nreset.value = 0
+        self._dut.n_reset.value = 0
         self._circuit.run(ms=1)
-        self._dut.nreset.value = 1
+        self._dut.n_reset.value = 1
         self._circuit.run(ms=1)
 
     def clock(self):
