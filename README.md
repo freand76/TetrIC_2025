@@ -46,9 +46,9 @@ ruff format
 ### Processor
 ```
 datamux.vhd      ==> src/top/processor/mux4/mux4.v
-fwmux1           ==> src/top/processor/mux4/mux4.v
-fwmux2           ==> src/top/processor/mux4/mux4.v
-imem             ==> src/top/processor/instr_or_nop/instr_or_nop.v
+fwmux1.vhd       ==> src/top/processor/mux4/mux4.v
+fwmux2.vhd       ==> src/top/processor/mux4/mux4.v
+imem.vhd         ==> src/top/processor/instr_or_nop/instr_or_nop.v
 immux.vhd        ==> src/top/processor/mux2/mux2.v
 pcmux1.vhd       ==> src/top/processor/mux2/mux2.v
 pcmux2.vhd       ==> src/top/processor/mux2/mux2.v
@@ -62,6 +62,7 @@ reg.vhd          ==> src/top/processor/regbank/regbank.v
 ### Processor
 ```
 alu.vhd          ==> src/top/processor/alu/alu.v
+processor.vhd    ==> src/top/processor/processor.v
 ```
 
 ## Todo
