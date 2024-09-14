@@ -48,6 +48,7 @@ ruff format
 datamux.vhd      ==> src/top/processor/mux4/mux4.v
 fwmux1           ==> src/top/processor/mux4/mux4.v
 fwmux2           ==> src/top/processor/mux4/mux4.v
+imem             ==> src/top/processor/instr_or_nop/instr_or_nop.v
 immux.vhd        ==> src/top/processor/mux2/mux2.v
 pcmux1.vhd       ==> src/top/processor/mux2/mux2.v
 pcmux2.vhd       ==> src/top/processor/mux2/mux2.v
@@ -77,7 +78,6 @@ branchlogic
 ctrl
 ex_dmem
 fwunit
-imem
 mem_dmem
 noplogic
 pcadd1

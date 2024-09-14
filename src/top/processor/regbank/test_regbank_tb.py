@@ -63,7 +63,7 @@ def current_path():
 
 @pytest.fixture(scope="module")
 def dut_tester(current_path):
-    circuit = Circuit(vcd="tb.vcd")
+    circuit = Circuit()
     # Synth DUT
     dut = YosysComponent(circuit)
     dut_synthesis = Synthesis(
