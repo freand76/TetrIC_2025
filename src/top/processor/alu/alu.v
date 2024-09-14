@@ -1,6 +1,6 @@
 module alu(clk, nreset, A, B, ctrl, O, zero, overflow);
 
-   input        clk, nreset;   
+   input        clk, nreset;
 
    input [31:0] A, B;
    input [4:0]  ctrl;
@@ -18,7 +18,7 @@ module alu(clk, nreset, A, B, ctrl, O, zero, overflow);
    wire [31:0]   var_rshifter_out;
    wire [31:0]   fix_lshifter_out;
    wire [31:0]   var_lshifter_out;
-   
+
    rshifter fix_rshifter(.A (A),
                          .shift (B[10:6]),
                          .arithmetic (ctrl[0]),
@@ -36,10 +36,10 @@ module alu(clk, nreset, A, B, ctrl, O, zero, overflow);
    lshifter var_lshifter(.A (B),
                          .shift (A[4:0]),
                          .O (var_lshifter_out));
-                         
+
    assign add_result[32:0] = {1'b0, A[31:0]} + {1'b0, B[31:0]};
    assign sub_result[32:0] = {1'b0, A[31:0]} - {1'b0, B[31:0]};
-   
+
    always @ (A, B, ctrl)
      begin
         case(ctrl)

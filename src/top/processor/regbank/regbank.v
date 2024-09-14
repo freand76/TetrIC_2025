@@ -1,11 +1,11 @@
 module regbank(clk, nreset, rSelA, rSelB, wSel, wEnable, wData, rDataA, rDataB);
 
-   input        clk, nreset;   
+   input        clk, nreset;
 
    input [4:0]  rSelA, rSelB, wSel;
    input        wEnable;
    input [31:0] wData;
-   
+
    output [31:0]  rDataA, rDataB;
 
    reg [31:0]     register_bank[32];

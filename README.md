@@ -40,3 +40,67 @@ pytest
 ruff check
 ruff format
 ```
+
+## Done
+
+### Processor
+```
+datamux.vhd      ==> src/top/processor/mux4/mux4.v
+fwmux1           ==> src/top/processor/mux4/mux4.v
+fwmux2           ==> src/top/processor/mux4/mux4.v
+immux.vhd        ==> src/top/processor/mux2/mux2.v
+pcmux1.vhd       ==> src/top/processor/mux2/mux2.v
+pcmux2.vhd       ==> src/top/processor/mux2/mux2.v
+pcmux3.vhd       ==> src/top/processor/mux2/mux2.v
+reg.vhd          ==> src/top/processor/regbank/regbank.v
+```
+
+## Started
+
+### Processor
+```
+alu.vhd          ==> src/top/processor/alu/alu.v
+```
+
+## Todo
+
+### Top
+```
+arb
+memctrl
+```
+
+### Processor
+```
+branchlogic
+ctrl
+ex_dmem
+fwunit
+imem
+mem_dmem
+noplogic
+pcadd1
+pcadd2
+pipereg
+regdestmux
+s_unit
+signandshift
+signext
+```
+
+
+### Sound
+
+```
+mixer
+mult
+resample
+sampleoutput
+mainunit
+ljudxbox
+```
+
+### Display
+```
+gfxbox
+```
