@@ -53,7 +53,7 @@ def current_path():
 def dut_tester(current_path):
     circuit = Circuit()
 
-    # Synth ALU
+    # Synth DUT
     dut = YosysComponent(circuit)
     dut_synthesis = Synthesis(
         [

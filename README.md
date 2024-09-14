@@ -52,6 +52,7 @@ immux.vhd        ==> src/top/processor/mux2/mux2.v
 pcmux1.vhd       ==> src/top/processor/mux2/mux2.v
 pcmux2.vhd       ==> src/top/processor/mux2/mux2.v
 pcmux3.vhd       ==> src/top/processor/mux2/mux2.v
+pipereg.vhd      ==> src/top/processor/pipereg/pipereg.v
 reg.vhd          ==> src/top/processor/regbank/regbank.v
 ```
 
@@ -81,7 +82,6 @@ mem_dmem
 noplogic
 pcadd1
 pcadd2
-pipereg
 regdestmux
 s_unit
 signandshift
