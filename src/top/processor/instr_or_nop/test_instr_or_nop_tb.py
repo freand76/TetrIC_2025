@@ -14,7 +14,7 @@ class DutTester:
     def __init__(self, circuit, dut):
         self._circuit = circuit
         self._dut = dut
-        self._dut.nstall.value = 0
+        self._dut.n_stall.value = 0
         self._dut.imem_ack.value = 0
         self._dut.instr_in.value = 0
 
@@ -22,8 +22,8 @@ class DutTester:
         self._dut.instr_in.value = instr
         self._circuit.run(ms=1)
 
-    def ctrl(self, nstall, imem_ack):
-        self._dut.nstall.value = nstall
+    def ctrl(self, n_stall, imem_ack):
+        self._dut.n_stall.value = n_stall
         self._dut.imem_ack.value = imem_ack
         self._circuit.run(ms=1)
 
