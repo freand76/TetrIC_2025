@@ -64,6 +64,7 @@ pcmux2.vhd       ==> src/top/processor/mux2/mux2.v
 pcmux3.vhd       ==> src/top/processor/mux2/mux2.v
 pipereg.vhd      ==> src/top/processor/pipereg/pipereg.v
 reg.vhd          ==> src/top/processor/regbank/regbank.v
+signext.vhd      ==> src/top/processor/signext/signext.v
 ```
 
 ## Started
@@ -93,7 +94,6 @@ pcadd2
 regdestmux
 s_unit
 signandshift
-signext
 ```
 
 
