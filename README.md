@@ -53,6 +53,7 @@ ruff format
 ### Processor
 ```
 alu.vhd          ==> src/top/processor/alu/alu.v
+ctrl.vhd         ==> src/top/processor/ctrl/ctrl.v
 datamux.vhd      ==> src/top/processor/mux4/mux4.v
 fwmux1.vhd       ==> src/top/processor/mux4/mux4.v
 fwmux2.vhd       ==> src/top/processor/mux4/mux4.v
@@ -83,7 +84,6 @@ memctrl
 ### Processor
 ```
 branchlogic
-ctrl
 ex_dmem
 fwunit
 mem_dmem
