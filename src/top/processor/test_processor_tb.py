@@ -69,24 +69,24 @@ def dut_tester(current_path):
     yield DutTester(circuit, dut)
 
 
-def test_zero(dut_tester):
+def test_addui(dut_tester):
     """Test ZERO operation"""
     dut_tester.reset()
     dut_tester.imem_ack(1)
     dut_tester.n_ext_stall(1)
-    dut_tester.data_in(0xFEDEBEDA)
 
-    for x in range(10):
+    dut_tester.data_in(0x24210003)
+
+    for x in range(20):
         print(
             "PC",
             dut_tester.debug_pc(),
-            dut_tester.imem_addr_out(),
-            hex(dut_tester.data_out()),
+            hex(dut_tester._dut.debug_data.value),
+            hex(dut_tester._dut.debug_data2.value),
         )
         dut_tester.clock()
 
     dut_tester.n_ext_stall(0)
 
     for x in range(10):
-        print("PC", dut_tester.debug_pc(), dut_tester.imem_addr_out())
         dut_tester.clock()

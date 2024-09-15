@@ -1,6 +1,9 @@
 #!/bin/env bash
 
 VERILOG_FILES="src/top/processor/processor.v"
+VERILOG_FILES+=" src/top/processor/alu/alu.v"
+VERILOG_FILES+=" src/top/processor/alu/lshifter.v"
+VERILOG_FILES+=" src/top/processor/alu/rshifter.v"
 VERILOG_FILES+=" src/top/processor/branchlogic/branchlogic.v"
 VERILOG_FILES+=" src/top/processor/ctrl/ctrl.v"
 VERILOG_FILES+=" src/top/processor/fwunit/fwunit.v"
