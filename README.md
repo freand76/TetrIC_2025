@@ -41,10 +41,18 @@ ruff check
 ruff format
 ```
 
+# BUGS found
+
+ * The program counter is word based
+ * BGT / BGE only handles unsigned values
+
+# Converting VHDL to Verilog
+
 ## Done
 
 ### Processor
 ```
+alu.vhd          ==> src/top/processor/alu/alu.v
 datamux.vhd      ==> src/top/processor/mux4/mux4.v
 fwmux1.vhd       ==> src/top/processor/mux4/mux4.v
 fwmux2.vhd       ==> src/top/processor/mux4/mux4.v
@@ -61,7 +69,6 @@ reg.vhd          ==> src/top/processor/regbank/regbank.v
 
 ### Processor
 ```
-alu.vhd          ==> src/top/processor/alu/alu.v
 processor.vhd    ==> src/top/processor/processor.v
 ```
 

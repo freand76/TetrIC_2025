@@ -14,25 +14,9 @@ class DutTester:
     def __init__(self, circuit, dut):
         self._circuit = circuit
         self._dut = dut
-        self._dut.clk.value = 0
-        self._dut.n_reset.value = 0
         self._dut.A.value = 0
         self._dut.B.value = 0
         self._dut.ctrl.value = 0
-        self.reset()
-        self.clock()
-
-    def reset(self):
-        self._dut.n_reset.value = 0
-        self._circuit.run(ms=1)
-        self._dut.n_reset.value = 1
-        self._circuit.run(ms=1)
-
-    def clock(self):
-        self._dut.clk.value = 1
-        self._circuit.run(ms=1)
-        self._dut.clk.value = 0
-        self._circuit.run(ms=1)
 
     def ctrl(self, alu_control):
         self._dut.ctrl.value = alu_control
@@ -43,6 +27,12 @@ class DutTester:
         self._dut.B.value = B
         self._circuit.run(ms=1)
         return self._dut.O.value
+
+    def n_zero(self):
+        return self._dut.n_zero.value
+
+    def overflow(self):
+        return self._dut.overflow.value
 
 
 @pytest.fixture(scope="module")
@@ -285,3 +275,36 @@ def test_nor(dut_tester):
     assert 0xFFFFFFFF == dut_tester.run(0, 0)
     assert 0x00000000 == dut_tester.run(0, 0xFFFFFFFF)
     assert 0xEEEEEEEE == dut_tester.run(0x00001111, 0x11110000)
+
+
+def test_n_zero_flag(dut_tester):
+    """Test the n_zero flag"""
+    dut_tester.ctrl(22)  # Set operation to XOR
+
+    assert 0x00000000 == dut_tester.run(0, 0)
+    assert dut_tester.n_zero() == 0
+
+    assert 0x11111111 == dut_tester.run(0, 0x11111111)
+    assert dut_tester.n_zero() == 1
+
+
+def test_overflow_flag(dut_tester):
+    """Test the n_zero flag"""
+    dut_tester.ctrl(18)  # Set operation to SUB, BEQ, BNE, BGE, BGT
+
+    assert 0x00000000 == dut_tester.run(0, 0)
+    # Overflow is 0 because 0 is not greater than 0
+    assert dut_tester.overflow() == 0
+
+    assert 20 == dut_tester.run(30, 10)
+    # Overflow is 0 because 10 is not greater than 30
+    assert dut_tester.overflow() == 0
+
+    assert 0xFFFFFFFF == dut_tester.run(0, 1)
+    # Overflow is 1 because 1 is not greater than 0
+    assert dut_tester.overflow() == 1
+
+    # Overflow BUG: BGE / BGT only handles positive numbers
+    # Overflow is 0 even if 6 is greater than -10
+    assert 0xFFFFFFF0 == dut_tester.run(-10, 6)
+    assert dut_tester.overflow() == 0

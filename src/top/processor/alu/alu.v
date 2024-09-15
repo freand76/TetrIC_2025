@@ -1,23 +1,22 @@
-module alu(clk, n_reset, A, B, ctrl, O, zero, overflow);
-
-   input        clk, n_reset;
+module alu(A, B, ctrl, O, n_zero, overflow);
 
    input [31:0] A, B;
    input [4:0]  ctrl;
 
    output [31:0] O;
-   output reg    zero;
-   output reg    overflow;
+   output n_zero;
+   output overflow;
+
+   wire [31:0] result;
 
    wire [32:0]   add_result;
    wire [32:0]   sub_result;
-   wire          zero_set;
-   wire          overflow_set;
 
    wire [31:0]   fix_rshifter_out;
    wire [31:0]   var_rshifter_out;
    wire [31:0]   fix_lshifter_out;
    wire [31:0]   var_lshifter_out;
+
 
    rshifter fix_rshifter(.A(A),
                          .shift(B[10:6]),
@@ -40,48 +39,48 @@ module alu(clk, n_reset, A, B, ctrl, O, zero, overflow);
    assign add_result[32:0] = {1'b0, A[31:0]} + {1'b0, B[31:0]};
    assign sub_result[32:0] = {1'b0, A[31:0]} - {1'b0, B[31:0]};
 
-   always @ (A, B, ctrl)
+   always @ (A, B, ctrl, var_rshifter_out, var_lshifter_out, fix_rshifter_out, fix_lshifter_out, add_result, sub_result)
      begin
-        case(ctrl)
-          5'b00000 : O <= 0;                       // ZERO
-          5'b00011 : O <= A;                       // JR, JALR
-          5'b00111 : O <= var_rshifter_out;        // SRAV
-          5'b01000 : O <= fix_lshifter_out;        // SLL
-          5'b01010 : O <= fix_rshifter_out;        // SRL
-          5'b01011 : O <= fix_rshifter_out;        // SRA
-          5'b01100 : O <= var_lshifter_out;        // SLLV
-          5'b01110 : O <= var_rshifter_out;        // SRLV
-          5'b01111 : O <= {B[15:0], {16{1'b0}}};   // LUI
-          5'b10000 : O <= add_result[31:0];        // ADD, ADDI, LW, SW
-          5'b10001 : O <= add_result[31:0];        // ADDU, ADDUI
-          5'b10010 : O <= sub_result[31:0];        // SUB, BEQ, BNE, BGE, BGT
-          5'b10011 : O <= sub_result[31:0];        // SUBU
-          5'b10100 : O <= A & B;                   // AND, ANDI
-          5'b10101 : O <= A | B;                   // OR, ORI
-          5'b10110 : O <= A ^ B;                   // XOR, XORI
-          5'b10111 : O <= ~(A | B);                // NOR
-          5'b11100 : O <= 0;                       // WIP: MFC0 ALU Status register
-          5'b11101 : O <= 0;                       // WIP: MFC1 GFX Status register
-          5'b11110 : O <= 0;                       // WIP: MFC2 Joystick Data
-          5'b11111 : O <= 0;                       // WIP: MFC3 Modplayer
-          default:   O <= 0;
-        endcase
-     end
+        overflow <= "0";
 
-   always @(posedge clk or negedge n_reset)
-     begin
-        if (!n_reset)
-          begin
-             zero <= 0;
-             overflow <= 0;
-          end
+        overflow_set <= "0";
+        arithmetic_overflow_set <= "0";
+        zero_zet <= "1";
+        case(ctrl)
+          5'b00000 : result <= 0;                       // ZERO
+          5'b00011 : result <= A;                       // JR, JALR
+          5'b00111 : result <= var_rshifter_out;        // SRAV
+          5'b01000 : result <= fix_lshifter_out;        // SLL
+          5'b01010 : result <= fix_rshifter_out;        // SRL
+          5'b01011 : result <= fix_rshifter_out;        // SRA
+          5'b01100 : result <= var_lshifter_out;        // SLLV
+          5'b01110 : result <= var_rshifter_out;        // SRLV
+          5'b01111 : result <= {B[15:0], {16{1'b0}}};   // LUI
+          5'b10000 : result <= add_result[31:0];        // ADD, ADDI, LW, SW
+          5'b10001 : result <= add_result[31:0];        // ADDU, ADDUI
+          5'b10010 :                                    // SUB, BEQ, BNE, BGE, BGT
+            begin
+               result <= sub_result[31:0];
+               overflow <= sub_result[32];
+            end
+          5'b10011 : result <= sub_result[31:0];        // SUBU
+          5'b10100 : result <= A & B;                   // AND, ANDI
+          5'b10101 : result <= A | B;                   // OR, ORI
+          5'b10110 : result <= A ^ B;                   // XOR, XORI
+          5'b10111 : result <= ~(A | B);                // NOR
+          5'b11100 : result <= 0;                       // WIP: MFC0 ALU Status register, not used!
+          5'b11101 : result <= 0;                       // WIP: MFC1 GFX Status register
+          5'b11110 : result <= 0;                       // WIP: MFC2 Joystick Data
+          5'b11111 : result <= 0;                       // WIP: MFC3 Modplayer
+          default:   result <= 0;
+        endcase // case (ctrl)
+
+        O <= result;
+
+        if (result == 0)
+          n_zero <= 0;
         else
-          begin
-             if (zero_set)
-               zero <= 1;
-             if (overflow_set)
-               overflow <= 1;
-          end
+          n_zero <= 1;
      end
 
 endmodule
