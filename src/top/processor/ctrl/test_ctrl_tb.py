@@ -15,6 +15,7 @@ class DutTester:
         self._circuit = circuit
         self._dut = dut
         self._dut.instr.value = 0
+        self._circuit.run(ms=1)
 
     def instr(self, instr):
         self._dut.instr.value = instr
