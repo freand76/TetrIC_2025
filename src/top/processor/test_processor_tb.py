@@ -6,8 +6,6 @@ import pytest
 
 from digsim.circuit import Circuit
 from digsim.circuit.components import YosysComponent
-from digsim.synth import Synthesis
-from digsim.utils import YosysNetlist
 
 
 class DutTester:
