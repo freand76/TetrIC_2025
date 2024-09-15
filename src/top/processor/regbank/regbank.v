@@ -1,23 +1,23 @@
-module regbank(clk, n_reset, rSelA, rSelB, wSel, wEnable, wData, rDataA, rDataB);
+module regbank(clk, n_reset, r1_sel, r2_sel, rd_sel, w_enable, w_data, r1_data, r2_data);
 
    input        clk, n_reset;
 
-   input [4:0]  rSelA, rSelB, wSel;
-   input        wEnable;
-   input [31:0] wData;
+   input [4:0]  r1_sel, r2_sel, rd_sel;
+   input        w_enable;
+   input [31:0] w_data;
 
-   output [31:0]  rDataA, rDataB;
+   output [31:0]  r1_data, r2_data;
 
    reg [31:0]     register_bank[32];
 
-   always @ (rSelA)
+   always @ (r1_sel)
      begin
-        rDataA = register_bank[rSelA];
+        r1_data = register_bank[r1_sel];
      end
 
-   always @ (rSelB)
+   always @ (r2_sel)
      begin
-        rDataB = register_bank[rSelB];
+        r2_data = register_bank[r2_sel];
      end
 
    always @(posedge clk or negedge n_reset)
@@ -59,8 +59,8 @@ module regbank(clk, n_reset, rSelA, rSelB, wSel, wEnable, wData, rDataA, rDataB)
          end
         else
           begin
-             if ((wEnable) && (wSel != 0))
-               register_bank[wSel] = wData;
+             if ((w_enable) && (rd_sel != 0))
+               register_bank[rd_sel] = w_data;
           end
      end
 

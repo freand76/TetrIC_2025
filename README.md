@@ -58,6 +58,7 @@ ctrl.vhd         ==> src/top/processor/ctrl/ctrl.v
 datamux.vhd      ==> src/top/processor/mux4/mux4.v
 fwmux1.vhd       ==> src/top/processor/mux4/mux4.v
 fwmux2.vhd       ==> src/top/processor/mux4/mux4.v
+fwunit.vhd       ==> src/top/processor/fwunit/fwunit.v
 imem.vhd         ==> src/top/processor/instr_or_nop/instr_or_nop.v
 immux.vhd        ==> src/top/processor/mux2/mux2.v
 pcmux1.vhd       ==> src/top/processor/mux2/mux2.v
@@ -86,12 +87,7 @@ memctrl
 ### Processor
 ```
 ex_dmem
-fwunit
 mem_dmem
-noplogic
-pcadd1
-pcadd2
-regdestmux
 s_unit
 signandshift
 ```

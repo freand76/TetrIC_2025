@@ -16,11 +16,11 @@ class DutTester:
         self._dut = dut
         self._dut.clk.value = 0
         self._dut.n_reset.value = 0
-        self._dut.rSelA.value = 0
-        self._dut.rSelB.value = 0
-        self._dut.wSel.value = 0
-        self._dut.wEnable.value = 0
-        self._dut.wData.value = 0
+        self._dut.r1_sel.value = 0
+        self._dut.r2_sel.value = 0
+        self._dut.rd_sel.value = 0
+        self._dut.w_enable.value = 0
+        self._dut.w_data.value = 0
         self.reset()
         self.clock()
 
@@ -36,23 +36,23 @@ class DutTester:
         self._dut.clk.value = 0
         self._circuit.run(ms=1)
 
-    def read_registerA(self, rSelA):
-        self._dut.rSelA.value = rSelA
+    def read_registerA(self, r1_sel):
+        self._dut.r1_sel.value = r1_sel
         self._circuit.run(ms=1)
-        return self._dut.rDataA.value
+        return self._dut.r1_data.value
 
-    def read_registerB(self, rSelB):
-        self._dut.rSelB.value = rSelB
+    def read_registerB(self, r2_sel):
+        self._dut.r2_sel.value = r2_sel
         self._circuit.run(ms=1)
-        return self._dut.rDataB.value
+        return self._dut.r2_data.value
 
-    def write_register(self, wSel, wData):
-        self._dut.wSel.value = wSel
-        self._dut.wData.value = wData
-        self._dut.wEnable.value = 1  # Set write enable
+    def write_register(self, rd_sel, w_data):
+        self._dut.rd_sel.value = rd_sel
+        self._dut.w_data.value = w_data
+        self._dut.w_enable.value = 1  # Set write enable
         self._circuit.run(ms=1)  # Let signals ripple to the DFF
         self.clock()  # Clock in the new value
-        self._dut.wEnable.value = 0  # Clear write enable
+        self._dut.w_enable.value = 0  # Clear write enable
         self._circuit.run(ms=1)
 
 
