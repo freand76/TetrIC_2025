@@ -5,7 +5,7 @@ module instr_or_nop(n_stall,
 
    input n_stall, imem_ack;
    input [31:0] instr_in;
-   output [31:0] instr_out;
+   output reg [31:0] instr_out;
 
    always @ (imem_ack, instr_in, n_stall)
      begin

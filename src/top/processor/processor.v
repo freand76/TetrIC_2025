@@ -47,7 +47,7 @@ module processor(clk, n_reset, n_ext_stall,
    wire          s_ex_n_zero;
    wire          s_ex_overflow;
    wire [4:0]    s_ex_r1_sel, s_ex_r2_sel, s_ex_rd_sel;
-   wire [31:0]   s_ex_data3;
+   wire [31:0]   s_ex_data1, s_ex_data2, s_ex_data3;
    wire [31:0]   s_ex_pc1, s_ex_pc7;
    wire [7:0]    s_ex_ex_ctrl;
    wire [4:0]    s_ex_mem_ctrl;
@@ -63,15 +63,15 @@ module processor(clk, n_reset, n_ext_stall,
    wire [4:0]    s_mem_mem_ctrl;
    wire [4:0]    s_mem_regdest;
    wire [2:0]    s_mem_wb_ctrl;
+   wire [31:0]   s_mem_data4;
    wire [31:0]   s_mem_pc1, s_mem_pc7;
    wire [31:0]   s_mem_res;
 
    wire [2:0]    s_wb_wb_ctrl;
    wire [4:0]    s_wb_regdest2;
-   wire [31:0]   s_wb_data;
+   wire [31:0]   s_wb_data, s_wb_data4;
    wire [31:0]   s_wb_pc1;
    wire [31:0]   s_wb_res;
-
 
    // TOP OUTPUTS
    assign dmem_addr_out = 0;
@@ -98,9 +98,9 @@ module processor(clk, n_reset, n_ext_stall,
                .O(s_ex_pre_alu1));
 
    mux2 immux(.A(s_ex_pre_alu1),
-               .B(s_ex_data3),
-               .sel(s_ex_ex_ctrl[5]),
-               .O(s_ex_alu1));
+              .B(s_ex_data3),
+              .sel(s_ex_ex_ctrl[5]),
+              .O(s_ex_alu1));
 
    alu alu(.A(s_ex_alu0),
            .B(s_ex_alu1),
@@ -133,13 +133,13 @@ module processor(clk, n_reset, n_ext_stall,
    pipereg #( .WIDTH(1) ) preififreg(.clk(clk),
                                      .n_reset(n_reset),
                                      .D(imem_ack),
-                                     .enable(1),
+                                     .enable(1'b1),
                                      .Q(s_if_imem_ack));
 
    pipereg #( .WIDTH(32) ) pc(.clk(clk),
                               .n_reset(n_reset),
                               .D(s_if_pc3),
-                              .enable(1),
+                              .enable(1'b1),
                               .Q(s_if_pc2));
 
    // IF->ID REGISTERS
@@ -166,6 +166,7 @@ module processor(clk, n_reset, n_ext_stall,
 
    assign s_id_r1_sel = s_id_instr[25:21];
    assign s_id_r2_sel = s_id_instr[20:16];
+   assign s_id_rd_sel = s_id_instr[15:11];
 
    assign s_id_immediate = s_id_instr[15:0];
 
@@ -176,16 +177,28 @@ module processor(clk, n_reset, n_ext_stall,
 
    // ID->EX REGISTERS
    pipereg #( .WIDTH(32) ) ifid_pc1(.clk(clk),
-                                   .n_reset(n_reset),
-                                   .D(s_id_pc1),
-                                   .enable(n_stall),
-                                   .Q(s_ex_pc1));
+                                    .n_reset(n_reset),
+                                    .D(s_id_pc1),
+                                    .enable(n_stall),
+                                    .Q(s_ex_pc1));
 
-   pipereg #( .WIDTH(32) ) idex_data(.clk(clk),
-                                     .n_reset(n_reset),
-                                     .D(s_id_data3),
-                                     .enable(n_stall),
-                                     .Q(s_ex_data3));
+   pipereg #( .WIDTH(32) ) idex_data1(.clk(clk),
+                                      .n_reset(n_reset),
+                                      .D(s_id_data1),
+                                      .enable(n_stall),
+                                      .Q(s_ex_data1));
+
+   pipereg #( .WIDTH(32) ) idex_data2(.clk(clk),
+                                      .n_reset(n_reset),
+                                      .D(s_id_data2),
+                                      .enable(n_stall),
+                                      .Q(s_ex_data2));
+
+   pipereg #( .WIDTH(32) ) idex_data3(.clk(clk),
+                                      .n_reset(n_reset),
+                                      .D(s_id_data3),
+                                      .enable(n_stall),
+                                      .Q(s_ex_data3));
 
    pipereg #( .WIDTH(5) ) idex_r1_sel(.clk(clk),
                                       .n_reset(n_reset),
@@ -243,10 +256,10 @@ module processor(clk, n_reset, n_ext_stall,
                                      .Q(s_mem_pc7));
 
    pipereg #( .WIDTH(32) ) exmem_pc1(.clk(clk),
-                                   .n_reset(n_reset),
-                                   .D(s_ex_pc1),
-                                   .enable(n_stall),
-                                   .Q(s_mem_pc1));
+                                     .n_reset(n_reset),
+                                     .D(s_ex_pc1),
+                                     .enable(n_stall),
+                                     .Q(s_mem_pc1));
 
    pipereg #( .WIDTH(32) ) exmem_alu_res(.clk(clk),
                                          .n_reset(n_reset),
@@ -255,10 +268,10 @@ module processor(clk, n_reset, n_ext_stall,
                                          .Q(s_mem_res));
 
    pipereg #( .WIDTH(1) ) exmem_n_zero(.clk(clk),
-                                     .n_reset(n_reset),
-                                     .D(s_ex_n_zero),
-                                     .enable(n_stall),
-                                     .Q(s_mem_n_zero));
+                                       .n_reset(n_reset),
+                                       .D(s_ex_n_zero),
+                                       .enable(n_stall),
+                                       .Q(s_mem_n_zero));
 
    pipereg #( .WIDTH(1) ) exmem_overflow(.clk(clk),
                                          .n_reset(n_reset),
@@ -299,10 +312,10 @@ module processor(clk, n_reset, n_ext_stall,
 
 
    pipereg #( .WIDTH(32) ) memwb_data(.clk(clk),
-                                       .n_reset(n_reset),
-                                       .D(s_mem_data4),
-                                       .enable(n_stall),
-                                       .Q(s_wb_data4));
+                                      .n_reset(n_reset),
+                                      .D(s_mem_data4),
+                                      .enable(n_stall),
+                                      .Q(s_wb_data4));
 
    pipereg #( .WIDTH(32) ) memwb_alu_res(.clk(clk),
                                          .n_reset(n_reset),
@@ -329,12 +342,12 @@ module processor(clk, n_reset, n_ext_stall,
                 .sel(s_wb_wb_ctrl[2:1]),
                 .O(s_wb_data));
 
-   mux4 regdestmux(.A(s_ex_r2_sel),
-                   .B(s_ex_rd_sel),
-                   .C(5'b1111),
-                   .D(5'b11111),
-                   .sel(s_ex_ex_ctrl[7:6]),
-                   .O(s_ex_regdest));
+   mux4 #( .WIDTH(5) ) regdestmux(.A(s_ex_r2_sel),
+                                  .B(s_ex_rd_sel),
+                                  .C(5'b11111),
+                                  .D(5'b11111),
+                                  .sel(s_ex_ex_ctrl[7:6]),
+                                  .O(s_ex_regdest));
 
    regbank regbank(.clk(clk),
                    .n_reset(n_reset),
@@ -356,24 +369,16 @@ module processor(clk, n_reset, n_ext_stall,
                  .sel2(s_id_sel2));
 
    // PC ADD1
-   always @ (n_stall, s_if_imem_ack, s_if_pc2)
-     begin
-        if (n_stall && s_if_imem_ack)
-          s_if_pc1 <= s_if_pc2 + 1;
-        else
-          s_if_pc1 <= s_if_pc2;
-     end
+   assign s_if_pc1 = (n_stall && s_if_imem_ack) ? s_if_pc2 + 1 : s_if_pc2;
 
    // PC ADD2
-   always @ (s_ex_pc1, s_ex_data3)
-     begin
-        s_ex_pc7 <= s_ex_pc1 + s_ex_data3;
-    end
+   assign s_ex_pc7 = s_ex_pc1 + s_ex_data3;
 
+   assign s_mem_data4 = data_in;
    assign imem_addr_out = s_if_pc2;
    assign debug_pc = s_if_pc2;
    assign debug_data = s_wb_data;
-   assign debug_data2 = { 11'b0, s_wb_regdest2, 13'b0, s_wb_wb_ctrl };
+   assign debug_data2 = { s_ex_ex_ctrl, 8'h00, 8'h00, 3'b000, s_id_rd_sel };
    assign data_out = s_if_instr;
 
 endmodule

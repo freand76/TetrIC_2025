@@ -2,29 +2,29 @@ module ctrl(instr, ife_ctrl, id_ctrl, ex_ctrl, mem_ctrl, wb_ctrl);
 
    input [31:0] instr;
 
-   output       ife_ctrl;
-   output [1:0] id_ctrl;
-   output [7:0] ex_ctrl;
-   output [4:0] mem_ctrl;
-   output [2:0] wb_ctrl;
+   output reg   ife_ctrl;
+   output reg [1:0] id_ctrl;
+   output reg [7:0] ex_ctrl;
+   output reg [4:0] mem_ctrl;
+   output reg [2:0] wb_ctrl;
 
-   wire [5:0]   opcode;
-   wire [5:0]   func;
+   wire [5:0]       opcode;
+   wire [5:0]       func;
 
    assign opcode = instr[31:26];
    assign func = instr[5:0];
 
-   wire [1:0] f_id_ctrl;
-   wire [7:0] f_ex_ctrl;
-   wire [4:0] f_mem_ctrl;
-   wire [2:0] f_wb_ctrl;
+   reg [1:0]        f_id_ctrl;
+   reg [7:0]        f_ex_ctrl;
+   reg [4:0]        f_mem_ctrl;
+   reg [2:0]        f_wb_ctrl;
 
    // IFE
    always @ (opcode)
      begin
         case(opcode)
-          5'b000010 : ife_ctrl <= 1; // J
-          5'b000011 : ife_ctrl <= 1; // JAL
+          6'b000010 : ife_ctrl <= 1; // J
+          6'b000011 : ife_ctrl <= 1; // JAL
           default   : ife_ctrl <= 0;
         endcase // case (opcode)
      end

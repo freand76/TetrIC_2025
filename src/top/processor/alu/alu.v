@@ -3,19 +3,19 @@ module alu(A, B, ctrl, O, n_zero, overflow);
    input [31:0] A, B;
    input [4:0]  ctrl;
 
-   output [31:0] O;
-   output n_zero;
-   output overflow;
+   output reg [31:0] O;
+   output reg        n_zero;
+   output reg        overflow;
 
-   wire [31:0] result;
+   reg [31:0]        result;
 
-   wire [32:0]   add_result;
-   wire [32:0]   sub_result;
+   wire [32:0]       add_result;
+   wire [32:0]       sub_result;
 
-   wire [31:0]   fix_rshifter_out;
-   wire [31:0]   var_rshifter_out;
-   wire [31:0]   fix_lshifter_out;
-   wire [31:0]   var_lshifter_out;
+   wire [31:0]       fix_rshifter_out;
+   wire [31:0]       var_rshifter_out;
+   wire [31:0]       fix_lshifter_out;
+   wire [31:0]       var_lshifter_out;
 
 
    rshifter fix_rshifter(.A(A),
@@ -43,9 +43,6 @@ module alu(A, B, ctrl, O, n_zero, overflow);
      begin
         overflow <= "0";
 
-        overflow_set <= "0";
-        arithmetic_overflow_set <= "0";
-        zero_zet <= "1";
         case(ctrl)
           5'b00000 : result <= 0;                       // ZERO
           5'b00011 : result <= A;                       // JR, JALR

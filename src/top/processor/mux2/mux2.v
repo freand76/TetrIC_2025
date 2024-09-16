@@ -3,7 +3,7 @@ module mux2(A, B, sel, O);
    input [31:0] A, B;
    input        sel;
 
-   output [31:0] O;
+   output reg [31:0] O;
 
    always @ (A, B, sel)
      begin

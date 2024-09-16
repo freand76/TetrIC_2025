@@ -6,9 +6,9 @@ module regbank(clk, n_reset, r1_sel, r2_sel, rd_sel, w_enable, w_data, r1_data, 
    input        w_enable;
    input [31:0] w_data;
 
-   output [31:0]  r1_data, r2_data;
+   output reg [31:0] r1_data, r2_data;
 
-   reg [31:0]     register_bank[32];
+   reg [31:0]        register_bank[32];
 
    always @ (r1_sel)
      begin
@@ -56,7 +56,7 @@ module regbank(clk, n_reset, r1_sel, r2_sel, rd_sel, w_enable, w_data, r1_data, 
              register_bank[29] = 0;
              register_bank[30] = 0;
              register_bank[31] = 0;
-         end
+          end
         else
           begin
              if ((w_enable) && (rd_sel != 0))

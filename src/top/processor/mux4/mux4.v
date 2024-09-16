@@ -1,9 +1,9 @@
-module mux4(A, B, C, D, sel, O);
+module mux4  #(parameter WIDTH = 32) (A, B, C, D, sel, O);
 
-   input [31:0] A, B, C, D;
-   input [1:0]  sel;
+   input [WIDTH-1:0] A, B, C, D;
+   input [1:0]       sel;
 
-   output [31:0] O;
+   output reg [WIDTH-1:0] O;
 
    always @ (A, B, C, D, sel)
      begin

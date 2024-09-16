@@ -2,7 +2,7 @@ module lshifter(A, shift, O);
    input [31:0] A;
    input [4:0]  shift;
 
-   output [31:0] O;
+   output reg [31:0] O;
 
    always @ (A, shift)
      begin

@@ -1,11 +1,11 @@
 module pipereg #(parameter WIDTH = 8)
-(
- input              clk, n_reset, enable,
- input [WIDTH-1:0]  D,
- output [WIDTH-1:0] Q
-);
+   (
+    input              clk, n_reset, enable,
+    input [WIDTH-1:0]  D,
+    output [WIDTH-1:0] Q
+    );
 
-   reg [WIDTH-1:0]  val;
+   reg [WIDTH-1:0]     val;
 
    assign Q = val;
 

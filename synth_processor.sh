@@ -14,4 +14,6 @@ VERILOG_FILES+=" src/top/processor/pipereg/pipereg.v"
 VERILOG_FILES+=" src/top/processor/regbank/regbank.v"
 VERILOG_FILES+=" src/top/processor/signext/signext.v"
 
-python3 -m digsim.synth synth -i $VERILOG_FILES -t processor -o src/top/processor/processor.json
+#python3 -m digsim.synth synth -i $VERILOG_FILES -t processor -o src/top/processor/processor.json
+
+iverilog -g2005-sv -o processor_tb src/top/processor/processor_tb.v $VERILOG_FILES

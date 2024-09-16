@@ -4,8 +4,8 @@ module branchlogic(n_zero, overflow, ctrl, pcmux1_ctrl, pcmux3_ctrl);
    input overflow;
    input [2:0] ctrl;
 
-   output      pcmux1_ctrl;
-   output      pcmux3_ctrl;
+   output reg  pcmux1_ctrl;
+   output reg  pcmux3_ctrl;
 
    always @ (n_zero, overflow, ctrl)
      begin

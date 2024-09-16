@@ -3,9 +3,9 @@ module rshifter(A, shift, arithmetic, O);
    input [4:0]  shift;
    input        arithmetic;
 
-   output [31:0] O;
+   output reg [31:0] O;
 
-   wire          shift_in;
+   wire              shift_in;
 
    assign shift_in = A[31] & arithmetic;
 
@@ -48,7 +48,3 @@ module rshifter(A, shift, arithmetic, O);
         endcase
      end
 endmodule
-   
-
-                
-   
