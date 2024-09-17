@@ -1,10 +1,13 @@
 module processor(clk, n_reset, n_ext_stall,
-                 data_in,
-                 imem_ack, dmem_ack,
-                 dmem_req_r, dmem_req_w,
-                 dmem_pre_r, dmem_pre_w,
-                 imem_addr_out, dmem_addr_out,
-                 data_out,
+                 imem_addr_out,
+                 imem_data_in,
+                 imem_ack,
+                 dmem_addr_out,
+                 dmem_data_in,
+                 dmem_req,
+                 dmem_wr,
+                 dmem_ack,
+                 dmem_data_out,
                  debug_pc,
                  debug_data,
                  debug_data2,
@@ -12,18 +15,17 @@ module processor(clk, n_reset, n_ext_stall,
 
    input        clk, n_reset, n_ext_stall;
 
-   input [31:0] data_in;
+   input [31:0] imem_data_in, dmem_data_in;
+
+   output       dmem_req;
+   output       dmem_wr;
    input        imem_ack, dmem_ack;
-
-   output       dmem_req_r, dmem_req_w;
-   output       dmem_pre_r, dmem_pre_w;
-
    output [31:0] imem_addr_out, dmem_addr_out;
-   output [31:0] data_out;
+   output [31:0] dmem_data_out;
 
    output [31:0] debug_pc, debug_data, debug_data2;
 
-   wire          n_stall;
+   wire          n_stall, n_mem_stall;
 
    wire          s_if_ctrl2, s_if_imem_ack;
 
@@ -63,7 +65,7 @@ module processor(clk, n_reset, n_ext_stall,
    wire [4:0]    s_mem_mem_ctrl;
    wire [4:0]    s_mem_regdest;
    wire [2:0]    s_mem_wb_ctrl;
-   wire [31:0]   s_mem_data4;
+   wire [31:0]   s_mem_data2, s_mem_data4;
    wire [31:0]   s_mem_pc1, s_mem_pc7;
    wire [31:0]   s_mem_res;
 
@@ -74,14 +76,13 @@ module processor(clk, n_reset, n_ext_stall,
    wire [31:0]   s_wb_res;
 
    // TOP OUTPUTS
-   assign dmem_addr_out = 0;
    assign dmem_req_r = 0;
    assign dmem_req_w = 0;
    assign dmem_pre_r = 0;
    assign dmem_pre_w = 0;
 
    // STALL
-   assign n_stall = n_ext_stall;
+   assign n_stall = n_ext_stall & n_mem_stall;
 
    mux4 fwmux1(.A(s_ex_data1),
                .B(s_wb_data),
@@ -126,7 +127,7 @@ module processor(clk, n_reset, n_ext_stall,
 
    instr_or_nop instr_or_nop_inst(.n_stall(n_stall),
                                   .imem_ack(imem_ack),
-                                  .instr_in(data_in),
+                                  .instr_in(imem_data_in),
                                   .instr_out(s_if_instr));
 
    // IF REGISTERS
@@ -267,6 +268,12 @@ module processor(clk, n_reset, n_ext_stall,
                                          .enable(n_stall),
                                          .Q(s_mem_res));
 
+   pipereg #( .WIDTH(32) ) exmem_data2(.clk(clk),
+                                       .n_reset(n_reset),
+                                       .D(s_ex_data2),
+                                       .enable(n_stall),
+                                       .Q(s_mem_data2));
+
    pipereg #( .WIDTH(1) ) exmem_n_zero(.clk(clk),
                                        .n_reset(n_reset),
                                        .D(s_ex_n_zero),
@@ -368,17 +375,23 @@ module processor(clk, n_reset, n_ext_stall,
                  .sel1(s_id_sel1),
                  .sel2(s_id_sel2));
 
+   assign n_mem_stall = !(!dmem_ack & (s_mem_mem_ctrl[1] | s_mem_mem_ctrl[0]));
+   assign dmem_req = s_mem_mem_ctrl[1] | s_mem_mem_ctrl[0];
+   assign dmem_wr = s_mem_mem_ctrl[1];
+
    // PC ADD1
    assign s_if_pc1 = (n_stall && s_if_imem_ack) ? s_if_pc2 + 1 : s_if_pc2;
 
    // PC ADD2
    assign s_ex_pc7 = s_ex_pc1 + s_ex_data3;
 
-   assign s_mem_data4 = data_in;
+   assign s_mem_data4 = dmem_data_in;
+   assign dmem_addr_out = s_mem_res;
    assign imem_addr_out = s_if_pc2;
    assign debug_pc = s_if_pc2;
-   assign debug_data = s_wb_data;
-   assign debug_data2 = { s_ex_ex_ctrl, 8'h00, 8'h00, 3'b000, s_id_rd_sel };
-   assign data_out = s_if_instr;
+   assign debug_data = s_mem_data2;
+   assign debug_data2 = s_wb_data;
+
+   assign dmem_data_out = s_mem_data2;
 
 endmodule
