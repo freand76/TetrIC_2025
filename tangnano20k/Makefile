@@ -36,4 +36,3 @@ program-flash-top: $(BUILD_DIR)/top.fs
 .PHONY: program-flash-test
 program-flash-test: test.hex
 	openFPGALoader -btangnano20k --external-flash -o 0x500000 $<
-	openFPGALoader -btangnano20k --external-flash -o 0x000000 $<
