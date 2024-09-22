@@ -50,7 +50,7 @@ module top(
    flash_reader flash_reader(.clk(clk),
                              .n_reset(rst_n),
                              .address(FLASH_START),
-                             .word_count(24'h000100),
+                             .word_count(24'h000400),
                              .strobe(flash_strobe),
                              .done(flash_done),
                              .data_out(flash_data_out),
@@ -65,6 +65,7 @@ module top(
 
    wire [31:0]           imem_addr_out;
    wire [31:0]           current_instruction;
+   wire [31:0]           dmem_addr_out;
 
    processor processor(.clk(clk),
                        .n_reset(rst_n),
@@ -78,11 +79,12 @@ module top(
                        .dmem_req(dmem_req),
                        .dmem_wr(dmem_wr),
                        .dmem_ack(1'b1),
-                       .debug_pc(debug_pc),
+                       .debug_pc(debug_pc));
                        //.debug_data(debug_data),
-                       .debug_data2(debug_data2));
+                       //.debug_data2(debug_data2));
 
    assign debug_data = current_instruction;
+   assign debug_data2 = dmem_data_out;
 
    reg [9:0]             mem_write_addr;
    reg [9:0]             mem_read_addr;
@@ -106,6 +108,8 @@ module top(
         else
           if (dmem_req)
             begin
+               $display("DMEM_REQ");
+               
                tx_data <= dmem_data_out[7:0];
                tx_data_valid <= 1;
             end

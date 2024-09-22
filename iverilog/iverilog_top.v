@@ -8,7 +8,7 @@ module iverilog_top;
    initial
      begin
         $display("Hello, World");
-        #1000000
+        #10000000
           $finish;
      end
 
@@ -24,7 +24,7 @@ module iverilog_top;
    wire [5:0] led;
 
    wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
-   wire [31:0] debug_pc, debug_data;
+   wire [31:0] debug_pc, debug_data, debug_data2;
 
    top top(.clk(clk),
            .rst(rst),
@@ -35,7 +35,8 @@ module iverilog_top;
            .mspi_do(mspi_do),
 
            .debug_pc(debug_pc),
-           .debug_data(debug_data)
+           .debug_data(debug_data),
+           .debug_data2(debug_data2)
            );
 
    W25Q64JVxxIM spi_flash(.CSn(mspi_cs),
@@ -46,7 +47,9 @@ module iverilog_top;
 
    always @( debug_pc)
      begin
-        $display("PC: %x:%x", debug_pc, debug_data);
+        $display("PC: %x:%x:%x", debug_pc, debug_data, debug_data2);
+        if (debug_pc == 32'h00ffffff)
+          $finish;
      end
 endmodule
 
@@ -65,13 +68,10 @@ module uart_tx
     output      tx_pin            //serial data output
     );
 
-   always @ (tx_data_valid)
+   always @ (posedge tx_data_valid)
      begin
-        if (tx_data_valid)
-          begin
-             $display("UART: %x", tx_data);
-             tx_data_ready <= tx_data_valid;
-          end
+        $display("UART: %x", tx_data);
+        tx_data_ready <= tx_data_valid;
      end
 
 endmodule
@@ -92,7 +92,7 @@ module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
      begin
         if (rst)
           begin
-             for(idx = 0; idx < 1024; idx=idx+1)
+             for(idx = 0; idx < 4096; idx=idx+1)
                memory[idx] <= 0;
           end
         else

@@ -34,5 +34,11 @@ $(BUILD_DIR)/top_vvp: $(SRC_TOP)/flash_reader/flash_reader.v $(SPI_FLASH_MDOEL) 
 	mkdir -p $(BUILD_DIR)
 	iverilog -g2005-sv -DIVERLOG -o $@ $^
 
-run:
+prg.bin: prg.s
+	abnasm.pl prg.s
+
+MEM.TXT: prg.bin
+	hexdump -v -e '4/1 "%02x " "\n"' $< > $@
+
+run: MEM.TXT
 	vvp $(BUILD_DIR)/top_vvp
