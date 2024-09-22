@@ -66,3 +66,34 @@ module uart_tx
      end
 
 endmodule
+
+module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
+
+   input clk, rst;
+   input w_strobe;
+   input [9:0] w_addr, r_addr;
+   input [31:0] w_data;
+   output [31:0] r_data;
+
+   reg [31:0]    memory[1024];
+
+   integer idx;
+
+   always@(posedge clk or posedge rst)
+     begin
+        if (rst)
+          begin
+             for(idx = 0; idx < 1024; idx=idx+1)
+               memory[idx] <= 0;
+          end
+        else
+          begin
+             if (w_strobe)
+               begin
+                  memory[w_addr] <= w_data;
+               end
+          end
+     end // always@ (posedge clk or posedge rst)
+
+   assign r_data = memory[r_addr];
+endmodule

@@ -16,6 +16,12 @@ module top(
            input        mspi_do
            );
 
+`ifdef IVERLOG
+   parameter            FLASH_START = 24'h000000;
+`else
+   parameter            FLASH_START = 24'h500000;
+`endif
+
    parameter            CLK_FRE  = 27;//Mhz
    parameter            UART_FRE = 115200;
 
@@ -56,7 +62,7 @@ module top(
 
    flash_reader flash_reader(.clk(clk),
                              .n_reset(rst_n),
-                             .address(24'h500000),
+                             .address(FLASH_START),
                              .word_count(24'h000100),
                              .strobe(flash_strobe),
                              .done(flash_done),
@@ -126,23 +132,29 @@ module top(
             4 : state <= 5;
             5 : state <= 6;
             6 : state <= 7;
-            7 : state <= 8;
+            7 :
+            begin
+               if (uart_cnt[1:0] == 2'b00)
+                 begin
+                    mem_read_addr <= mem_read_addr + 1;
+                    state <= 14;
+                 end
+               else
+                 state <= 8;
+            end
             8 : state <= 9;
             9 :
               begin
                  if (tx_data_ready)
                    begin
-                      if (uart_cnt[1:0] == 2'b00)
-                        begin
-                           mem_read_addr <= mem_read_addr + 1;
-                           state <= 0;
-                        end
-                      else
-                        begin
-                           uart_data <= { uart_data[23:0], 8'b00000000 };
-                           state <= 1;
-                        end
+                      uart_data <= { uart_data[23:0], 8'b00000000 };
+                      state <= 1;
                    end
+              end
+            14 :
+              begin
+                 if (tx_data_ready)
+                   state <= 0;
               end
             15:
               begin
@@ -155,23 +167,13 @@ module top(
           endcase // case (state)
      end // always@ (posedge clk or negedge rst_n)
 
-   processor_ram processor_ram_inst1(
-                                     .clk(clk),
-                                     .reset(rst),
-                                     .write_strobe(flash_strobe),
-                                     .write_ad(mem_write_addr),
-                                     .write_data(flash_data_out[15:0]),
-                                     .read_ad(mem_read_addr),
-                                     .read_data(read_data[15:0]));
-
-   processor_ram processor_ram_inst2(
-                                     .clk(clk),
-                                     .reset(rst),
-                                     .write_strobe(flash_strobe),
-                                     .write_ad(mem_write_addr),
-                                     .write_data(flash_data_out[31:16]),
-                                     .read_ad(mem_read_addr),
-                                     .read_data(read_data[31:16]));
+   processor_ram processor_ram(.clk(clk),
+                               .rst(rst),
+                               .w_strobe(flash_strobe),
+                               .w_addr(mem_write_addr),
+                               .w_data(flash_data_out),
+                               .r_addr(mem_read_addr),
+                               .r_data(read_data));
 
    wire  [31:0] read_data;
 
@@ -188,50 +190,4 @@ module top(
         .tx_data_ready  (tx_data_ready),
         .tx_pin         (uart_tx)
         );
-endmodule
-
-module processor_ram(
-                     input wire         clk,
-                     input wire         reset,
-                     input wire         write_strobe,
-                     input wire [9:0]   write_ad,
-                     input wire [14:0]  write_data,
-                     input wire [9:0]   read_ad,
-                     output wire [15:0] read_data
-                     );
-
-   wire                                 gnd, vcc;
-   assign gnd = 1'b0;
-   assign vcc = 1'b1;
-
-   wire [7:0]                           dummy;
-
-   DPB mem(
-           .DIA({{8{gnd}}, write_data}),
-           .ADA({write_ad, gnd, gnd, vcc, vcc}),
-           .CLKA(clk),
-           .OCEA(vcc),
-           .CEA(vcc),
-           .DIB({16{gnd}}),
-           .DOB({dummy, read_data}),
-           .ADB({read_ad, gnd, gnd, vcc, vcc}),
-           .CLKB(clk),
-           .OCEB(vcc),
-           .CEB(vcc),
-           .WREA(write_strobe),
-           .WREB(gnd),
-           .BLKSELA(3'b000),
-           .BLKSELB(3'b000),
-           .RESETA(reset),
-           .RESETB(reset)
-           );
-   defparam mem.READ_MODE0 = 1'b1;
-   defparam mem.READ_MODE1 = 1'b1;
-   defparam mem.WRITE_MODE0 = 2'b01;
-   defparam mem.WRITE_MODE1 = 2'b01;
-   defparam mem.BIT_WIDTH_0 = 16;
-   defparam mem.BIT_WIDTH_1 = 16;
-   defparam mem.BLK_SEL_0 = 3'b000;
-   defparam mem.BLK_SEL_1 = 3'b000;
-   defparam mem.RESET_MODE = "SYNC";
 endmodule

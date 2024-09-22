@@ -14,7 +14,7 @@ synth: $(BUILD_DIR)/top_synth.json
 clean:
 	rm -rf $(BUILD_DIR)
 
-$(BUILD_DIR)/top_synth.json : ${SRC_TOP}/uart_tx/uart_tx.v ${SRC_TOP}/flash_reader/flash_reader.v top.v
+$(BUILD_DIR)/top_synth.json : ${SRC_TOP}/uart_tx/uart_tx.v ${SRC_TOP}/flash_reader/flash_reader.v processor_ram.v top.v
 	mkdir -p $(BUILD_DIR)
 	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@"
 

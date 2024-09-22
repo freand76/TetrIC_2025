@@ -17,7 +17,7 @@ clean:
 
 $(BUILD_DIR)/top_vvp: ${SRC_TOP}/flash_reader/flash_reader.v $(SPI_FLASH_MDOEL) ../tangnano20k/top.v iverilog_top.v
 	mkdir -p $(BUILD_DIR)
-	iverilog -g2005-sv -o $@ $^
+	iverilog -g2005-sv -DIVERLOG -o $@ $^
 
 run:
 	vvp $(BUILD_DIR)/top_vvp
