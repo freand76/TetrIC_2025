@@ -1,116 +1,139 @@
-module uart_test(
-                 // Clock and Reset
-                 input        clk,
-                 input        rst,
+module top(
+           // Clock and Reset
+           input        clk,
+           input        rst,
 
-                 // UART Tx
-                 output       uart_tx,
+           // UART Tx
+           output       uart_tx,
 
-                 // LED (Active LOW)
-                 output [5:0] led,
+           // LED (Active LOW)
+           output [5:0] led,
 
-                 // spi flash interface
-                 output       mspi_cs,
-                 output       mspi_clk,
-                 output       mspi_di,
-                 input        mspi_do
-                 );
+           // spi flash interface
+           output       mspi_cs,
+           output       mspi_clk,
+           output       mspi_di,
+           input        mspi_do
+           );
 
-   parameter                  CLK_FRE  = 27;//Mhz
-   parameter                  UART_FRE = 115200;
-   localparam                 IDLE =  0;
-   localparam                 READFLASH1 = 1;
-   localparam                 READFLASH2 = 2;
-   localparam                 SEND =  3;   //send
-   localparam                 WAIT =  4;   //wait 1 second and send uart received data
-   reg [7:0]                  tx_data;
-   reg [7:0]                  tx_str;
-   reg                        tx_data_valid;
-   wire                       tx_data_ready;
-   reg [7:0]                  tx_cnt;
-   reg [31:0]                 wait_cnt;
-   reg [3:0]                  state;
+   parameter            CLK_FRE  = 27;//Mhz
+   parameter            UART_FRE = 115200;
 
-   wire                       rst_n = !rst;
 
-   wire [7:0]                 flash_dout;
-   reg [23:0]                 flash_addr;
-   reg                        flash_cs;
-   reg                        flash_read;
+   reg [7:0]            tx_data;
+   reg                  tx_data_valid;
+   wire                 tx_data_ready;
+   reg [31:0]           wait_cnt;
+   reg [3:0]            state;
 
-   assign led[3:0] = flash_addr[3:0];
+   wire                 rst_n = !rst;
+
+   wire                 flash_done;
+   wire                 flash_strobe;
+   wire [31:0]          flash_data_out;
+
+   reg [4:0]            led_cnt;
+
+   assign led[0] = !led_cnt[0];
+   assign led[1] = !led_cnt[1];
+   assign led[2] = !led_cnt[2];
+   assign led[3] = !led_cnt[3];
+   assign led[4] = !led_cnt[4];
+   assign led[5] = !flash_done;
 
    always@(posedge clk or negedge rst_n)
      begin
         if(rst_n == 1'b0)
           begin
-             wait_cnt <= 32'd0;
-             tx_data <= 8'd0;
-             state <= IDLE;
-             tx_cnt <= 8'd0;
-             tx_data_valid <= 1'b0;
-             flash_addr <= 24'h500000;
-             flash_read <= 0;
+             led_cnt <= 0;
+          end
+        else
+          if (flash_strobe)
+            begin
+               led_cnt <= led_cnt + 1;
+            end
+     end // always@ (posedge clk or negedge rst_n)
+
+   flash_reader flash_reader(.clk(clk),
+                             .n_reset(rst_n),
+                             .address(24'h000000),
+                             .word_count(24'h000003),
+                             .strobe(flash_strobe),
+                             .done(flash_done),
+                             .data_out(flash_data_out),
+                             .spi_cs(mspi_cs),
+                             .spi_clk(mspi_clk),
+                             .spi_mosi(mspi_di),
+                             .spi_miso(mspi_do));
+
+   reg [31:0] uart_data;
+   reg [7:0]  uart_cnt;
+
+   always@(posedge clk or negedge rst_n)
+     begin
+        if(!rst_n)
+          begin
+             state <= 0;
+             uart_data <= 0;
+             tx_data <= 0;
+             tx_data_valid <= 0;
+             uart_cnt <= 0;
           end
         else
           case(state)
-            IDLE:
+            0:
               begin
-                 tx_data_valid <= 1'b0;
-                 wait_cnt <= 32'd0;
-                 state <= WAIT;
-              end
-            READFLASH1:
-              begin
-                 flash_read <= 1;
-                 if (flash_busy)
-                   state <= READFLASH2;
-              end
-            READFLASH2:
-              begin
-                 tx_data_valid <= 1'b0;
-                 if (!flash_busy)
+                 if (flash_done)
                    begin
-                      state <= SEND;
+                      state <= 1;
+                      uart_data <= flash_data_out;
                    end
               end
-            SEND:
+            1:
               begin
-                 flash_read <= 0;
-                 flash_addr <= flash_addr + 1;
-                 state <= WAIT;
-                 wait_cnt <= 0;
-                 tx_data_valid <= 1'b1;
-                 tx_data <= flash_dout[7:0];
+                 tx_data_valid <= 1;
+                 if (uart_cnt > 3)
+                   begin
+                      tx_data <= 8'h0a;
+                      state <= 15;
+                   end
+                 else
+                   begin
+                      tx_data <= uart_data[31:24];
+                      state <= 2;
+                   end
               end
-            WAIT:
+            2 :
               begin
-                 tx_data_valid <= 1'b0;
-                 wait_cnt <= wait_cnt + 32'd1;
-                 if(wait_cnt >= CLK_FRE * 1000_00) // wait for 100ms
-                   state <= READFLASH1;
+                 uart_cnt <= uart_cnt + 1;
+                 tx_data_valid <= 0;
+                 state <= 3;
+              end
+            3 : state <= 4;
+            4 : state <= 5;
+            5 : state <= 6;
+            6 : state <= 7;
+            7 : state <= 8;
+            8 : state <= 9;
+            9 :
+              begin
+                 if (tx_data_ready)
+                   begin
+                      uart_data <= { uart_data[23:0], 8'b00000000 };
+                      state <= 1;
+                   end
+              end
+            15:
+              begin
+                 tx_data_valid <= 0;
               end
             default:
-              state <= IDLE;
-          endcase
-     end
+              begin
+                 tx_data_valid <= 0;
+              end
+          endcase // case (state)
+     end // always@ (posedge clk or negedge rst_n)
 
-   assign led[5] = flash_busy;
-   assign led[4] = flash_busy;
-
-   flash_reader flash_reader (
-                .clk       (clk),
-                .n_reset   (rst_n),
-                .address   (flash_addr),
-                .read      (flash_read),
-                .data_out  (flash_dout),
-                .busy      (flash_busy),
-
-                .spi_cs    (mspi_cs),
-                .spi_clk   (mspi_clk),
-                .spi_mosi  (mspi_di),
-                .spi_miso  (mspi_do)
-                );
    uart_tx#
      (
       .CLK_FRE(CLK_FRE),

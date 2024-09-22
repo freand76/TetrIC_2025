@@ -1,202 +1,158 @@
-module flash_reader(clk, n_reset, address, read, busy, data_out, spi_cs, spi_clk, spi_mosi, spi_miso, state);
+module flash_reader(clk, n_reset, address, word_count, strobe, done, data_out, spi_cs, spi_clk, spi_mosi, spi_miso);
 
    input clk, n_reset;
    input [23:0] address;
+   input [23:0] word_count;
 
-   input        read;
-   output reg   busy;
-   output reg [7:0] data_out;
+   output reg   strobe;
+   output reg   done;
+   output reg [31:0] data_out;
 
-   output reg   spi_cs, spi_clk, spi_mosi;
-   input        spi_miso;
+   output reg        spi_cs, spi_clk, spi_mosi;
+   input             spi_miso;
+   reg               last_spi_clk;
 
-   output reg [3:0]    state;
+   reg [2:0]         state;
+   reg [15:0]        bitcnt;
+   reg [23:0]        wcount;
 
-   reg [7:0]    mosi_shift;
-   reg [7:0]    miso_shift;
+   reg [31:0]        mosi_shift;
+   reg [31:0]        miso_shift;
 
-   localparam   INIT    =  0;
-   localparam   CS_LOW  =  2;
-   localparam   COMMAND =  3;
-   localparam   COMMAND_WAIT =  4;
-   localparam   ADDR1        =  5;
-   localparam   ADDR1_WAIT   =  6;
-   localparam   ADDR2        =  7;
-   localparam   ADDR2_WAIT   =  8;
-   localparam   ADDR3        =  9;
-   localparam   ADDR3_WAIT   =  10;
-   localparam   DATA         =  11;
-   localparam   DATA_WAIT    =  12;
-   localparam   CS_HIGH      =  13;
+   reg               load_cmd_addr;
+   reg               shifter_active;
 
-   reg          start_shifter;
-   reg          shifter_done;
-
-   reg [7:0]    mosi_data;
-   reg [1:0]    mosi_sel;
-
-   always @ (mosi_sel, address)
-     begin
-        case(mosi_sel)
-          0 : mosi_data <= 8'h03;
-          1 : mosi_data <= address[23:16];
-          2 : mosi_data <= address[15:8];
-          3 : mosi_data <= address[7:0];
-        endcase // case (mosi_sel)
-     end
-
-   always @ (posedge clk, negedge n_reset)
-     begin
-        start_shifter <= 0;
-
-        if (!n_reset)
-          begin
-             spi_cs <= 1'b1;
-             data_out <= 0;
-             mosi_sel <= 0;
-             state <= INIT;
-             busy <= 0;
-          end
-        else
-          begin
-             case(state)
-               INIT:
-                 if (read)
-                   begin
-                      state <= CS_LOW;
-                      busy <= 1;
-                   end
-               CS_LOW:
-                 begin
-                    spi_cs <= 1'b0;
-                    state <= COMMAND;
-                 end
-               COMMAND:
-                 begin
-                    mosi_sel <= 0;
-                    start_shifter <= 1;
-                    if (!shifter_done)
-                      state <= COMMAND_WAIT;
-                 end
-               COMMAND_WAIT:
-                 begin
-                    start_shifter <= 0;
-                    if (shifter_done)
-                      state <= ADDR1;
-                 end
-               ADDR1:
-                   begin
-                      mosi_sel <= 1;
-                      start_shifter <= 1;
-                      if (!shifter_done)
-                        state <= ADDR1_WAIT;
-                   end
-               ADDR1_WAIT:
-                 begin
-                    start_shifter <= 0;
-                    if (shifter_done)
-                      state <= ADDR2;
-                 end
-               ADDR2:
-                   begin
-                      mosi_sel <= 2;
-                      start_shifter <= 1;
-                      if (!shifter_done)
-                        state <= ADDR2_WAIT;
-                   end
-               ADDR2_WAIT:
-                 begin
-                    start_shifter <= 0;
-                    if (shifter_done)
-                      state <= ADDR3;
-                 end
-               ADDR3:
-                   begin
-                      mosi_sel <= 3;
-                      start_shifter <= 1;
-                      if (!shifter_done)
-                        state <= ADDR3_WAIT;
-                   end
-               ADDR3_WAIT:
-                 begin
-                    start_shifter <= 0;
-                    if (shifter_done)
-                      state <= DATA;
-                 end
-               DATA:
-                   begin
-                      start_shifter <= 1;
-                      if (!shifter_done)
-                        state <= DATA_WAIT;
-                   end
-               DATA_WAIT:
-                 begin
-                    start_shifter <= 0;
-                    if (shifter_done)
-                      begin
-                         state <= CS_HIGH;
-                         data_out <= miso_shift;
-                         busy <= 0;
-                      end
-                 end
-               CS_HIGH:
-                 begin
-                    spi_cs <= 1'b1;
-                    state <= INIT;
-                 end
-             endcase // case (state)
-          end // else: !if(!n_reset)
-     end // always @ (clk, rst_n)
-
-   reg [1:0] shifter_state;
-   reg [2:0] bit_count;
-
+   // SPI MOSI MISO
    always @ (posedge clk, negedge n_reset)
      begin
         if (!n_reset)
           begin
              spi_mosi <= 1'b0;
-             spi_clk <= 1'b1;
-             shifter_done <= 1'b0;
-             shifter_state <= 1'b0;
-             bit_count <= 3'b000;
+             mosi_shift <= 32'h00000000;
+             miso_shift <= 32'h00000000;
           end
         else
           begin
-             case(shifter_state)
-               0 : // IDLE
-                 begin
-                    if (start_shifter)
-                      begin
-                         mosi_shift <= mosi_data;
-                         shifter_state <= 1;
-                         shifter_done <= 1'b0;
-                      end
-                 end
-               1 : // LOW CLK
-                 begin
-                    spi_clk <= 1'b0;
-                    spi_mosi <= mosi_shift[7];
-                    mosi_shift[7:0] <= { mosi_shift[6:0], 1'b0 };
-                    shifter_state <= 2;
-                    bit_count <= bit_count + 3'b001;
-                 end
-               2 : // HIGH CLK
-                 begin
-                    spi_clk <= 1'b1;
-                    miso_shift[7:0] <= { miso_shift[6:0], spi_miso };
+             spi_mosi <= mosi_shift[31];
 
-                    if (bit_count == 3'b000)
-                      begin
-                         bit_count <= 3'b000;
-                         shifter_done <= 1'b1;
-                         shifter_state <= 0;
-                      end
-                    else
-                      shifter_state <= 1;
+             if (load_cmd_addr)
+               mosi_shift <= { 8'h03, address };
+             else
+               begin
+                  if (shifter_active)
+                    begin
+                       if (last_spi_clk && !spi_clk)
+                         mosi_shift <= { mosi_shift[30:0], 1'b0 };
+
+                       if (!last_spi_clk && spi_clk)
+                         miso_shift <= { miso_shift[30:0], spi_miso };
+                    end
+               end
+          end
+     end
+
+   // SPI CLK
+   always @ (posedge clk, negedge n_reset)
+     begin
+        if (!n_reset)
+          begin
+             spi_clk <= 1'b1;
+             last_spi_clk <= 1'b1;
+          end
+        else
+          begin
+             if (shifter_active)
+               begin
+                  last_spi_clk <= spi_clk;
+                  spi_clk <= ~spi_clk;
+               end
+          end
+     end
+
+
+   // CTRL
+
+   parameter INIT             = 0;
+   parameter CS_LOW           = 1;
+   parameter CS_LOW_TO_CLK    = 2;
+   parameter SHIFT            = 3;
+   parameter SHIFT_AND_STROBE = 4;
+   parameter DONE             = 5;
+
+   always @ (posedge clk, negedge n_reset)
+     begin
+        if (!n_reset)
+          begin
+             load_cmd_addr <= 0;
+             state <= 0;
+             wcount <= 0;
+             spi_cs <= 1;
+             shifter_active <= 0;
+             bitcnt <= 8192;
+             data_out <= 0;
+             strobe <= 0;
+             done <= 0;
+          end
+        else
+          begin
+             case(state)
+               INIT : // PRE START CYCLES
+                 begin
+                    bitcnt <= bitcnt - 1;
+                    if (bitcnt == 0)
+                      state <= CS_LOW;
                  end
-             endcase // case (shifter_state)
-          end // else: !if(!n_reset)
+               CS_LOW: // CS LOW
+                 begin
+                    spi_cs <= 0;
+                    load_cmd_addr <= 1;
+                    wcount <= word_count;
+                    bitcnt <= 20;
+                    state <= CS_LOW_TO_CLK;
+                 end
+               CS_LOW_TO_CLK: // CS LOW ==> SPI_CLK delay
+                 begin
+                    load_cmd_addr <= 0;
+                    bitcnt <= bitcnt - 1;
+                    if (bitcnt == 0)
+                      begin
+                         state <= SHIFT;
+                         bitcnt <= 131;
+                      end
+                 end
+               SHIFT: // Start shifting
+                 begin
+                    strobe <= 0;
+                    shifter_active <= 1;
+                    bitcnt <= bitcnt - 1;
+                    if (bitcnt == 0)
+                      begin
+                         data_out <= miso_shift;
+                         state <= SHIFT_AND_STROBE;
+                         bitcnt <= 63;
+                         wcount <= wcount - 1;
+                      end
+                 end
+               SHIFT_AND_STROBE: // Word Strobe
+                 begin
+                    strobe <= 1;
+                    shifter_active <= 1;
+                    bitcnt <= bitcnt - 1;
+                    if (wcount == 0)
+                      state <= DONE;
+                    else
+                      state <= SHIFT;
+                 end
+               DONE: // Done
+                 begin
+                    spi_cs <= 1;
+                    shifter_active <= 0;
+                    done <= 1;
+                    strobe <= 0;
+                 end
+
+             endcase // case (state)
+          end
      end
 
 endmodule // flash_reader

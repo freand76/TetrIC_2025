@@ -4,7 +4,7 @@ GOWIN_PACK = gowin_pack
 
 BUILD_DIR=out
 
-SRC_TOP=../src/top/
+SRC_TOP=../src/top
 
 all: $(BUILD_DIR)/top.fs
 
@@ -14,7 +14,7 @@ synth: $(BUILD_DIR)/top_synth.json
 clean:
 	rm -rf $(BUILD_DIR)
 
-$(BUILD_DIR)/top_synth.json : top.v ${SRC_TOP}/uart_tx/uart_tx.v ${SRC_TOP}/flash_reader/flash_reader.v
+$(BUILD_DIR)/top_synth.json : ${SRC_TOP}/uart_tx/uart_tx.v ${SRC_TOP}/flash_reader/flash_reader.v top.v
 	mkdir -p $(BUILD_DIR)
 	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@"
 
@@ -36,3 +36,4 @@ program-flash-top: $(BUILD_DIR)/top.fs
 .PHONY: program-flash-test
 program-flash-test: test.hex
 	openFPGALoader -btangnano20k --external-flash -o 0x500000 $<
+	openFPGALoader -btangnano20k --external-flash -o 0x000000 $<

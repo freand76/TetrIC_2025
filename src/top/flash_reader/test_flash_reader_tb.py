@@ -17,7 +17,7 @@ class DutTester:
         self._dut.clk.value = 0
         self._dut.n_reset.value = 0
         self._dut.address.value = 0
-        self._dut.read.value = 0
+        self._dut.word_count.value = 1
         self._dut.spi_miso.value = 0
         self.reset()
         self.clock()
@@ -38,10 +38,6 @@ class DutTester:
         self._dut.address.value = address
         self._circuit.run(ms=1)
 
-    def set_read(self, read):
-        self._dut.read.value = read
-        self._circuit.run(ms=1)
-
     def set_miso(self, miso):
         self._dut.spi_miso.value = miso
 
@@ -53,9 +49,6 @@ class DutTester:
 
     def mosi(self):
         return self._dut.spi_mosi.value
-
-    def state(self):
-        return self._dut.state.value
 
     def data_out(self):
         return self._dut.data_out.value
@@ -91,17 +84,8 @@ def test_start(dut_tester):
 
     print("HELLO")
 
-    dut_tester.set_address(0x55330F)
-    dut_tester.set_read(1)
+    dut_tester.set_address(0)
     dut_tester.set_miso(1)
 
-    for idx in range(100):
-        dut_tester.set_miso(idx % 4 < 2)
-
+    for idx in range(1000):
         dut_tester.clock()
-        print(
-            f"STATE: {dut_tester.state()} {dut_tester.spics()}:{dut_tester.sclk()}:{dut_tester.mosi()}"
-        )
-        dut_tester.set_read(0)
-
-    print(f"DATA {dut_tester.data_out()}")
