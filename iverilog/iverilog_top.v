@@ -24,6 +24,7 @@ module iverilog_top;
    wire [5:0] led;
 
    wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
+   wire [31:0] debug_pc, debug_data;
 
    top top(.clk(clk),
            .rst(rst),
@@ -31,7 +32,11 @@ module iverilog_top;
            .mspi_cs(mspi_cs),
            .mspi_clk(mspi_clk),
            .mspi_di(mspi_di),
-           .mspi_do(mspi_do));
+           .mspi_do(mspi_do),
+
+           .debug_pc(debug_pc),
+           .debug_data(debug_data)
+           );
 
    W25Q64JVxxIM spi_flash(.CSn(mspi_cs),
                           .CLK(mspi_clk),
@@ -39,6 +44,10 @@ module iverilog_top;
                           .DO(mspi_do),
                           .RESETn(!rst));
 
+   always @( debug_pc)
+     begin
+        $display("PC: %x:%x", debug_pc, debug_data);
+     end
 endmodule
 
 
@@ -77,7 +86,7 @@ module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
 
    reg [31:0]    memory[1024];
 
-   integer idx;
+   integer       idx;
 
    always@(posedge clk or posedge rst)
      begin
