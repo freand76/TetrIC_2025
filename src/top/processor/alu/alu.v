@@ -1,4 +1,4 @@
-module alu(A, B, ctrl, O, n_zero, overflow);
+module alu(A, B, ctrl, O, n_zero, overflow, mfc0);
 
    input [31:0] A, B;
    input [4:0]  ctrl;
@@ -6,6 +6,8 @@ module alu(A, B, ctrl, O, n_zero, overflow);
    output reg [31:0] O;
    output reg        n_zero;
    output reg        overflow;
+
+   input [31:0]      mfc0;
 
    reg [31:0]        result;
 
@@ -65,7 +67,7 @@ module alu(A, B, ctrl, O, n_zero, overflow);
           5'b10101 : result <= A | B;                   // OR, ORI
           5'b10110 : result <= A ^ B;                   // XOR, XORI
           5'b10111 : result <= ~(A | B);                // NOR
-          5'b11100 : result <= 0;                       // WIP: MFC0 ALU Status register, not used!
+          5'b11100 : result <= mfc0;
           5'b11101 : result <= 0;                       // WIP: MFC1 GFX Status register
           5'b11110 : result <= 0;                       // WIP: MFC2 Joystick Data
           5'b11111 : result <= 0;                       // WIP: MFC3 Modplayer

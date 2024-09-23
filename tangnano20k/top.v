@@ -79,12 +79,13 @@ module top(
                        .dmem_req(dmem_req),
                        .dmem_wr(dmem_wr),
                        .dmem_ack(1'b1),
+                       .mfc0({{31{1'b0}},tx_data_ready}),
                        .debug_pc(debug_pc));
                        //.debug_data(debug_data),
                        //.debug_data2(debug_data2));
 
    assign debug_data = current_instruction;
-   assign debug_data2 = dmem_data_out;
+   assign debug_data2 = {{31{1'b0}},tx_data_ready};
 
    reg [9:0]             mem_write_addr;
    reg [9:0]             mem_read_addr;
@@ -108,8 +109,6 @@ module top(
         else
           if (dmem_req)
             begin
-               $display("DMEM_REQ");
-               
                tx_data <= dmem_data_out[7:0];
                tx_data_valid <= 1;
             end

@@ -68,10 +68,17 @@ module uart_tx
     output      tx_pin            //serial data output
     );
 
+   initial
+     begin
+        tx_data_ready <= 1;
+     end
+
    always @ (posedge tx_data_valid)
      begin
-        $display("UART: %x", tx_data);
-        tx_data_ready <= tx_data_valid;
+        $display("UART: %x (time is %0t)", tx_data, $time);
+        tx_data_ready <= 0;
+        #1000
+          tx_data_ready <= 1;
      end
 
 endmodule

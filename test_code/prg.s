@@ -5,11 +5,15 @@ start:
     movi $t1, 0x30
     movi $t2, 0x0
     movi $t3, 5
+    nop
 new:
-    nop
-    nop
-    nop
     sw $t1, 0($t2)
+    nop
+    nop
+    nop
+wait_uart_ready:
+    mfc0 $s0
+    beqz $s0, wait_uart_ready
     nop
     nop
     nop

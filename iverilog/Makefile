@@ -5,6 +5,7 @@ GOWIN_PACK = gowin_pack
 BUILD_DIR=out
 
 SRC_TOP=../src/top
+TESTCODE_FOLDER=../test_code
 SPI_FLASH_MDOEL=/projects/W25Q64JVxxIM/W25Q64JVxxIM.v
 
 PROCESSOR_FILES = \
@@ -34,11 +35,9 @@ $(BUILD_DIR)/top_vvp: $(SRC_TOP)/flash_reader/flash_reader.v $(SPI_FLASH_MDOEL) 
 	mkdir -p $(BUILD_DIR)
 	iverilog -g2005-sv -DIVERLOG -o $@ $^
 
-prg.bin: prg.s
-	abnasm.pl prg.s
-
-MEM.TXT: prg.bin
-	hexdump -v -e '4/1 "%02x " "\n"' $< > $@
+MEM.TXT: $(TESTCODE_FOLDER)/prg.s
+	make -C $(TESTCODE_FOLDER) MEM.TXT
+	cp $(TESTCODE_FOLDER)/MEM.TXT .
 
 run: MEM.TXT
 	vvp $(BUILD_DIR)/top_vvp

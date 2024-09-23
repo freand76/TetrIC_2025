@@ -8,6 +8,7 @@ module processor(clk, n_reset, n_ext_stall,
                  dmem_wr,
                  dmem_ack,
                  dmem_data_out,
+                 mfc0,
                  debug_pc,
                  debug_data,
                  debug_data2,
@@ -23,6 +24,7 @@ module processor(clk, n_reset, n_ext_stall,
    output [31:0] imem_addr_out, dmem_addr_out;
    output [31:0] dmem_data_out;
 
+   input  [31:0] mfc0;
    output [31:0] debug_pc, debug_data, debug_data2;
 
    wire          n_stall, n_mem_stall;
@@ -108,7 +110,8 @@ module processor(clk, n_reset, n_ext_stall,
            .ctrl(s_ex_ex_ctrl[4:0]),
            .O(s_ex_res),
            .n_zero(s_ex_n_zero),
-           .overflow(s_ex_overflow));
+           .overflow(s_ex_overflow),
+           .mfc0(mfc0));
 
    mux2 pcmux1(.A(s_if_pc1),
                .B(s_if_pc6),
