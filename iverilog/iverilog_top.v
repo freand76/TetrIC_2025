@@ -32,11 +32,11 @@ module iverilog_top;
            .mspi_cs(mspi_cs),
            .mspi_clk(mspi_clk),
            .mspi_di(mspi_di),
-           .mspi_do(mspi_do),
+           .mspi_do(mspi_do)
 
-           .debug_pc(debug_pc),
-           .debug_data(debug_data),
-           .debug_data2(debug_data2)
+//           .debug_pc(debug_pc),
+//           .debug_data(debug_data),
+//           .debug_data2(debug_data2)
            );
 
    W25Q64JVxxIM spi_flash(.CSn(mspi_cs),

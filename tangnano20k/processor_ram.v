@@ -27,10 +27,10 @@ module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
             .DOB(r_data[31:16]),
             .BLKSELB(3'b000));
 
-   defparam mem1.READ_MODE0 = 1'b1;
-   defparam mem1.READ_MODE1 = 1'b1;
-   defparam mem1.WRITE_MODE0 = 2'b01;
-   defparam mem1.WRITE_MODE1 = 2'b01;
+   defparam mem1.READ_MODE0 = 1'b0;
+   defparam mem1.READ_MODE1 = 1'b0;
+   defparam mem1.WRITE_MODE0 = 2'b00;
+   defparam mem1.WRITE_MODE1 = 2'b00;
    defparam mem1.BIT_WIDTH_0 = 16;
    defparam mem1.BIT_WIDTH_1 = 16;
    defparam mem1.BLK_SEL_0 = 3'b000;
@@ -55,10 +55,10 @@ module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
             .DOB(r_data[15:0]),
             .BLKSELB(3'b000));
 
-   defparam mem2.READ_MODE0 = 1'b1;
-   defparam mem2.READ_MODE1 = 1'b1;
-   defparam mem2.WRITE_MODE0 = 2'b01;
-   defparam mem2.WRITE_MODE1 = 2'b01;
+   defparam mem2.READ_MODE0 = 1'b0;
+   defparam mem2.READ_MODE1 = 1'b0;
+   defparam mem2.WRITE_MODE0 = 2'b00;
+   defparam mem2.WRITE_MODE1 = 2'b00;
    defparam mem2.BIT_WIDTH_0 = 16;
    defparam mem2.BIT_WIDTH_1 = 16;
    defparam mem2.BLK_SEL_0 = 3'b000;
