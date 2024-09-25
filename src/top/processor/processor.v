@@ -380,7 +380,7 @@ module processor(clk, n_reset, n_ext_stall,
 
    assign n_mem_stall = !(!dmem_ack & (s_mem_mem_ctrl[1] | s_mem_mem_ctrl[0]));
    assign dmem_req = s_mem_mem_ctrl[1] | s_mem_mem_ctrl[0];
-   assign dmem_wr = s_mem_mem_ctrl[1];
+   assign dmem_wr = s_mem_mem_ctrl[0];
 
    // PC ADD1
    assign s_if_pc1 = (n_stall && s_if_imem_ack) ? s_if_pc2 + 1 : s_if_pc2;
