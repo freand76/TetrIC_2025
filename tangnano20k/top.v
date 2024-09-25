@@ -1,20 +1,24 @@
 module top(
            // Clock and Reset
-           input        clk,
-           input        rst,
+           input         clk,
+           input         rst,
 
            // UART Tx
-           output       uart_tx,
+           output        uart_tx,
 
            // LED (Active LOW)
-           output [5:0] led,
+           output [5:0]  led,
 
+`ifdef IVERLOG
+           output [31:0] debug_pc,
+           output [31:0] debug_data,
+           output [31:0] debug_data2,
+`endif
            // spi flash interface
-           output       mspi_cs,
-           output       mspi_clk,
-           output       mspi_di,
-           input        mspi_do
-           );
+           output        mspi_cs,
+           output        mspi_clk,
+           output        mspi_di,
+           input         mspi_do);
 
 `ifdef IVERLOG
    parameter            FLASH_START = 24'h000000;
@@ -63,7 +67,7 @@ module top(
    flash_reader flash_reader(.clk(clk),
                              .n_reset(rst_n),
                              .address(FLASH_START),
-                             .word_count(24'h000100),
+                             .word_count(24'h000400),
                              .strobe(flash_strobe),
                              .done(flash_done),
                              .data_out(flash_data_out),
@@ -84,88 +88,93 @@ module top(
           mem_write_addr <= 0;
         else
           if (flash_strobe)
-            mem_write_addr <= mem_write_addr + 1;
+            begin
+               mem_write_addr <= mem_write_addr + 1;
+            end
      end
+
+   wire [31:0] dmem_data_out;
+   wire [31:0] mem_data_out;
+   wire [31:0] imem_addr_out, dmem_addr_out;
+   wire        dmem_req, dmem_wr;
+   wire        n_stall;
+
+   reg         n_mem_stall;
+   reg         dmem_ack,  imem_ack;
+   reg [2:0]   arb_state;
+
+   assign n_stall = flash_done & n_mem_stall;
 
    always@(posedge clk or negedge rst_n)
      begin
         if(!rst_n)
           begin
-             state <= 0;
-             uart_data <= 0;
-             tx_data <= 0;
-             tx_data_valid <= 0;
-             uart_cnt <= 0;
-             mem_read_addr <= 0;
+             arb_state <= 0;
+             imem_ack <= 0;
+             dmem_ack <= 0;
+             n_mem_stall <= 0;
           end
         else
-          case(state)
-            0:
-              begin
-                 if (flash_done)
-                   begin
-                      state <= 1;
-                      uart_data <= read_data;
-                   end
-              end
-            1:
-              begin
-                 tx_data_valid <= 1;
-                 if (uart_cnt > 200)
-                   begin
-                      tx_data <= 8'h0a;
-                      state <= 15;
-                   end
-                 else
-                   begin
-                      tx_data <= uart_data[31:24];
-                      state <= 2;
-                   end
-              end
-            2 :
-              begin
-                 uart_cnt <= uart_cnt + 1;
-                 tx_data_valid <= 0;
-                 state <= 3;
-              end
-            3 : state <= 4;
-            4 : state <= 5;
-            5 : state <= 6;
-            6 : state <= 7;
-            7 :
-            begin
-               if (uart_cnt[1:0] == 2'b00)
+          begin
+             case(arb_state)
+               0 :
                  begin
-                    mem_read_addr <= mem_read_addr + 1;
-                    state <= 14;
+                    if (flash_done)
+                      begin
+                         if (dmem_req & dmem_wr)
+                           begin
+                              // WRITE DMEM
+                              arb_state <= 7;
+                              dmem_ack <= 1;
+                              imem_ack <= 0;
+                              n_mem_stall <= 1;
+                           end
+                         else if (dmem_req & !dmem_wr)
+                           begin
+                              // READ DMEM
+                              arb_state <= 7;
+                              dmem_ack <= 1;
+                              imem_ack <= 0;
+                              n_mem_stall <= 1;
+                           end
+                         else
+                           begin
+                              arb_state <= 7;
+                              dmem_ack <= 0;;
+                              imem_ack <= 1;
+                              n_mem_stall <= 1;
+                           end // else: !if(dmem_req & dmem_wr)
+                      end // if (flash_done)
                  end
-               else
-                 state <= 8;
-            end
-            8 : state <= 9;
-            9 :
-              begin
-                 if (tx_data_ready)
-                   begin
-                      uart_data <= { uart_data[23:0], 8'b00000000 };
-                      state <= 1;
-                   end
-              end
-            14 :
-              begin
-                 if (tx_data_ready)
-                   state <= 0;
-              end
-            15:
-              begin
-                 tx_data_valid <= 0;
-              end
-            default:
-              begin
-                 tx_data_valid <= 0;
-              end
-          endcase // case (state)
-     end // always@ (posedge clk or negedge rst_n)
+               7:
+                 begin
+                    arb_state <= 0;
+                    dmem_ack <= 0;
+                    imem_ack <= 0;
+                    n_mem_stall <= 0;
+                 end
+             endcase // case (arb_state)
+          end
+     end
+
+   processor processor(.clk(clk),
+                       .n_reset(rst_n),
+                       .n_ext_stall(n_stall),
+                       .imem_addr_out(imem_addr_out),
+                       .imem_data_in(mem_data_out),
+                       .imem_ack(1'b1),
+                       .dmem_addr_out(dmem_addr_out),
+                       .dmem_data_in(32'hfedebeda),
+                       .dmem_req(dmem_req),
+                       .dmem_wr(dmem_wr),
+                       .dmem_ack(dmem_ack),
+                       .dmem_data_out(dmem_data_out),
+                       .mfc0({{31{1'b0}}, tx_data_ready}),
+                       .debug_pc(debug_pc),
+                       .debug_data(debug_data),
+                       .debug_data2(debug_data2));
+
+   assign mem_read_addr = imem_addr_out[9:0];
 
    processor_ram processor_ram(.clk(clk),
                                .rst(rst),
@@ -173,9 +182,26 @@ module top(
                                .w_addr(mem_write_addr),
                                .w_data(flash_data_out),
                                .r_addr(mem_read_addr),
-                               .r_data(read_data));
+                               .r_data(mem_data_out));
 
-   wire  [31:0] read_data;
+   always@(posedge clk or negedge rst_n)
+     begin
+        if(!rst_n)
+          begin
+             tx_data <= 0;
+             tx_data_valid <= 0;
+          end
+        else
+          if (dmem_req & dmem_wr)
+            begin
+               tx_data <= dmem_data_out[7:0];
+               tx_data_valid <= 1;
+            end
+          else
+            begin
+               tx_data_valid <= 0;
+            end
+     end
 
    uart_tx#
      (

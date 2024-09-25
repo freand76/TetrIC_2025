@@ -11,9 +11,7 @@ new:
     nop
     nop
     nop
-wait_uart_ready:
-    mfc0 $s0
-    beqz $s0, wait_uart_ready
+    jal wait_uart_ready
     nop
     nop
     nop
@@ -26,7 +24,29 @@ wait_uart_ready:
     nop
     nop
     nop
-    j 0xffffff
+    jal wait_uart_ready
     nop
     nop
     nop
+    movi $t1, 0x0a
+    nop
+    nop
+    nop
+    nop
+    sw $t1, 0($t2)
+endless_loop:
+    j endless_loop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+wait_uart_ready:
+    mfc0 $s0
+    beqz $s0, wait_uart_ready
+    nop
+    nop
+    nop
+    jr $ra

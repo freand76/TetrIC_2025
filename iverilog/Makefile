@@ -22,8 +22,8 @@ PROCESSOR_FILES = \
 	$(SRC_TOP)/processor/pipereg/pipereg.v \
 	$(SRC_TOP)/processor/signext/signext.v
 
-PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank.v
-#PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
+#PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank.v
+PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
 
 all: $(BUILD_DIR)/top_vvp
 

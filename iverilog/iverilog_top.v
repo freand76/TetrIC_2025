@@ -8,7 +8,7 @@ module iverilog_top;
    initial
      begin
         $display("Hello, World");
-        #10000000
+        #1000000
           $finish;
      end
 
@@ -32,11 +32,11 @@ module iverilog_top;
            .mspi_cs(mspi_cs),
            .mspi_clk(mspi_clk),
            .mspi_di(mspi_di),
-           .mspi_do(mspi_do)
+           .mspi_do(mspi_do),
 
-//           .debug_pc(debug_pc),
-//           .debug_data(debug_data),
-//           .debug_data2(debug_data2)
+           .debug_pc(debug_pc),
+           .debug_data(debug_data),
+           .debug_data2(debug_data2)
            );
 
    W25Q64JVxxIM spi_flash(.CSn(mspi_cs),
@@ -89,7 +89,7 @@ module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
    input w_strobe;
    input [9:0] w_addr, r_addr;
    input [31:0] w_data;
-   output [31:0] r_data;
+   output reg [31:0] r_data;
 
    reg [31:0]    memory[1024];
 
@@ -99,11 +99,13 @@ module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
      begin
         if (rst)
           begin
+             r_data <= 0;
              for(idx = 0; idx < 4096; idx=idx+1)
                memory[idx] <= 0;
           end
         else
           begin
+             r_data <= memory[r_addr];
              if (w_strobe)
                begin
                   memory[w_addr] <= w_data;
@@ -111,7 +113,6 @@ module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
           end
      end // always@ (posedge clk or posedge rst)
 
-   assign r_data = memory[r_addr];
 endmodule
 
 
