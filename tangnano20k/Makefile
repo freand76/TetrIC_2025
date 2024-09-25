@@ -18,8 +18,11 @@ PROCESSOR_FILES = \
 	$(SRC_TOP)/processor/mux2/mux2.v \
 	$(SRC_TOP)/processor/mux4/mux4.v \
 	$(SRC_TOP)/processor/pipereg/pipereg.v \
-	$(SRC_TOP)/processor/regbank/regbank.v \
 	$(SRC_TOP)/processor/signext/signext.v
+
+
+#PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank.v
+PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
 
 all: $(BUILD_DIR)/top.fs
 

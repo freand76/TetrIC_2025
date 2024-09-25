@@ -113,3 +113,24 @@ module processor_ram(clk, rst, w_strobe, w_addr, w_data, r_addr, r_data);
 
    assign r_data = memory[r_addr];
 endmodule
+
+
+module RAM16SDP4(DI, WRE, CLK, WAD, RAD, DO);
+
+   input [3:0] DI;
+   input       WRE;
+   input       CLK;
+   input [3:0] WAD;
+   input [3:0] RAD;
+   output [3:0] DO;
+
+   reg [3:0]   MEM[16];
+
+   assign DO = MEM[RAD];
+
+   always @(posedge CLK)
+     begin
+        if (WRE)
+          MEM[WAD] <= DI;
+     end
+endmodule // RAM16SDP4
