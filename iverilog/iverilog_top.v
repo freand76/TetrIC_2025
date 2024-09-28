@@ -129,6 +129,14 @@ module RAM16SDP4(DI, WRE, CLK, WAD, RAD, DO);
 
    assign DO = MEM[RAD];
 
+   integer     idx;
+
+   initial
+     begin
+        for (idx = 0; idx < 16; idx = idx + 1)
+          MEM[idx] = 0;
+     end
+
    always @(posedge CLK)
      begin
         if (WRE)
