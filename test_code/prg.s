@@ -2,12 +2,16 @@ start:
     nop
     nop
     nop
-    movi $t1, 0x30
+    movi $r1, 0x30
     movi $t2, 0x0
-    movi $t3, 5
+    movi $t3, 7
+    lui  $t4, 0xf000
+    nop
+    nop
+    nop
     nop
 new:
-    sw $t1, 0($t2)
+    sw $r1, 0($t4)
     nop
     nop
     nop
@@ -15,7 +19,7 @@ new:
     nop
     nop
     nop
-    addi $t1, $t1, 1
+    addi $r1, $r1, 1
     addi $t2, $t2, 1
     nop
     nop
@@ -24,16 +28,28 @@ new:
     nop
     nop
     nop
+    movi $r1, 0x46
+    nop
+    nop
+    nop
+    nop
+    sw $r1, 0($t4)
+    nop
+    nop
+    nop
     jal wait_uart_ready
     nop
     nop
     nop
-    movi $t1, 0x0a
+    movi $r1, 0x0a
     nop
     nop
     nop
     nop
-    sw $t1, 0($t2)
+    nop
+    sw $r1, 0($t4)
+    nop
+    nop
 endless_loop:
     j endless_loop
     nop
@@ -45,8 +61,20 @@ endless_loop:
 
 wait_uart_ready:
     mfc0 $s0
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
     beqz $s0, wait_uart_ready
     nop
     nop
     nop
     jr $ra
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop

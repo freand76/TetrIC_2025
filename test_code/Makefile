@@ -1,7 +1,7 @@
 all: MEM.TXT
 
 clean:
-	rm MEM.TXT prg.bin prg.1 prg.2
+	rm -f MEM.TXT prg.bin prg.1 prg.2
 
 prg.bin: prg.s
 	abnasm.pl $<

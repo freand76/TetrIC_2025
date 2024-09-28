@@ -192,7 +192,7 @@ module top(
              tx_data_valid <= 0;
           end
         else
-          if (dmem_req & dmem_wr)
+          if (dmem_req && dmem_wr && dmem_addr_out[31:28] == 4'hf)
             begin
                tx_data <= dmem_data_out[7:0];
                tx_data_valid <= 1;
