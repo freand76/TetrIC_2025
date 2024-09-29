@@ -9,11 +9,6 @@ module top(
            // LED (Active LOW)
            output [5:0]  led,
 
-`ifdef IVERLOG
-           output [31:0] debug_pc,
-           output [31:0] debug_data,
-           output [31:0] debug_data2,
-`endif
            // spi flash interface
            output        mspi_cs,
            output        mspi_clk,
@@ -115,6 +110,11 @@ module top(
              n_mem_stall <= 0;
           end
         else
+`ifdef IVERLOG
+          $display("DBG PC=%x DMEM_A=%x MEM_A=%x MEM_D=%x DR=%d DW=%d Dack=%d Iack=%d",
+                   imem_addr_out, dmem_addr_out, mem_read_addr, mem_data_out,
+                   dmem_req, dmem_wr, dmem_ack, imem_ack);
+`endif
           begin
              case(arb_state)
                0 :
@@ -164,17 +164,14 @@ module top(
                        .imem_data_in(mem_data_out),
                        .imem_ack(1'b1),
                        .dmem_addr_out(dmem_addr_out),
-                       .dmem_data_in(32'hfedebeda),
+                       .dmem_data_in(mem_data_out),
                        .dmem_req(dmem_req),
                        .dmem_wr(dmem_wr),
                        .dmem_ack(dmem_ack),
                        .dmem_data_out(dmem_data_out),
-                       .mfc0({{31{1'b0}}, tx_data_ready}),
-                       .debug_pc(debug_pc),
-                       .debug_data(debug_data),
-                       .debug_data2(debug_data2));
+                       .mfc0({{31{1'b0}}, tx_data_ready}));
 
-   assign mem_read_addr = imem_addr_out[9:0];
+   assign mem_read_addr = (dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : imem_addr_out[9:0];
 
    processor_ram processor_ram(.clk(clk),
                                .rst(rst),

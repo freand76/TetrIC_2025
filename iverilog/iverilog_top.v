@@ -24,7 +24,6 @@ module iverilog_top;
    wire [5:0] led;
 
    wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
-   wire [31:0] debug_pc, debug_data, debug_data2;
 
    top top(.clk(clk),
            .rst(rst),
@@ -32,25 +31,13 @@ module iverilog_top;
            .mspi_cs(mspi_cs),
            .mspi_clk(mspi_clk),
            .mspi_di(mspi_di),
-           .mspi_do(mspi_do),
-
-           .debug_pc(debug_pc),
-           .debug_data(debug_data),
-           .debug_data2(debug_data2)
-           );
+           .mspi_do(mspi_do));
 
    W25Q64JVxxIM spi_flash(.CSn(mspi_cs),
                           .CLK(mspi_clk),
                           .DIO(mspi_di),
                           .DO(mspi_do),
                           .RESETn(!rst));
-
-   always @( debug_pc)
-     begin
-        $display("PC: %x:%x:%x", debug_pc, debug_data, debug_data2);
-        if (debug_pc == 32'h00ffffff)
-          $finish;
-     end
 endmodule
 
 
@@ -75,7 +62,7 @@ module uart_tx
 
    always @ (posedge tx_data_valid)
      begin
-        $display("UART: %x (time is %0t)", tx_data, $time);
+        $display("UART: %x [%c] (time is %0t)", tx_data, tx_data, $time);
         tx_data_ready <= 0;
         #1000
           tx_data_ready <= 1;

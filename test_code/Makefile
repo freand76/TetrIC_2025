@@ -3,7 +3,7 @@ all: MEM.TXT
 clean:
 	rm -f MEM.TXT prg.bin prg.1 prg.2
 
-prg.bin: prg.s
+prg.bin: prg.s HelloWorld.txt
 	abnasm.pl $<
 
 MEM.TXT: prg.bin

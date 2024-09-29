@@ -25,7 +25,7 @@ PROCESSOR_FILES = \
 #PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank.v
 PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
 
-all: $(BUILD_DIR)/top_vvp
+all: $(BUILD_DIR)/top_vvp MEM.TXT
 
 .PHONY: synth
 synth: $(BUILD_DIR)/top_vvp
@@ -37,7 +37,7 @@ $(BUILD_DIR)/top_vvp: $(SRC_TOP)/flash_reader/flash_reader.v $(SPI_FLASH_MDOEL) 
 	mkdir -p $(BUILD_DIR)
 	iverilog -g2005-sv -DIVERLOG -o $@ $^
 
-MEM.TXT: $(TESTCODE_FOLDER)/prg.s
+MEM.TXT: $(TESTCODE_FOLDER)/MEM.TXT
 	make -C $(TESTCODE_FOLDER) MEM.TXT
 	cp $(TESTCODE_FOLDER)/MEM.TXT .
 
