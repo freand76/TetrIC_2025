@@ -384,4 +384,13 @@ module processor(clk, n_reset, n_ext_stall,
 
    assign dmem_data_out = s_mem_data2;
 
+`ifdef IVERLOG
+   always @ (posedge clk)
+     $display("DBG PC=%x IF=%x ID=%x STALL=%d",
+              s_if_pc2,
+              s_if_instr,
+              s_id_instr,
+              n_stall);
+`endif
+
 endmodule
