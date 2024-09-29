@@ -17,6 +17,12 @@ module regbank(clk, n_reset, r1_sel, r2_sel, rd_sel, w_enable, w_data, r1_data, 
    assign wr_en_lo = w_enable & !rd_sel[4];
    assign wr_en_hi = w_enable & rd_sel[4];
 
+`ifdef IVERLOG
+   always @ (posedge clk)
+     if (w_enable && (rd_sel != 0))
+       $display("REGDATA %x ==> %d", w_data, rd_sel);
+`endif
+
    RAM16SDP4 r1_31_28_lo(.DI(w_data[31:28]), .WRE(wr_en_lo), .CLK(clk), .WAD(rd_sel[3:0]), .RAD(r1_sel[3:0]), .DO(r1_data_lo[31:28]));
    RAM16SDP4 r1_27_24_lo(.DI(w_data[27:24]), .WRE(wr_en_lo), .CLK(clk), .WAD(rd_sel[3:0]), .RAD(r1_sel[3:0]), .DO(r1_data_lo[27:24]));
    RAM16SDP4 r1_23_20_lo(.DI(w_data[23:20]), .WRE(wr_en_lo), .CLK(clk), .WAD(rd_sel[3:0]), .RAD(r1_sel[3:0]), .DO(r1_data_lo[23:20]));
