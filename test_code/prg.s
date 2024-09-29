@@ -27,19 +27,13 @@ start:
     nop
     nop
     nop
-    _LDA    $t1, data_word
-    nop
-    nop
-    nop
-    jal print_hex_val
-    nop
-    nop
-    nop
     li  $t1, data_string
-    nop
-    nop
-    nop
     jal print_string
+    nop
+    nop
+    nop
+    _LDA    $t1, data_word
+    jal print_hex_val
     nop
     nop
     nop
@@ -97,10 +91,6 @@ _loop_word:
     nop
     nop
 _done:
-    b _done
-    nop
-    nop
-    nop
     mov $ra, $k1
     jr $ra
     nop
