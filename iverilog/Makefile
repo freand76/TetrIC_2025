@@ -37,6 +37,7 @@ $(BUILD_DIR)/top_vvp: $(SRC_TOP)/flash_reader/flash_reader.v $(SPI_FLASH_MDOEL) 
 	mkdir -p $(BUILD_DIR)
 	iverilog -g2005-sv -DIVERLOG -o $@ $^
 
+.PHONY: MEM.TXT
 MEM.TXT: $(TESTCODE_FOLDER)/MEM.TXT
 	make -C $(TESTCODE_FOLDER) MEM.TXT
 	cp $(TESTCODE_FOLDER)/MEM.TXT .
