@@ -30,8 +30,8 @@ module fwunit(r1_sel, r2_sel, mem_rd_sel, wb_rd_sel, mem_w_enable, wb_w_enable, 
         else
           if (wb_w_enable)
             begin
-               sel1 <= { 1'b0, r1_is_mem_sel };
-               sel2 <= { 1'b0, r2_is_mem_sel };
+               sel1 <= { 1'b0, r1_is_wb_sel };
+               sel2 <= { 1'b0, r2_is_wb_sel };
             end
      end
 

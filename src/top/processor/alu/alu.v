@@ -41,7 +41,7 @@ module alu(A, B, ctrl, O, n_zero, overflow, mfc0);
    assign add_result[32:0] = {1'b0, A[31:0]} + {1'b0, B[31:0]};
    assign sub_result[32:0] = {1'b0, A[31:0]} - {1'b0, B[31:0]};
 
-   always @ (A, B, ctrl, var_rshifter_out, var_lshifter_out, fix_rshifter_out, fix_lshifter_out, add_result, sub_result)
+   always @ (*)
      begin
         overflow <= "0";
 
