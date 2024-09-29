@@ -8,10 +8,7 @@ module processor(clk, n_reset, n_ext_stall,
                  dmem_wr,
                  dmem_ack,
                  dmem_data_out,
-                 mfc0,
-                 debug_pc,
-                 debug_data,
-                 debug_data2,
+                 mfc0
                  );
 
    input        clk, n_reset, n_ext_stall;
@@ -25,7 +22,6 @@ module processor(clk, n_reset, n_ext_stall,
    output [31:0] dmem_data_out;
 
    input  [31:0] mfc0;
-   output [31:0] debug_pc, debug_data, debug_data2;
 
    wire          n_stall, n_mem_stall;
 
@@ -391,9 +387,6 @@ module processor(clk, n_reset, n_ext_stall,
    assign s_mem_data4 = dmem_data_in;
    assign dmem_addr_out = s_mem_res;
    assign imem_addr_out = s_if_pc2;
-   assign debug_pc = s_if_pc2;
-   assign debug_data = s_mem_data2;
-   assign debug_data2 = s_wb_data;
 
    assign dmem_data_out = s_mem_data2;
 
