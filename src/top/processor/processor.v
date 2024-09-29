@@ -73,12 +73,6 @@ module processor(clk, n_reset, n_ext_stall,
    wire [31:0]   s_wb_pc1;
    wire [31:0]   s_wb_res;
 
-   // TOP OUTPUTS
-   assign dmem_req_r = 0;
-   assign dmem_req_w = 0;
-   assign dmem_pre_r = 0;
-   assign dmem_pre_w = 0;
-
    // STALL
    assign n_stall = n_ext_stall & n_mem_stall;
 
