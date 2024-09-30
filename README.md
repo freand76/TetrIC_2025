@@ -28,6 +28,52 @@ source <my_special_venv_folder>/bin/activate
 pip3 install digsim-logic-simulator ruff pytest
 ```
 
+### Install needed apt packages
+
+```
+sudo apt install iverilog
+```
+
+## Build and execute iverilog simulation
+
+```
+make -C iverilog all run
+```
+
+## Build and Flash code
+
+###  Build
+
+```
+make -C test_code
+```
+
+###  Flash
+
+```
+make -C test_code program-flash-code
+```
+
+## Synth and Program Tang Nano 20k FPGA
+
+### Synth
+
+```
+make -C tangnano20k synth
+```
+
+### Program FPGA (RAM)
+
+```
+make -C tangnano20k program-sram-top
+```
+
+### Program FPGA (FLASH)
+
+```
+make -C tangnano20k program-flash-top
+```
+
 ## Module Testing
 
 ```
@@ -45,65 +91,3 @@ ruff format
 
  * The program counter is word based
  * BGT / BGE only handles unsigned values
-
-# Converting VHDL to Verilog
-
-## Done
-
-### Processor
-```
-alu.vhd          ==> src/top/processor/alu/alu.v
-branchlogic.vhd  ==> src/top/processor/branchlogic/branchlogic.v
-ctrl.vhd         ==> src/top/processor/ctrl/ctrl.v
-datamux.vhd      ==> src/top/processor/mux4/mux4.v
-fwmux1.vhd       ==> src/top/processor/mux4/mux4.v
-fwmux2.vhd       ==> src/top/processor/mux4/mux4.v
-fwunit.vhd       ==> src/top/processor/fwunit/fwunit.v
-imem.vhd         ==> src/top/processor/instr_or_nop/instr_or_nop.v
-immux.vhd        ==> src/top/processor/mux2/mux2.v
-pcmux1.vhd       ==> src/top/processor/mux2/mux2.v
-pcmux2.vhd       ==> src/top/processor/mux2/mux2.v
-pcmux3.vhd       ==> src/top/processor/mux2/mux2.v
-pipereg.vhd      ==> src/top/processor/pipereg/pipereg.v
-reg.vhd          ==> src/top/processor/regbank/regbank.v
-signext.vhd      ==> src/top/processor/signext/signext.v
-```
-
-## Started
-
-### Processor
-```
-processor.vhd    ==> src/top/processor/processor.v
-```
-
-## Todo
-
-### Top
-```
-arb
-memctrl
-```
-
-### Processor
-```
-ex_dmem
-mem_dmem
-s_unit
-```
-
-
-### Sound
-
-```
-mixer
-mult
-resample
-sampleoutput
-mainunit
-ljudxbox
-```
-
-### Display
-```
-gfxbox
-```
