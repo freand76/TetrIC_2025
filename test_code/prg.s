@@ -15,6 +15,12 @@ start:
     nop
     nop
     nop
+    lui $t1, 0x0000
+    ori $t1, $t1, 0x0000
+    jal print_hex_val
+    nop
+    nop
+    nop
     lui $t1, 0x0123
     ori $t1, $t1, 0x4567
     jal print_hex_val
@@ -32,8 +38,47 @@ start:
     nop
     nop
     nop
-    _LDA    $t1, data_word
+    lui $t1, 0x0000
+    ori $t1, $t1, 0x0001
     jal print_hex_val
+    nop
+    nop
+    nop
+    li  $t1, empty_space
+    sw $zero 0($t1)
+    nop
+    nop
+    jal print_string
+    nop
+    nop
+    nop
+    lui $t1, 0x0000
+    ori $t1, $t1, 0x0002
+    jal print_hex_val
+    nop
+    nop
+    nop
+
+    li  $t1, data_string
+    li  $t2, empty_space
+    li  $t3, 2
+    jal memcopy
+    nop
+    nop
+    nop
+
+    _LDA $t1, data_word
+    jal print_hex_val
+    nop
+    nop
+    nop
+    li  $t1, empty_space
+    jal print_string
+    nop
+    nop
+    nop
+    li $t1, 0x0a
+    jal print_char
     nop
     nop
     nop
@@ -49,8 +94,24 @@ data_word:
 data_string:
     .file HelloWorld.txt 32
 
-print_string:
+print_char:
+    nop
+    nop
+    nop
+    mov $k0, $ra
     lui $a0, 0xf000
+    sw $t1, 0($a0)
+    jal wait_uart_ready
+    nop
+    nop
+    nop
+    mov $ra, $k0
+    jr $ra
+    nop
+    nop
+    nop
+
+print_string:
     mov $at, $t1
     nop
     nop
@@ -73,11 +134,7 @@ _loop_word:
     nop
     nop
     nop
-    sw $t1, 0($a0)
-    jal wait_uart_ready
-    nop
-    nop
-    nop
+    jal print_char
     nop
     nop
     nop
@@ -141,9 +198,35 @@ _number:
     nop
     nop
 
+empty_space: .pad 128, 0
+
 wait_uart_ready:
     mfc0 $s0
     beqz $s0, wait_uart_ready
+    nop
+    nop
+    nop
+    jr $ra
+    nop
+    nop
+    nop
+
+memcopy:
+    movi $v0, 0
+_memcopy_loop:
+    lw $v1, 0($t1)
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    sw $v1, 0($t2)
+    addi $t1, $t1, 1
+    addi $t2, $t2, 1
+    addi $v0, $v0, 1
+    bge $t3, $v0, _memcopy_loop
     nop
     nop
     nop

@@ -74,17 +74,17 @@ module top(
    reg [31:0] uart_data;
    reg [7:0]  uart_cnt;
 
-   reg [9:0]  mem_write_addr;
+   reg [9:0]  memcpy_write_addr;
    reg [9:0]  mem_read_addr;
 
    always@(posedge clk or negedge rst_n)
      begin
         if(!rst_n)
-          mem_write_addr <= 0;
+          memcpy_write_addr <= 0;
         else
           if (flash_strobe)
             begin
-               mem_write_addr <= mem_write_addr + 1;
+               memcpy_write_addr <= memcpy_write_addr + 1;
             end
      end
 
@@ -153,9 +153,9 @@ module top(
           end
 `ifdef IVERLOG
           if (flash_done)
-            $display("DBG PC=%x DMEM_A=%x MEM_A=%x MEM_D=%x DR=%d DW=%d Iack=%d",
-                     imem_addr_out, dmem_addr_out, mem_read_addr, mem_data_out,
-                     dmem_req, dmem_wr, imem_ack);
+            $display("DBG PC=%x DMEM_A=%x MEM_RA=%x MEM_WA=%x MEM_D=%x DR=%d DW=%d Iack=%d Strobe=%d",
+                     imem_addr_out, dmem_addr_out, mem_read_addr, mem_write_addr, mem_write_data,
+                     dmem_req, dmem_wr, imem_ack, mem_strobe);
 `endif
      end
 
@@ -165,13 +165,25 @@ module top(
           mem_read_reg <= mem_data_out;
      end
 
+   wire mem_stobe;
+   wire [31:0] mem_write_data;
+   wire [9:0]  mem_write_addr;
+
+   wire        ram_sel, uart_sel;
+
+   assign ram_sel = dmem_addr_out[31:28] == 4'h0;
+   assign uart_sel = dmem_addr_out[31:28] == 4'hf;
+
    assign mem_read_addr = ((arb_state == 1) & dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : imem_addr_out[9:0];
+   assign mem_write_addr = flash_done ? dmem_addr_out[9:0] : memcpy_write_addr;
+   assign mem_write_data = flash_done ? dmem_data_out : flash_data_out;
+   assign mem_strobe = flash_done ? (dmem_wr & ram_sel & imem_ack) : flash_strobe;
 
    processor_ram processor_ram(.clk(clk),
                                .rst(rst),
-                               .w_strobe(flash_strobe),
+                               .w_strobe(mem_strobe),
                                .w_addr(mem_write_addr),
-                               .w_data(flash_data_out),
+                               .w_data(mem_write_data),
                                .r_addr(mem_read_addr),
                                .r_data(mem_data_out));
 
@@ -196,7 +208,7 @@ module top(
              tx_data_valid <= 0;
           end
         else
-          if (dmem_req && dmem_wr && dmem_addr_out[31:28] == 4'hf)
+          if (dmem_req && uart_sel)
             begin
                tx_data <= dmem_data_out[7:0];
                tx_data_valid <= 1;
