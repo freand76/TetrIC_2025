@@ -92,13 +92,12 @@ module top(
    wire [31:0] mem_data_out;
    wire [31:0] imem_addr_out, dmem_addr_out;
    wire        dmem_req, dmem_wr;
-   wire        n_stall;
 
-   reg         n_mem_stall;
-   reg         dmem_ack,  imem_ack;
-   reg [2:0]   arb_state;
+   reg         imem_ack;
+   reg         load_read_reg;
+   reg [31:0]  mem_read_reg;
 
-   assign n_stall = flash_done & n_mem_stall;
+   reg [1:0]   arb_state;
 
    always@(posedge clk or negedge rst_n)
      begin
@@ -106,72 +105,67 @@ module top(
           begin
              arb_state <= 0;
              imem_ack <= 0;
-             dmem_ack <= 0;
-             n_mem_stall <= 0;
+             load_read_reg <= 0;
           end
         else
-`ifdef IVERLOG
-          $display("DBG PC=%x DMEM_A=%x MEM_A=%x MEM_D=%x DR=%d DW=%d Dack=%d Iack=%d",
-                   imem_addr_out, dmem_addr_out, mem_read_addr, mem_data_out,
-                   dmem_req, dmem_wr, dmem_ack, imem_ack);
-`endif
           begin
              case(arb_state)
                0 :
                  begin
+                    // WAIT FOR NVM to RAM copy
                     if (flash_done)
                       begin
-                         if (dmem_req & dmem_wr)
-                           begin
-                              // WRITE DMEM
-                              arb_state <= 7;
-                              dmem_ack <= 1;
-                              imem_ack <= 0;
-                              n_mem_stall <= 1;
-                           end
-                         else if (dmem_req & !dmem_wr)
-                           begin
-                              // READ DMEM
-                              arb_state <= 7;
-                              dmem_ack <= 1;
-                              imem_ack <= 0;
-                              n_mem_stall <= 1;
-                           end
-                         else
-                           begin
-                              arb_state <= 7;
-                              dmem_ack <= 0;;
-                              imem_ack <= 1;
-                              n_mem_stall <= 1;
-                           end // else: !if(dmem_req & dmem_wr)
+                         arb_state <= 1;
                       end // if (flash_done)
                  end
-               7:
+               1 :
                  begin
-                    arb_state <= 0;
-                    dmem_ack <= 0;
+                    if (dmem_req & !dmem_wr)
+                      begin
+                         // DMEM READ (Address out)
+                         arb_state <= 2;
+                         imem_ack <= 0;
+                         load_read_reg <= 1;
+                      end
+                    else
+                      begin
+                         // IMEM READ (Adress out) + IMEM ACK
+                         arb_state <= 3;
+                         imem_ack <= 1;
+                         load_read_reg <= 0;
+                      end
+                 end // case: 1
+               2:
+                 begin
+                    // DMEM READ (Data to Reg) + IMEM ACK
+                    arb_state <= 3;
+                    imem_ack <= 1;
+                    load_read_reg <= 0;
+                 end
+               3:
+                 begin
+                    // Processor Consume
+                    arb_state <= 1;
                     imem_ack <= 0;
-                    n_mem_stall <= 0;
+                    load_read_reg <= 0;
                  end
              endcase // case (arb_state)
           end
+`ifdef IVERLOG
+          if (flash_done)
+            $display("DBG PC=%x DMEM_A=%x MEM_A=%x MEM_D=%x DR=%d DW=%d Iack=%d",
+                     imem_addr_out, dmem_addr_out, mem_read_addr, mem_data_out,
+                     dmem_req, dmem_wr, imem_ack);
+`endif
      end
 
-   processor processor(.clk(clk),
-                       .n_reset(rst_n),
-                       .n_ext_stall(n_stall),
-                       .imem_addr_out(imem_addr_out),
-                       .imem_data_in(mem_data_out),
-                       .imem_ack(1'b1),
-                       .dmem_addr_out(dmem_addr_out),
-                       .dmem_data_in(mem_data_out),
-                       .dmem_req(dmem_req),
-                       .dmem_wr(dmem_wr),
-                       .dmem_ack(dmem_ack),
-                       .dmem_data_out(dmem_data_out),
-                       .mfc0({{31{1'b0}}, tx_data_ready}));
+   always@(posedge clk)
+     begin
+        if (load_read_reg)
+          mem_read_reg <= mem_data_out;
+     end
 
-   assign mem_read_addr = (dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : imem_addr_out[9:0];
+   assign mem_read_addr = ((arb_state == 1) & dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : imem_addr_out[9:0];
 
    processor_ram processor_ram(.clk(clk),
                                .rst(rst),
@@ -180,6 +174,19 @@ module top(
                                .w_data(flash_data_out),
                                .r_addr(mem_read_addr),
                                .r_data(mem_data_out));
+
+   processor processor(.clk(clk),
+                       .n_reset(rst_n),
+                       .imem_addr_out(imem_addr_out),
+                       .imem_data_in(mem_data_out),
+                       .imem_ack(imem_ack),
+                       .dmem_addr_out(dmem_addr_out),
+                       .dmem_data_in(mem_read_reg),
+                       .dmem_req(dmem_req),
+                       .dmem_wr(dmem_wr),
+                       .dmem_data_out(dmem_data_out),
+                       .mfc0({{31{1'b0}}, tx_data_ready}));
+
 
    always@(posedge clk or negedge rst_n)
      begin
