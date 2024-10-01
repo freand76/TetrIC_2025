@@ -29,10 +29,16 @@ all: $(BUILD_DIR)/top.fs
 .PHONY: synth
 synth: $(BUILD_DIR)/top_synth.json
 
+.PHONY: pnr
+pnr: $(BUILD_DIR)/top_pnr.json
+
+.PHONY: fs-image
+fs-image: $(BUILD_DIR)/top.fs
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-$(BUILD_DIR)/top_synth.json : ${SRC_TOP}/uart_tx/uart_tx.v ${SRC_TOP}/flash_reader/flash_reader.v $(PROCESSOR_FILES) processor_ram.v top.v
+$(BUILD_DIR)/top_synth.json : ${SRC_TOP}/uart_tx/uart_tx.v ${SRC_TOP}/flash_reader/flash_reader.v $(PROCESSOR_FILES) processor_ram.v main_pll.v top.v
 	mkdir -p $(BUILD_DIR)
 	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@"
 
@@ -50,7 +56,3 @@ program-sram-top: $(BUILD_DIR)/top.fs
 .PHONY: program-flash-top
 program-flash-top: $(BUILD_DIR)/top.fs
 	openFPGALoader -btangnano20k -f $<
-
-.PHONY: program-flash-test
-program-flash-test: test.hex
-	openFPGALoader -btangnano20k --external-flash -o 0x500000 $<

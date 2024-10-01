@@ -1,7 +1,7 @@
 // Clock and Reset
 
-IO_LOC "clk" 4;
-CLOCK_LOC "clk" BUFG;
+IO_LOC "sys_clk" 4;
+CLOCK_LOC "sys_clk" BUFG;
 
 IO_LOC "rst" 88;
 IO_PORT "rst" IO_TYPE=LVCMOS33;

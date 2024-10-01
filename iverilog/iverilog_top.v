@@ -25,7 +25,7 @@ module iverilog_top;
 
    wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
 
-   top top(.clk(clk),
+   top top(.sys_clk(clk),
            .rst(rst),
            .led(led),
            .mspi_cs(mspi_cs),
@@ -130,3 +130,18 @@ module RAM16SDP4(DI, WRE, CLK, WAD, RAD, DO);
           MEM[WAD] <= DI;
      end
 endmodule // RAM16SDP4
+
+
+module main_pll(clkout, clkoutp, lock, reset, clkin);
+
+   output clkout;
+   output clkoutp;
+   output lock;
+   input  reset;
+   input  clkin;
+
+   assign clkout = clkin;
+   assign clkoutp = !clkin;
+   assign lock = 1'b1;
+   
+endmodule // main_pll

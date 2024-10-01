@@ -1,6 +1,6 @@
 module top(
            // Clock and Reset
-           input         clk,
+           input         sys_clk,
            input         rst,
 
            // UART Tx
@@ -45,6 +45,14 @@ module top(
    assign led[3] = !led_cnt[3];
    assign led[4] = !led_cnt[4];
    assign led[5] = !flash_done;
+
+   wire                 clk, clk_sdram;
+
+   main_pll main_(
+    .clkout(clk),           // Main clock
+    .clkoutp(clk_sdram),    // Phase shifted clock for SDRAM
+    .clkin(sys_clk)         // 27Mhz system clock
+   );
 
    always@(posedge clk or negedge rst_n)
      begin
