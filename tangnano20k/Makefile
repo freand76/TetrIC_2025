@@ -20,9 +20,18 @@ PROCESSOR_FILES = \
 	$(SRC_TOP)/processor/pipereg/pipereg.v \
 	$(SRC_TOP)/processor/signext/signext.v
 
-
 #PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank.v
 PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
+
+VERILOG_FILES = \
+	$(PROCESSOR_FILES) \
+	$(SRC_TOP)/uart_tx/uart_tx.v \
+	$(SRC_TOP)/flash_reader/flash_reader.v \
+	$(SRC_TOP)/memory/processor_ram.v \
+	$(SRC_TOP)/pll/main_pll.v \
+	$(SRC_TOP)/top.v
+
+CST=tangnano20k.cst
 
 all: $(BUILD_DIR)/top.fs
 
@@ -38,13 +47,13 @@ fs-image: $(BUILD_DIR)/top.fs
 clean:
 	rm -rf $(BUILD_DIR)
 
-$(BUILD_DIR)/top_synth.json : ${SRC_TOP}/uart_tx/uart_tx.v ${SRC_TOP}/flash_reader/flash_reader.v $(PROCESSOR_FILES) processor_ram.v main_pll.v top.v
+$(BUILD_DIR)/top_synth.json : $(VERILOG_FILES)
 	mkdir -p $(BUILD_DIR)
-	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@" | tee $(BUILD_DIR)/synth.log
+	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@"
 
-$(BUILD_DIR)/top_pnr.json : $(BUILD_DIR)/top_synth.json top.cst
+$(BUILD_DIR)/top_pnr.json : $(BUILD_DIR)/top_synth.json $(CST)
 	mkdir -p $(BUILD_DIR)
-	$(NEXTPNR) --json $< --write $@ --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C --vopt cst=top.cst | tee $(BUILD_DIR)/pnr.log
+	$(NEXTPNR) --json $< --write $@ --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C --vopt cst=$(CST)
 
 $(BUILD_DIR)/top.fs: $(BUILD_DIR)/top_pnr.json
 	$(GOWIN_PACK) -d GW2A-18C -o $@ $<

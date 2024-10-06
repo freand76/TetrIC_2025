@@ -25,6 +25,13 @@ PROCESSOR_FILES = \
 #PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank.v
 PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
 
+VERILOG_FILES = \
+	$(PROCESSOR_FILES) \
+	$(SPI_FLASH_MDOEL) \
+	$(SRC_TOP)/flash_reader/flash_reader.v \
+	$(SRC_TOP)/top.v \
+	iverilog_top.v
+
 all: $(BUILD_DIR)/top_vvp MEM.TXT
 
 .PHONY: synth
@@ -33,7 +40,7 @@ synth: $(BUILD_DIR)/top_vvp
 clean:
 	rm -rf $(BUILD_DIR)
 
-$(BUILD_DIR)/top_vvp: $(SRC_TOP)/flash_reader/flash_reader.v $(SPI_FLASH_MDOEL) $(PROCESSOR_FILES) ../tangnano20k/top.v iverilog_top.v
+$(BUILD_DIR)/top_vvp: $(VERILOG_FILES)
 	mkdir -p $(BUILD_DIR)
 	iverilog -g2005-sv -DIVERLOG -o $@ $^
 
