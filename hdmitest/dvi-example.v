@@ -125,6 +125,11 @@ module dvi_pattern
    logic [5:0]  control_data = 6'd0;
    logic [11:0] data_island_data = 12'd0;
 
+   logic [7:0]  ybs = 0;
+
+   always_comb begin
+      ybs = ({8{~frame_cnt[8]}}^frame_cnt[7:0]) + cy[7:0];
+   end
 
    always_ff @(posedge clk_pixel)
      begin
@@ -139,7 +144,7 @@ module dvi_pattern
              mode <= video_data_period ? 3'd1 : 3'd0;
              // FANCY RGB DATA
 //             video_data <= (cx < 256) ? {cx[7:0], 8'h00, 8'h00} : (cx < 512) ? {8'h00, cx[7:0] , 8'h00} : {8'h00, 8'h00, cx[7:0]};
-             video_data <= (cy < 240) ? {~frame_cnt[7:0], 8'(frame_cnt + cy >> 1), 8'(moving_bar[8]^moving_bar[7:0]+(cx<<1)|(frame_cnt+cy<<1))} : (cy < 480) ? {8'(moving_bar[3]^moving_bar2[8:1]), cx[9:2], 8'(moving_bar2 + cy[8:1])} : 24'h000000;
+             video_data <= (cy < 320) ? {8'(~frame_cnt[7:0]+cx[9:2]-{2'b00,cy[8:2]}), 8'(frame_cnt[6]^frame_cnt + cy >> 1), 8'(moving_bar[8]^moving_bar[7:0]+(cx<<1)|(frame_cnt+cy<<1))} : (cy < 480) ? {8'(moving_bar[8:1]+cx[8:1]+ybs), 8'({8{frame_cnt[8]}}^frame_cnt[7:0]), 8'(moving_bar2[8:1] -cx[8:1] +ybs)} : 24'h000000;
 
              control_data <= {4'b0000, {vsync, hsync}}; // ctrl3, ctrl2, ctrl1, ctrl0, vsync, hsync
           end
