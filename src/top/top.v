@@ -28,8 +28,6 @@ module top(
    reg [7:0]            tx_data;
    reg                  tx_data_valid;
    wire                 tx_data_ready;
-   reg [31:0]           wait_cnt;
-   reg [3:0]            state;
 
    wire                 rst_n = !rst;
 
@@ -40,28 +38,25 @@ module top(
    reg [4:0]            led_cnt;
 
    wire                 mem_strobe;
-   wire [31:0] mem_write_data;
-   wire [9:0]  mem_write_addr;
+   wire [31:0]          mem_write_data;
+   wire [9:0]           mem_write_addr;
 
-   wire        ram_sel, uart_sel;
+   wire                 ram_sel, uart_sel;
    wire                 clk, clk_sdram;
 
-   reg [31:0]           uart_data;
-   reg [7:0]  uart_cnt;
+   reg [9:0]            memcpy_write_addr;
+   reg [9:0]            mem_read_addr;
 
-   reg [9:0]  memcpy_write_addr;
-   reg [9:0]  mem_read_addr;
+   wire [31:0]          dmem_data_out;
+   wire [31:0]          mem_data_out;
+   wire [31:0]          imem_addr_out, dmem_addr_out;
+   wire                 dmem_req, dmem_wr;
 
-      wire [31:0] dmem_data_out;
-   wire [31:0] mem_data_out;
-   wire [31:0] imem_addr_out, dmem_addr_out;
-   wire        dmem_req, dmem_wr;
+   reg                  imem_ack;
+   reg                  load_read_reg;
+   reg [31:0]           mem_read_reg;
 
-   reg         imem_ack;
-   reg         load_read_reg;
-   reg [31:0]  mem_read_reg;
-
-   reg [1:0]   arb_state;
+   reg [1:0]            arb_state;
 
    assign led[0] = !led_cnt[0];
    assign led[1] = !led_cnt[1];
