@@ -139,7 +139,7 @@ module dvi_pattern
              mode <= video_data_period ? 3'd1 : 3'd0;
              // FANCY RGB DATA
 //             video_data <= (cx < 256) ? {cx[7:0], 8'h00, 8'h00} : (cx < 512) ? {8'h00, cx[7:0] , 8'h00} : {8'h00, 8'h00, cx[7:0]};
-             video_data <= (cy < 240) ? {~frame_cnt[7:0], 8'(frame_cnt + cy >> 1), 8'(moving_bar[8]^moving_bar[7:0])} : (cy < 480) ? {8'(moving_bar[3]^moving_bar2[8:1]), cx[9:2], 8'(moving_bar2 + cy[8:1])} : 24'h000000;
+             video_data <= (cy < 240) ? {~frame_cnt[7:0], 8'(frame_cnt + cy >> 1), 8'(moving_bar[8]^moving_bar[7:0]+(cx<<1)|(frame_cnt+cy<<1))} : (cy < 480) ? {8'(moving_bar[3]^moving_bar2[8:1]), cx[9:2], 8'(moving_bar2 + cy[8:1])} : 24'h000000;
 
              control_data <= {4'b0000, {vsync, hsync}}; // ctrl3, ctrl2, ctrl1, ctrl0, vsync, hsync
           end
