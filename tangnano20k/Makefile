@@ -40,11 +40,11 @@ clean:
 
 $(BUILD_DIR)/top_synth.json : ${SRC_TOP}/uart_tx/uart_tx.v ${SRC_TOP}/flash_reader/flash_reader.v $(PROCESSOR_FILES) processor_ram.v main_pll.v top.v
 	mkdir -p $(BUILD_DIR)
-	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@"
+	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@" | tee $(BUILD_DIR)/synth.log
 
 $(BUILD_DIR)/top_pnr.json : $(BUILD_DIR)/top_synth.json top.cst
 	mkdir -p $(BUILD_DIR)
-	$(NEXTPNR) --json $< --write $@ --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C --vopt cst=top.cst
+	$(NEXTPNR) --json $< --write $@ --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C --vopt cst=top.cst | tee $(BUILD_DIR)/pnr.log
 
 $(BUILD_DIR)/top.fs: $(BUILD_DIR)/top_pnr.json
 	$(GOWIN_PACK) -d GW2A-18C -o $@ $<
