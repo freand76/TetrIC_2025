@@ -39,6 +39,30 @@ module top(
 
    reg [4:0]            led_cnt;
 
+   wire                 mem_strobe;
+   wire [31:0] mem_write_data;
+   wire [9:0]  mem_write_addr;
+
+   wire        ram_sel, uart_sel;
+   wire                 clk, clk_sdram;
+
+   reg [31:0]           uart_data;
+   reg [7:0]  uart_cnt;
+
+   reg [9:0]  memcpy_write_addr;
+   reg [9:0]  mem_read_addr;
+
+      wire [31:0] dmem_data_out;
+   wire [31:0] mem_data_out;
+   wire [31:0] imem_addr_out, dmem_addr_out;
+   wire        dmem_req, dmem_wr;
+
+   reg         imem_ack;
+   reg         load_read_reg;
+   reg [31:0]  mem_read_reg;
+
+   reg [1:0]   arb_state;
+
    assign led[0] = !led_cnt[0];
    assign led[1] = !led_cnt[1];
    assign led[2] = !led_cnt[2];
@@ -46,7 +70,6 @@ module top(
    assign led[4] = !led_cnt[4];
    assign led[5] = !flash_done;
 
-   wire                 clk, clk_sdram;
 
    main_pll main_(
     .clkout(clk),           // Main clock
@@ -79,12 +102,6 @@ module top(
                              .spi_mosi(mspi_di),
                              .spi_miso(mspi_do));
 
-   reg [31:0] uart_data;
-   reg [7:0]  uart_cnt;
-
-   reg [9:0]  memcpy_write_addr;
-   reg [9:0]  mem_read_addr;
-
    always@(posedge clk or negedge rst_n)
      begin
         if(!rst_n)
@@ -95,17 +112,6 @@ module top(
                memcpy_write_addr <= memcpy_write_addr + 1;
             end
      end
-
-   wire [31:0] dmem_data_out;
-   wire [31:0] mem_data_out;
-   wire [31:0] imem_addr_out, dmem_addr_out;
-   wire        dmem_req, dmem_wr;
-
-   reg         imem_ack;
-   reg         load_read_reg;
-   reg [31:0]  mem_read_reg;
-
-   reg [1:0]   arb_state;
 
    always@(posedge clk or negedge rst_n)
      begin
@@ -172,12 +178,6 @@ module top(
         if (load_read_reg)
           mem_read_reg <= mem_data_out;
      end
-
-   wire mem_stobe;
-   wire [31:0] mem_write_data;
-   wire [9:0]  mem_write_addr;
-
-   wire        ram_sel, uart_sel;
 
    assign ram_sel = dmem_addr_out[31:28] == 4'h0;
    assign uart_sel = dmem_addr_out[31:28] == 4'hf;
