@@ -4,10 +4,13 @@ GOWIN_PACK = gowin_pack
 
 BUILD_DIR=out
 
+SRC_TOP=../src/top
+
 VERILOG_FILES = \
-	dvi-example.v \
-	pll480.v \
-	tmds-channel.v
+	top.v \
+	pll126.v \
+	$(SRC_TOP)/dvi/dvi_generator.v \
+	$(SRC_TOP)/dvi/tmds_channel.v
 
 CST=tangnano20k.cst
 

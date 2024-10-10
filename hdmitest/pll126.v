@@ -1,8 +1,8 @@
-module PLL480 (clkout, lock, clkin);
+module PLL126 (clkout_126mhz, lock, clkin_27mhz);
 
-output clkout;
+output clkout_126mhz;
 output lock;
-input clkin;
+input clkin_27mhz;
 
 wire clkoutp_o;
 wire clkoutd_o;
@@ -12,14 +12,14 @@ wire gw_gnd;
 assign gw_gnd = 1'b0;
 
 rPLL rpll_inst (
-    .CLKOUT(clkout),
+    .CLKOUT(clkout_126mhz),
     .LOCK(lock),
     .CLKOUTP(clkoutp_o),
     .CLKOUTD(clkoutd_o),
     .CLKOUTD3(clkoutd3_o),
     .RESET(gw_gnd),
     .RESET_P(gw_gnd),
-    .CLKIN(clkin),
+    .CLKIN(clkin_27mhz),
     .CLKFB(gw_gnd),
     .FBDSEL({gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd}),
     .IDSEL({gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd,gw_gnd}),
