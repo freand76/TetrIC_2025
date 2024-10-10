@@ -9,8 +9,8 @@ SRC_TOP=../src/top
 VERILOG_FILES = \
 	top.v \
 	pll126.v \
-	$(SRC_TOP)/dvi/dvi_generator.v \
-	$(SRC_TOP)/dvi/tmds_channel.v
+	$(SRC_TOP)/video/dvi/dvi_generator.v \
+	$(SRC_TOP)/video/dvi/tmds_channel.v
 
 CST=tangnano20k.cst
 
