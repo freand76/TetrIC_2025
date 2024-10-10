@@ -27,13 +27,16 @@ VERILOG_FILES = \
 	$(PROCESSOR_FILES) \
 	$(SRC_TOP)/uart_tx/uart_tx.v \
 	$(SRC_TOP)/flash_reader/flash_reader.v \
-	$(SRC_TOP)/memory/processor_ram.v \
-	$(SRC_TOP)/pll/main_pll.v \
 	$(SRC_TOP)/top.v
+
+TANGNANO20K_FILES = \
+	tangnano20k_top.v \
+	processor_ram.v \
+	main_pll.v
 
 CST=tangnano20k.cst
 
-all: $(BUILD_DIR)/top.fs
+all: check $(BUILD_DIR)/top.fs
 
 .PHONY: synth
 synth: $(BUILD_DIR)/top_synth.json
@@ -47,7 +50,7 @@ fs-image: $(BUILD_DIR)/top.fs
 clean:
 	rm -rf $(BUILD_DIR)
 
-$(BUILD_DIR)/top_synth.json : $(VERILOG_FILES)
+$(BUILD_DIR)/top_synth.json : $(VERILOG_FILES) $(TANGNANO20K_FILES)
 	mkdir -p $(BUILD_DIR)
 	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@"
 
@@ -57,6 +60,10 @@ $(BUILD_DIR)/top_pnr.json : $(BUILD_DIR)/top_synth.json $(CST)
 
 $(BUILD_DIR)/top.fs: $(BUILD_DIR)/top_pnr.json
 	$(GOWIN_PACK) -d GW2A-18C -o $@ $<
+
+.PHONY: check
+check: $(TANGNANO20K_FILES)
+	iverilog -g2005-sv -DIVERLOG $^ -i && rm -rf a.out
 
 .PHONY: program-sram-top
 program-sram-top: $(BUILD_DIR)/top.fs

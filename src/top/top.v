@@ -1,7 +1,7 @@
 module top(
            // Clock and Reset
-           input         sys_clk,
-           input         rst,
+           input         clk,
+           input         rst_n,
 
            // UART Tx
            output        uart_tx,
@@ -29,8 +29,6 @@ module top(
    reg                  tx_data_valid;
    wire                 tx_data_ready;
 
-   wire                 rst_n = !rst;
-
    wire                 flash_done;
    wire                 flash_strobe;
    wire [31:0]          flash_data_out;
@@ -42,7 +40,6 @@ module top(
    wire [9:0]           mem_write_addr;
 
    wire                 ram_sel, uart_sel;
-   wire                 clk, clk_sdram;
 
    reg [9:0]            memcpy_write_addr;
    reg [9:0]            mem_read_addr;
@@ -64,13 +61,6 @@ module top(
    assign led[3] = !led_cnt[3];
    assign led[4] = !led_cnt[4];
    assign led[5] = !flash_done;
-
-
-   main_pll main_(
-    .clkout(clk),           // Main clock
-    .clkoutp(clk_sdram),    // Phase shifted clock for SDRAM
-    .clkin(sys_clk)         // 27Mhz system clock
-   );
 
    always@(posedge clk or negedge rst_n)
      begin

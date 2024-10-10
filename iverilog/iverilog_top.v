@@ -3,7 +3,7 @@
 module iverilog_top;
 
    reg clk;
-   reg rst;
+   reg rst_n;
 
    initial
      begin
@@ -15,8 +15,8 @@ module iverilog_top;
    initial
      begin
         clk = 0;
-        rst = 1;
-        #9 rst = 0;
+        rst_n = 0;
+        #9 rst_n = 1;
      end
 
    always #5 clk = ~clk;
@@ -25,8 +25,8 @@ module iverilog_top;
 
    wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
 
-   top top(.sys_clk(clk),
-           .rst(rst),
+   top top(.clk(clk),
+           .rst_n(rst_n),
            .led(led),
            .mspi_cs(mspi_cs),
            .mspi_clk(mspi_clk),
@@ -130,18 +130,3 @@ module RAM16SDP4(DI, WRE, CLK, WAD, RAD, DO);
           MEM[WAD] <= DI;
      end
 endmodule // RAM16SDP4
-
-
-module main_pll(clkout, clkoutp, lock, reset, clkin);
-
-   output clkout;
-   output clkoutp;
-   output lock;
-   input  reset;
-   input  clkin;
-
-   assign clkout = clkin;
-   assign clkoutp = !clkin;
-   assign lock = 1'b1;
-   
-endmodule // main_pll
