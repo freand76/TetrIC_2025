@@ -32,3 +32,22 @@ IO_LOC "led[2]" 17;
 IO_LOC "led[3]" 18;
 IO_LOC "led[4]" 19;
 IO_LOC "led[5]" 20;
+
+// DVI
+
+IO_LOC "tmds_clk_p" 33;
+IO_PORT "tmds_clk_p" PULL_MODE=NONE;
+IO_LOC "tmds_clk_n" 34;
+IO_PORT "tmds_clk_n" PULL_MODE=NONE;
+IO_LOC "tmds_d_p[0]" 35;
+IO_PORT "tmds_d_p[0]" PULL_MODE=NONE;
+IO_LOC "tmds_d_n[0]" 36;
+IO_PORT "tmds_d_n[0]" PULL_MODE=NONE;
+IO_LOC "tmds_d_p[1]" 37;
+IO_PORT "tmds_d_p[1]" PULL_MODE=NONE;
+IO_LOC "tmds_d_n[1]" 38;
+IO_PORT "tmds_d_n[1]" PULL_MODE=NONE;
+IO_LOC "tmds_d_p[2]" 39;
+IO_PORT "tmds_d_p[2]" PULL_MODE=NONE;
+IO_LOC "tmds_d_n[2]" 40;
+IO_PORT "tmds_d_n[2]" PULL_MODE=NONE;

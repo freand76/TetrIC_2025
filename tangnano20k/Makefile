@@ -27,12 +27,14 @@ VERILOG_FILES = \
 	$(PROCESSOR_FILES) \
 	$(SRC_TOP)/uart_tx/uart_tx.v \
 	$(SRC_TOP)/flash_reader/flash_reader.v \
+	$(SRC_TOP)/video/dvi/dvi_generator.v \
+	$(SRC_TOP)/video/dvi/tmds_channel.v \
 	$(SRC_TOP)/top.v
 
 TANGNANO20K_FILES = \
 	tangnano20k_top.v \
 	processor_ram.v \
-	main_pll.v
+	pll.v
 
 CST=tangnano20k.cst
 

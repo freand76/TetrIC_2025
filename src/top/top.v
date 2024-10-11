@@ -1,19 +1,25 @@
 module top(
            // Clock and Reset
-           input         clk,
-           input         rst_n,
+           input        clk_cpu,
+           input        clk_pixel,
+           input        rst_n,
 
            // UART Tx
-           output        uart_tx,
+           output       uart_tx,
 
            // LED (Active LOW)
-           output [5:0]  led,
+           output [5:0] led,
 
            // spi flash interface
-           output        mspi_cs,
-           output        mspi_clk,
-           output        mspi_di,
-           input         mspi_do);
+           output       mspi_cs,
+           output       mspi_clk,
+           output       mspi_di,
+           input        mspi_do,
+
+           output [9:0] tmds_r,
+           output [9:0] tmds_g,
+           output [9:0] tmds_b
+);
 
 `ifdef IVERLOG
    parameter            FLASH_START = 24'h000000;
@@ -21,7 +27,7 @@ module top(
    parameter            FLASH_START = 24'h500000;
 `endif
 
-   parameter            CLK_FRE  = 27;//Mhz
+   parameter            CLK_FRE  = 25200000; //Hz
    parameter            UART_FRE = 115200;
 
 
@@ -35,11 +41,11 @@ module top(
 
    reg [4:0]            led_cnt;
 
-   wire                 mem_strobe;
+   wire                 mem_strobe, video_strobe;
    wire [31:0]          mem_write_data;
    wire [9:0]           mem_write_addr;
 
-   wire                 ram_sel, uart_sel;
+   wire                 ram_sel, uart_sel, video_sel;
 
    reg [9:0]            memcpy_write_addr;
    reg [9:0]            mem_read_addr;
@@ -55,6 +61,10 @@ module top(
 
    reg [1:0]            arb_state;
 
+   wire [9:0]          xpos, ypos;
+   wire                 line_end, frame_end;
+   reg [23:0]           rgb_data;
+
    assign led[0] = !led_cnt[0];
    assign led[1] = !led_cnt[1];
    assign led[2] = !led_cnt[2];
@@ -62,7 +72,7 @@ module top(
    assign led[4] = !led_cnt[4];
    assign led[5] = !flash_done;
 
-   always@(posedge clk or negedge rst_n)
+   always@(posedge clk_cpu or negedge rst_n)
      begin
         if(rst_n == 1'b0)
           begin
@@ -75,7 +85,7 @@ module top(
             end
      end // always@ (posedge clk or negedge rst_n)
 
-   flash_reader flash_reader(.clk(clk),
+   flash_reader flash_reader(.clk(clk_cpu),
                              .n_reset(rst_n),
                              .address(FLASH_START),
                              .word_count(24'h000400),
@@ -87,7 +97,7 @@ module top(
                              .spi_mosi(mspi_di),
                              .spi_miso(mspi_do));
 
-   always@(posedge clk or negedge rst_n)
+   always@(posedge clk_cpu or negedge rst_n)
      begin
         if(!rst_n)
           memcpy_write_addr <= 0;
@@ -98,7 +108,7 @@ module top(
             end
      end
 
-   always@(posedge clk or negedge rst_n)
+   always@(posedge clk_cpu or negedge rst_n)
      begin
         if(!rst_n)
           begin
@@ -158,13 +168,22 @@ module top(
 `endif
      end
 
-   always@(posedge clk)
+   always@(posedge clk_cpu)
      begin
         if (load_read_reg)
           mem_read_reg <= mem_data_out;
      end
 
+   always@(posedge clk_cpu)
+     begin
+        if (dmem_req & dmem_wr & video_sel)
+          begin
+             rgb_data <= dmem_data_out[23:0];
+          end
+     end
+
    assign ram_sel = dmem_addr_out[31:28] == 4'h0;
+   assign video_sel = dmem_addr_out[31:28] == 4'he;
    assign uart_sel = dmem_addr_out[31:28] == 4'hf;
 
    assign mem_read_addr = ((arb_state == 1) & dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : imem_addr_out[9:0];
@@ -172,7 +191,7 @@ module top(
    assign mem_write_data = flash_done ? dmem_data_out : flash_data_out;
    assign mem_strobe = flash_done ? (dmem_wr & ram_sel & imem_ack) : flash_strobe;
 
-   processor_ram processor_ram(.clk(clk),
+   processor_ram processor_ram(.clk(clk_cpu),
                                .rst(rst),
                                .w_strobe(mem_strobe),
                                .w_addr(mem_write_addr),
@@ -180,7 +199,7 @@ module top(
                                .r_addr(mem_read_addr),
                                .r_data(mem_data_out));
 
-   processor processor(.clk(clk),
+   processor processor(.clk(clk_cpu),
                        .n_reset(rst_n),
                        .imem_addr_out(imem_addr_out),
                        .imem_data_in(mem_data_out),
@@ -192,8 +211,18 @@ module top(
                        .dmem_data_out(dmem_data_out),
                        .mfc0({{31{1'b0}}, tx_data_ready}));
 
+   dvi_generator dvi_gen(.clk_pixel(clk_pixel),
+                         .n_reset(rst_n),
+                         .rgb_data(rgb_data),
+                         .tmds_r(tmds_r),
+                         .tmds_g(tmds_g),
+                         .tmds_b(tmds_b),
+                         .xpos(xpos),
+                         .ypos(ypos),
+                         .line_end(line_end),
+                         .frame_end(frame_end));
 
-   always@(posedge clk or negedge rst_n)
+   always@(posedge clk_cpu or negedge rst_n)
      begin
         if(!rst_n)
           begin
@@ -218,7 +247,7 @@ module top(
       .BAUD_RATE(UART_FRE)
       ) uart_tx_inst
        (
-        .clk            (clk),
+        .clk            (clk_cpu),
         .rst_n          (rst_n),
         .tx_data        (tx_data),
         .tx_data_valid  (tx_data_valid),

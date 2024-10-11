@@ -25,7 +25,8 @@ module iverilog_top;
 
    wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
 
-   top top(.clk(clk),
+   top top(.clk_cpu(clk),
+           .clk_pixel(clk),
            .rst_n(rst_n),
            .led(led),
            .mspi_cs(mspi_cs),

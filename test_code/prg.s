@@ -15,6 +15,13 @@ start:
     nop
     nop
     nop
+    lui $t1, 0x00ff
+    ori $t1, $t1, 0xff00
+    nop
+    lui $a0, 0xe000
+    sw $t1, 0($a0)
+    nop
+    nop
     lui $t1, 0x0000
     ori $t1, $t1, 0x0000
     jal print_hex_val
