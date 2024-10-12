@@ -31,8 +31,6 @@ module top(
    parameter            UART_FRE = 115200;
 
 
-   reg [7:0]            tx_data;
-   reg                  tx_data_valid;
    wire                 tx_data_ready;
 
    wire                 flash_done;
@@ -210,25 +208,6 @@ module top(
                .tmds_g(tmds_g),
                .tmds_b(tmds_b));
 
-   always@(posedge clk_cpu or negedge rst_n)
-     begin
-        if(!rst_n)
-          begin
-             tx_data <= 0;
-             tx_data_valid <= 0;
-          end
-        else
-          if (dmem_req && uart_sel)
-            begin
-               tx_data <= dmem_data_out[7:0];
-               tx_data_valid <= 1;
-            end
-          else
-            begin
-               tx_data_valid <= 0;
-            end
-     end
-
    uart_tx#
      (
       .CLK_FRE(CLK_FRE),
@@ -237,8 +216,8 @@ module top(
        (
         .clk            (clk_cpu),
         .rst_n          (rst_n),
-        .tx_data        (tx_data),
-        .tx_data_valid  (tx_data_valid),
+        .tx_data        (dmem_data_out[7:0]),
+        .tx_data_valid  (dmem_req & dmem_wr &  uart_sel),
         .tx_data_ready  (tx_data_ready),
         .tx_pin         (uart_tx)
         );
