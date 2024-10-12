@@ -29,6 +29,7 @@ VERILOG_FILES = \
 	$(PROCESSOR_FILES) \
 	$(SPI_FLASH_MDOEL) \
 	$(SRC_TOP)/flash_reader/flash_reader.v \
+	$(SRC_TOP)/video/video.v \
 	$(SRC_TOP)/video/dvi/dvi_generator.v \
 	$(SRC_TOP)/video/dvi/tmds_channel.v \
 	$(SRC_TOP)/top.v \

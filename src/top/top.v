@@ -61,10 +61,6 @@ module top(
 
    reg [1:0]            arb_state;
 
-   wire [9:0]          xpos, ypos;
-   wire                 line_end, frame_end;
-   reg [23:0]           rgb_data;
-
    assign led[0] = !led_cnt[0];
    assign led[1] = !led_cnt[1];
    assign led[2] = !led_cnt[2];
@@ -174,14 +170,6 @@ module top(
           mem_read_reg <= mem_data_out;
      end
 
-   always@(posedge clk_cpu)
-     begin
-        if (dmem_req & dmem_wr & video_sel)
-          begin
-             rgb_data <= dmem_data_out[23:0];
-          end
-     end
-
    assign ram_sel = dmem_addr_out[31:28] == 4'h0;
    assign video_sel = dmem_addr_out[31:28] == 4'he;
    assign uart_sel = dmem_addr_out[31:28] == 4'hf;
@@ -211,16 +199,16 @@ module top(
                        .dmem_data_out(dmem_data_out),
                        .mfc0({{31{1'b0}}, tx_data_ready}));
 
-   dvi_generator dvi_gen(.clk_pixel(clk_pixel),
-                         .n_reset(rst_n),
-                         .rgb_data(rgb_data),
-                         .tmds_r(tmds_r),
-                         .tmds_g(tmds_g),
-                         .tmds_b(tmds_b),
-                         .xpos(xpos),
-                         .ypos(ypos),
-                         .line_end(line_end),
-                         .frame_end(frame_end));
+   video video(.clk_pixel(clk_pixel),
+               .clk_cpu(clk_cpu),
+               .rst_n(rst_n),
+               .addr_in(dmem_addr_out),
+               .data_in(dmem_data_out),
+               .sel(video_sel),
+               .wr(dmem_req & dmem_wr),
+               .tmds_r(tmds_r),
+               .tmds_g(tmds_g),
+               .tmds_b(tmds_b));
 
    always@(posedge clk_cpu or negedge rst_n)
      begin
