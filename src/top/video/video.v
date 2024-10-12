@@ -16,17 +16,26 @@ module video(
    wire                   video_strobe;
    wire [9:0]             xpos, ypos;
    wire                   line_end, frame_end;
+   wire [15:0]            pixel_data;
    reg [23:0]             rgb_data;
 
    assign video_strobe = sel & wr;
 
-   always@(posedge clk_cpu)
+   always@(posedge clk_pixel)
      begin
-        if (video_strobe)
-          begin
-             rgb_data <= data_in[23:0];
-          end
+        // Expand 16 bit pixel 5-6-5 to 24 bit 8-8-8
+        rgb_data <= { pixel_data[15:11], {3{pixel_data[11]}},
+                      pixel_data[10:5], {2{pixel_data[5]}},
+                      pixel_data[4:0], {3{pixel_data[0]}}};
      end
+
+   line_mem line_mem1(
+                      .pixel_addr(xpos[9:1]),
+                      .pixel_data(pixel_data),
+                      .clk_wr(clk_cpu),
+                      .wr_en(video_strobe),
+                      .wr_addr(addr_in[7:0]),
+                      .wr_data(data_in));
 
    dvi_generator dvi_gen(.clk_pixel(clk_pixel),
                          .n_reset(rst_n),
