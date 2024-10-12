@@ -20,7 +20,7 @@ module pix32_mem(
    RAM16SDP4 pix16_data_07_04(.DI(wr_data[7:4]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[7:4]));
    RAM16SDP4 pix16_data_03_00(.DI(wr_data[3:0]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[3:0]));
 
-   assign pixel_data = pixel_addr[0] ? lpixel : rpixel;
+   assign pixel_data = pixel_addr[0] ? rpixel : lpixel;
 
 endmodule // pix32_mem
 

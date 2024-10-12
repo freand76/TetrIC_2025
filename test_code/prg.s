@@ -15,11 +15,32 @@ start:
     nop
     nop
     nop
-    lui $t1, 0xf000
-    ori $t1, $t1, 0x000f
+    lui $t2, 0xf800
+    lui $t1, 0xffe0
+    ori $t1, $t1, 0x07e0
     nop
     lui $a0, 0xe000
-    sw $t1, 0($a0)
+    sw $t2, 0($a0)
+    sw $t2, 159($a0)
+    sw $t1, 1($a0)
+    sw $t1, 2($a0)
+    sw $t1, 3($a0)
+    sw $t1, 4($a0)
+    sw $t1, 5($a0)
+    sw $t1, 6($a0)
+    sw $t1, 7($a0)
+    sw $t1, 8($a0)
+    sw $t1, 9($a0)
+    sw $t1, 10($a0)
+    nop
+    nop
+    lui $t1, 0x001f
+    ori $t1, $t1, 0xf800
+    nop
+    lui $a0, 0xe000
+    ori $a0, $a0, 0x0100
+    sw $t2, 0($a0)
+    sw $t2, 159($a0)
     sw $t1, 1($a0)
     sw $t1, 2($a0)
     sw $t1, 3($a0)
