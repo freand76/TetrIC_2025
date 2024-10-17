@@ -49,7 +49,7 @@ module tangnano20k_top(
            .tmds_g(tmds_g),
            .tmds_b(tmds_b));
 
-   OSER10 gwSer0(.Q(tmds[0]),
+   OSER10 gwSer0(.Q(tmds[2]),
                  .D0(tmds_r[0]),
                  .D1(tmds_r[1]),
                  .D2(tmds_r[2]),
@@ -60,9 +60,9 @@ module tangnano20k_top(
                  .D7(tmds_r[7]),
                  .D8(tmds_r[8]),
                  .D9(tmds_r[9]),
-                 .PCLK(clk_pixel ),
-                 .FCLK(clk_pixel_x5 ),
-                 .RESET(reset ) );
+                 .PCLK(clk_pixel),
+                 .FCLK(clk_pixel_x5),
+                 .RESET(rst));
 
    OSER10 gwSer1(.Q(tmds[1]),
                  .D0(tmds_g[0]),
@@ -75,11 +75,11 @@ module tangnano20k_top(
                  .D7(tmds_g[7]),
                  .D8(tmds_g[8]),
                  .D9(tmds_g[9]),
-                 .PCLK(clk_pixel ),
-                 .FCLK(clk_pixel_x5 ),
-                 .RESET(reset ) );
+                 .PCLK(clk_pixel),
+                 .FCLK(clk_pixel_x5),
+                 .RESET(rst));
 
-   OSER10 gwSer2(.Q(tmds[2]),
+   OSER10 gwSer2(.Q(tmds[0]),
                  .D0(tmds_b[0]),
                  .D1(tmds_b[1]),
                  .D2(tmds_b[2]),
@@ -92,7 +92,7 @@ module tangnano20k_top(
                  .D9(tmds_b[9]),
                  .PCLK(clk_pixel),
                  .FCLK(clk_pixel_x5),
-                 .RESET(reset));
+                 .RESET(rst));
 
    TLVDS_OBUF tmds_bufds [3:0] (.I({clk_pixel, tmds}),
                                 .O({tmds_clk_p, tmds_d_p}),
