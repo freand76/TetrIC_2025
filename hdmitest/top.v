@@ -18,23 +18,27 @@ module top(input wire        sys_clk,
    wire                      line_end, frame_end;
 
    // --- PATTERN GENERATOR ----------------------------------------------------------------
-   logic [23:0]              rgb_data;
+   logic [23:0]              rgb_data, rgb_data_next;
    logic [8:0]               frame_cnt, moving_bar;
 
    always @(posedge clk_pixel)
      begin
         if (!rst_n)
           begin
+             rgb_data_next <= 24'd0;
              rgb_data <= 24'd0;
              frame_cnt <= 0;
              moving_bar <= 0;
           end
         else
           begin
-             if (ypos < moving_bar)
-               rgb_data <= {ypos[7:0], 16'h0000 };
+             rgb_data <= rgb_data_next;
+             if ((xpos == 0) || (ypos == 0) || (xpos == 639) || (ypos == 479))
+               rgb_data_next <= 24'hffffff;
+             else if (ypos < moving_bar)
+               rgb_data_next <= {ypos[7:0], 16'h0000 };
              else
-               rgb_data <= 24'h00003f;
+               rgb_data_next <= 24'h00003f;
 
              frame_cnt <= frame_end ? frame_cnt + 1'b1 : frame_cnt;
              moving_bar <= frame_end ? moving_bar + 1'b1 : moving_bar;
