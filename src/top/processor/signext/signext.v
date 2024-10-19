@@ -13,7 +13,7 @@ module signext(A, ctrl, O);
    assign one_ext = {{16{1'b1}}, A};
    assign zero_ext = {{16{1'b0}}, A};
 
-   always @ (A, ctrl)
+   always @ (*)
      begin
         O <= zero_ext;
         case(ctrl)
