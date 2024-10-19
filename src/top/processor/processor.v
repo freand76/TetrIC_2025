@@ -143,6 +143,16 @@ module processor(clk, n_reset,
                                       .enable(imem_ack),
                                       .Q(s_id_instr));
 
+`ifdef IVERLOG
+   always@(posedge clk)
+     begin
+        if (imem_ack)
+          $display("DBG PC=%x IMEM_D=%x DMEM_A=%x MEM_RA=%x MEM_DO=%x DR=%d DW=%d",
+                   imem_addr_out, imem_data_in,
+                   dmem_addr_out, dmem_data_in, dmem_data_out, dmem_req, dmem_wr);
+     end
+`endif
+
    ctrl ctrl(.instr(s_id_instr),
              .ife_ctrl(s_if_ctrl2),
              .id_ctrl(s_id_ctrl_id),
@@ -377,14 +387,5 @@ module processor(clk, n_reset,
    assign imem_addr_out = s_if_pc2;
 
    assign dmem_data_out = s_mem_data2;
-
-// `ifdef IVERLOG
-//    always @ (posedge clk)
-//      $display("DBG PC=%x IF=%x ID=%x IMEM_ACK=%d",
-//               s_if_pc2,
-//               s_if_instr,
-//               s_id_instr,
-//               imem_ack);
-// `endif
 
 endmodule

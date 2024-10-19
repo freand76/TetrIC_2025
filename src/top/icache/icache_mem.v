@@ -1,9 +1,9 @@
 module icache_mem(
-                  input [31:0] wr_data,
-                  input        wr_en,
-                  input        clk_wr,
-                  input [3:0]  wr_addr,
-                  input [3:0]  rd_addr,
+                  input [31:0]  wr_data,
+                  input         wr_en,
+                  input         clk_wr,
+                  input [3:0]   wr_addr,
+                  input [3:0]   rd_addr,
                   output [31:0] rd_data
                   );
 

@@ -53,8 +53,8 @@ start:
     sw $t1, 10($a0)
     nop
     nop
-    lui $t1, 0x0000
-    ori $t1, $t1, 0x0000
+    lui $t1, 0xdead
+    ori $t1, $t1, 0xbeef
     jal print_hex_val
     nop
     nop
@@ -65,13 +65,16 @@ start:
     nop
     nop
     nop
-    lui $t1, 0xdead
-    ori $t1, $t1, 0xbeef
+    lui $t1, 0x0000
+    ori $t1, $t1, 0x0000
     jal print_hex_val
     nop
     nop
     nop
     li  $t1, data_string
+    nop
+    nop
+    nop
     jal print_string
     nop
     nop
@@ -83,7 +86,10 @@ start:
     nop
     nop
     li  $t1, empty_space
-    sw $zero 0($t1)
+    sw $zero, 0($t1)
+    nop
+    nop
+    nop
     nop
     nop
     jal print_string
@@ -111,11 +117,17 @@ start:
     nop
     nop
     li  $t1, empty_space
+    nop
+    nop
+    nop
     jal print_string
     nop
     nop
     nop
     li $t1, 0x0a
+    nop
+    nop
+    nop
     jal print_char
     nop
     nop
@@ -158,6 +170,10 @@ _loop_mem:
     lw $t2, 0($at)
     nop
     nop
+    nop
+    nop
+    nop
+    beq  $zero, $t2, _done
     nop
     nop
     nop
@@ -223,6 +239,7 @@ _number:
     nop
     nop
     movi $t1, 0x0a
+    nop
     nop
     nop
     sw $t1, 0($a0)

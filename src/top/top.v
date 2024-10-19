@@ -53,11 +53,19 @@ module top(
    wire [31:0]          imem_addr_out, dmem_addr_out;
    wire                 dmem_req, dmem_wr;
 
-   reg                  imem_ack;
+   wire                 proc_write;
+   wire                 proc_read;
+   wire                 proc_stall_n;
+   wire                 imem_ack;
    reg                  load_read_reg;
+   reg                  proc_write_strobe;
    reg [31:0]           mem_read_reg;
 
    reg [1:0]            arb_state;
+
+   wire [19:0]          icache_read_addr;
+   wire [31:0]          icache_imem_data_out;
+   wire                 icache_ram_rd;
 
    assign led[0] = !led_cnt[0];
    assign led[1] = !led_cnt[1];
@@ -102,13 +110,17 @@ module top(
             end
      end
 
+   assign proc_write = (dmem_req & dmem_wr & imem_ack);
+   assign proc_read = (dmem_req & !dmem_wr);
+   assign proc_stall_n = !(proc_read & ((arb_state == 1) || (arb_state == 2)));
+
    always@(posedge clk_cpu or negedge rst_n)
      begin
         if(!rst_n)
           begin
              arb_state <= 0;
-             imem_ack <= 0;
              load_read_reg <= 0;
+             proc_write_strobe <= 0;
           end
         else
           begin
@@ -123,43 +135,33 @@ module top(
                  end
                1 :
                  begin
-                    if (dmem_req & !dmem_wr)
+                    if (dmem_req)
                       begin
                          // DMEM READ (Address out)
                          arb_state <= 2;
-                         imem_ack <= 0;
-                         load_read_reg <= 1;
+                         load_read_reg <= !dmem_wr;
+                         proc_write_strobe <= dmem_wr;
                       end
-                    else
-                      begin
-                         // IMEM READ (Adress out) + IMEM ACK
-                         arb_state <= 3;
-                         imem_ack <= 1;
-                         load_read_reg <= 0;
-                      end
-                 end // case: 1
+                 end
                2:
                  begin
-                    // DMEM READ (Data to Reg) + IMEM ACK
-                    arb_state <= 3;
-                    imem_ack <= 1;
                     load_read_reg <= 0;
+                    proc_write_strobe <= 0;
+                    if (dmem_wr)
+                      arb_state <= 1;
+                    else
+                      arb_state <= 3;
                  end
                3:
                  begin
-                    // Processor Consume
-                    arb_state <= 1;
-                    imem_ack <= 0;
-                    load_read_reg <= 0;
+                    // DMEM READ (Data to Reg) + IMEM ACK
+                    if (!dmem_req)
+                      begin
+                         arb_state <= 1;
+                      end
                  end
              endcase // case (arb_state)
           end
-`ifdef IVERLOG
-          if (flash_done)
-            $display("DBG PC=%x DMEM_A=%x MEM_RA=%x MEM_WA=%x MEM_D=%x DR=%d DW=%d Iack=%d Strobe=%d",
-                     imem_addr_out, dmem_addr_out, mem_read_addr, mem_write_addr, mem_write_data,
-                     dmem_req, dmem_wr, imem_ack, mem_strobe);
-`endif
      end
 
    always@(posedge clk_cpu)
@@ -172,7 +174,8 @@ module top(
    assign video_sel = dmem_addr_out[31:28] == 4'he;
    assign uart_sel = dmem_addr_out[31:28] == 4'hf;
 
-   assign mem_read_addr = ((arb_state == 1) & dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : imem_addr_out[9:0];
+   assign mem_read_addr = ((arb_state == 1) & dmem_req & !dmem_wr) ?
+                          dmem_addr_out[9:0] : icache_read_addr[9:0];
    assign mem_write_addr = flash_done ? dmem_addr_out[9:0] : memcpy_write_addr;
    assign mem_write_data = flash_done ? dmem_data_out : flash_data_out;
    assign mem_strobe = flash_done ? (dmem_wr & ram_sel & imem_ack) : flash_strobe;
@@ -185,11 +188,24 @@ module top(
                                .r_addr(mem_read_addr),
                                .r_data(mem_data_out));
 
+   icache icache(
+              .rst_n(rst_n),
+              .halt_n(flash_done),
+              .imem_addr(imem_addr_out[19:0]),
+              .imem_data(icache_imem_data_out),
+              .imem_ack(imem_ack),
+              .ram_clk(clk_cpu),
+              .ram_addr(icache_read_addr),
+              .ram_data(mem_data_out),
+              .ram_data_ready(1'b1),
+              .ram_rd(icache_ram_rd)
+              );
+
    processor processor(.clk(clk_cpu),
                        .n_reset(rst_n),
                        .imem_addr_out(imem_addr_out),
-                       .imem_data_in(mem_data_out),
-                       .imem_ack(imem_ack),
+                       .imem_data_in(icache_imem_data_out),
+                       .imem_ack(imem_ack & proc_stall_n),
                        .dmem_addr_out(dmem_addr_out),
                        .dmem_data_in(mem_read_reg),
                        .dmem_req(dmem_req),
@@ -197,13 +213,19 @@ module top(
                        .dmem_data_out(dmem_data_out),
                        .mfc0({{31{1'b0}}, tx_data_ready}));
 
+   always@(posedge clk_cpu)
+     begin
+        if (proc_write)
+          $display("PROC_WRITE: %x == %x", dmem_data_out, dmem_addr_out);
+     end
+
    video video(.clk_pixel(clk_pixel),
                .clk_cpu(clk_cpu),
                .rst_n(rst_n),
                .addr_in(dmem_addr_out),
                .data_in(dmem_data_out),
                .sel(video_sel),
-               .wr(dmem_req & dmem_wr),
+               .wr(proc_write),
                .tmds_r(tmds_r),
                .tmds_g(tmds_g),
                .tmds_b(tmds_b));
@@ -217,7 +239,7 @@ module top(
         .clk            (clk_cpu),
         .rst_n          (rst_n),
         .tx_data        (dmem_data_out[7:0]),
-        .tx_data_valid  (dmem_req & dmem_wr &  uart_sel),
+        .tx_data_valid  (proc_write_strobe & uart_sel),
         .tx_data_ready  (tx_data_ready),
         .tx_pin         (uart_tx)
         );

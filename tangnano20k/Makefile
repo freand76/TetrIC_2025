@@ -25,6 +25,8 @@ PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
 
 VERILOG_FILES = \
 	$(PROCESSOR_FILES) \
+	$(SRC_TOP)/icache/icache.v \
+	$(SRC_TOP)/icache/icache_mem.v \
 	$(SRC_TOP)/uart_tx/uart_tx.v \
 	$(SRC_TOP)/flash_reader/flash_reader.v \
 	$(SRC_TOP)/video/video.v \
