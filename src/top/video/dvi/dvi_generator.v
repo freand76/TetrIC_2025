@@ -26,17 +26,18 @@ module dvi_generator(input clk_pixel,
    assign line_end  = (xpos == FRAME_WIDTH-1'b1);
    assign frame_end = (xpos == FRAME_WIDTH-1'b1) && (ypos == FRAME_HEIGHT-1'b1);
 
-   always_comb begin
-      hsync <= INVERT ^ (xpos >= SCREEN_WIDTH + HSYNC_PULSE_START && xpos < SCREEN_WIDTH + HSYNC_PULSE_START + HSYNC_PULSE_SIZE);
-      // vsync pulses should begin and end at the start of hsync, so special
-      // handling is required for the lines on which vsync starts and ends
-      if (ypos == SCREEN_HEIGHT + VSYNC_PULSE_START - 1)
-        vsync <= INVERT ^ (xpos >= SCREEN_WIDTH + HSYNC_PULSE_START);
-      else if (ypos == SCREEN_HEIGHT + VSYNC_PULSE_START + VSYNC_PULSE_SIZE - 1)
-        vsync <= INVERT ^ (xpos < SCREEN_WIDTH + HSYNC_PULSE_START);
-      else
-        vsync <= INVERT ^ (ypos >= SCREEN_HEIGHT + VSYNC_PULSE_START && ypos < SCREEN_HEIGHT + VSYNC_PULSE_START + VSYNC_PULSE_SIZE);
-   end
+   always @ (xpos, ypos)
+     begin
+        hsync <= INVERT ^ (xpos >= SCREEN_WIDTH + HSYNC_PULSE_START && xpos < SCREEN_WIDTH + HSYNC_PULSE_START + HSYNC_PULSE_SIZE);
+        // vsync pulses should begin and end at the start of hsync, so special
+        // handling is required for the lines on which vsync starts and ends
+        if (ypos == SCREEN_HEIGHT + VSYNC_PULSE_START - 1)
+          vsync <= INVERT ^ (xpos >= SCREEN_WIDTH + HSYNC_PULSE_START);
+        else if (ypos == SCREEN_HEIGHT + VSYNC_PULSE_START + VSYNC_PULSE_SIZE - 1)
+          vsync <= INVERT ^ (xpos < SCREEN_WIDTH + HSYNC_PULSE_START);
+        else
+          vsync <= INVERT ^ (ypos >= SCREEN_HEIGHT + VSYNC_PULSE_START && ypos < SCREEN_HEIGHT + VSYNC_PULSE_START + VSYNC_PULSE_SIZE);
+     end
 
    // See Section 5.2
    logic video_data_period = 0;

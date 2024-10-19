@@ -29,7 +29,7 @@ module tmds_channel
    logic [3:0]         N1D;
    logic signed [4:0]  N1q_m07;
    logic signed [4:0]  N0q_m07;
-   always_comb
+   always @ (*)
      begin
         N1D = video_data[0] + video_data[1] + video_data[2] + video_data[3] + video_data[4] + video_data[5] + video_data[6] + video_data[7];
         case(q_m[0] + q_m[1] + q_m[2] + q_m[3] + q_m[4] + q_m[5] + q_m[6] + q_m[7])
@@ -51,7 +51,7 @@ module tmds_channel
 
    integer            i;
 
-   always_comb
+   always @(*)
      begin
         if (N1D > 4'd4 || (N1D == 4'd4 && video_data[0] == 1'd0))
           begin
@@ -101,7 +101,7 @@ module tmds_channel
    logic [9:0] control_coding;
    always_comb
      begin
-        unique case(control_data)
+        case(control_data)
           2'b00: control_coding = 10'b1101010100;
           2'b01: control_coding = 10'b0010101011;
           2'b10: control_coding = 10'b0101010100;
@@ -113,7 +113,7 @@ module tmds_channel
    logic [9:0] terc4_coding;
    always_comb
      begin
-        unique case(data_island_data)
+        case(data_island_data)
           4'b0000 : terc4_coding = 10'b1010011100;
           4'b0001 : terc4_coding = 10'b1001100011;
           4'b0010 : terc4_coding = 10'b1011100100;
