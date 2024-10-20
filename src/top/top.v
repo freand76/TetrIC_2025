@@ -36,6 +36,7 @@ module top(
    wire                 flash_done;
    wire                 flash_strobe;
    wire [31:0]          flash_data_out;
+   wire [23:0]          flash_mem_address;
 
    reg [4:0]            led_cnt;
 
@@ -45,12 +46,11 @@ module top(
 
    wire                 ram_sel, uart_sel, video_sel;
 
-   reg [18:0]           memcpy_write_addr;
-   reg [9:0]            mem_read_addr;
+   wire [9:0]           mem_read_addr;
 
-   wire [31:0]          dmem_data_out;
+   wire [31:0]          proc_dmem_data_out, proc_dmem_data_in;
    wire [31:0]          mem_data_out;
-   wire [23:0]          imem_addr_out, dmem_addr_out;
+   wire [23:0]          proc_imem_addr_out, proc_dmem_addr_out;
    wire                 dmem_req, dmem_wr;
 
    wire                 proc_stall_n;
@@ -85,7 +85,8 @@ module top(
    flash_reader flash_reader(.clk(clk_cpu),
                              .n_reset(rst_n),
                              .address(FLASH_START),
-                             .word_count(24'h000400),
+                             .word_count(24'h00400),
+                             .mem_address(flash_mem_address),
                              .strobe(flash_strobe),
                              .done(flash_done),
                              .data_out(flash_data_out),
@@ -94,17 +95,6 @@ module top(
                              .spi_mosi(mspi_di),
                              .spi_miso(mspi_do));
 
-   always@(posedge clk_cpu or negedge rst_n)
-     begin
-        if(!rst_n)
-          memcpy_write_addr <= 0;
-        else
-          if (flash_strobe)
-            begin
-               memcpy_write_addr <= memcpy_write_addr + 1;
-            end
-     end
-
    memory_arbiter memory_arbiter(
                                  .clk_cpu(clk_cpu),
                                  .rst_n(rst_n),
@@ -112,7 +102,7 @@ module top(
                                  .dmem_req(dmem_req),
                                  .dmem_wr(dmem_wr),
                                  .memory_ack(1'b1),
-                                 .write_address(dmem_addr_out),
+                                 .write_address(proc_dmem_addr_out),
                                  .stall_n(proc_stall_n),
                                  .wr_strobe(proc_write_strobe),
                                  .video_sel(video_sel),
@@ -120,10 +110,12 @@ module top(
                                  .ram_sel(ram_sel)
                                  );
 
-   assign mem_read_addr = imem_ack ? dmem_addr_out[9:0] : icache_read_addr[9:0];
-   assign mem_write_addr = flash_done ? dmem_addr_out[9:0] : memcpy_write_addr[9:0];
-   assign mem_write_data = flash_done ? dmem_data_out : flash_data_out;
-   assign mem_strobe = flash_done ? (dmem_wr & ram_sel & imem_ack) : flash_strobe;
+   assign mem_read_addr = imem_ack ? proc_dmem_addr_out[9:0] : icache_read_addr[9:0];
+   assign mem_write_addr = flash_done ? proc_dmem_addr_out[9:0] : flash_mem_address[9:0];
+   assign mem_write_data = flash_done ? proc_dmem_data_out : flash_data_out;
+   assign mem_strobe = flash_done ? (proc_write_strobe & ram_sel) : flash_strobe;
+
+   assign proc_dmem_data_in = mem_data_out;
 
    processor_ram processor_ram(.clk(clk_cpu),
                                .rst(rst),
@@ -136,7 +128,7 @@ module top(
    icache icache(
               .rst_n(rst_n),
               .halt_n(flash_done),
-              .imem_addr(imem_addr_out[19:0]),
+              .imem_addr(proc_imem_addr_out[19:0]),
               .imem_data(icache_imem_data_out),
               .imem_ack(imem_ack),
               .ram_clk(clk_cpu),
@@ -148,27 +140,27 @@ module top(
 
    processor processor(.clk(clk_cpu),
                        .n_reset(rst_n),
-                       .imem_addr_out(imem_addr_out),
+                       .imem_addr_out(proc_imem_addr_out),
                        .imem_data_in(icache_imem_data_out),
                        .imem_ack(imem_ack & proc_stall_n),
-                       .dmem_addr_out(dmem_addr_out),
-                       .dmem_data_in(mem_data_out),
+                       .dmem_addr_out(proc_dmem_addr_out),
+                       .dmem_data_in(proc_dmem_data_in),
                        .dmem_req(dmem_req),
                        .dmem_wr(dmem_wr),
-                       .dmem_data_out(dmem_data_out),
+                       .dmem_data_out(proc_dmem_data_out),
                        .mfc0({{31{1'b0}}, tx_data_ready}));
 
    always@(posedge clk_cpu)
      begin
         if (proc_write_strobe)
-          $display("PROC_WRITE: %x == %x", dmem_data_out, dmem_addr_out);
+          $display("PROC_WRITE: %x == %x", proc_dmem_data_out, proc_dmem_addr_out);
      end
 
    video video(.clk_pixel(clk_pixel),
                .clk_cpu(clk_cpu),
                .rst_n(rst_n),
-               .addr_in(dmem_addr_out),
-               .data_in(dmem_data_out),
+               .addr_in(proc_dmem_addr_out),
+               .data_in(proc_dmem_data_out),
                .sel(video_sel),
                .wr(proc_write_strobe),
                .tmds_r(tmds_r),
@@ -183,7 +175,7 @@ module top(
        (
         .clk            (clk_cpu),
         .rst_n          (rst_n),
-        .tx_data        (dmem_data_out[7:0]),
+        .tx_data        (proc_dmem_data_out[7:0]),
         .tx_data_valid  (proc_write_strobe & uart_sel),
         .tx_data_ready  (tx_data_ready),
         .tx_pin         (uart_tx)

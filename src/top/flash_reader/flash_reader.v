@@ -1,26 +1,28 @@
-module flash_reader(clk, n_reset, address, word_count, strobe, done, data_out, spi_cs, spi_clk, spi_mosi, spi_miso);
+module flash_reader(
+                    input             clk,
+                    input             n_reset,
+                    input [23:0]      address,
+                    input [23:0]      word_count,
+                    output reg [23:0] mem_address,
+                    output reg        strobe,
+                    output reg        done,
+                    output reg [31:0] data_out,
+                    output reg        spi_cs,
+                    output reg        spi_clk,
+                    output reg        spi_mosi,
+                    input             spi_miso
+                    );
+   reg                                last_spi_clk;
 
-   input clk, n_reset;
-   input [23:0] address;
-   input [23:0] word_count;
+   reg [2:0]                          state;
+   reg [15:0]                         bitcnt;
+   reg [23:0]                         wcount;
 
-   output reg   strobe;
-   output reg   done;
-   output reg [31:0] data_out;
+   reg [31:0]                         mosi_shift;
+   reg [31:0]                         miso_shift;
 
-   output reg        spi_cs, spi_clk, spi_mosi;
-   input             spi_miso;
-   reg               last_spi_clk;
-
-   reg [2:0]         state;
-   reg [15:0]        bitcnt;
-   reg [23:0]        wcount;
-
-   reg [31:0]        mosi_shift;
-   reg [31:0]        miso_shift;
-
-   reg               load_cmd_addr;
-   reg               shifter_active;
+   reg                                load_cmd_addr;
+   reg                                shifter_active;
 
    // SPI MOSI MISO
    always @ (posedge clk, negedge n_reset)
@@ -153,6 +155,17 @@ module flash_reader(clk, n_reset, address, word_count, strobe, done, data_out, s
 
              endcase // case (state)
           end
+     end
+
+   always@(posedge clk or negedge n_reset)
+     begin
+        if(!n_reset)
+          mem_address <= 0;
+        else
+          if (strobe)
+            begin
+               mem_address <= mem_address + 1;
+            end
      end
 
 endmodule // flash_reader
