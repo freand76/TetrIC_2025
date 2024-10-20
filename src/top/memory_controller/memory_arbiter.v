@@ -17,7 +17,6 @@ module memory_arbiter(
 
                       // OUTPUT
                       output reg   wr_strobe,
-                      output reg   load_read_reg,
                       output       video_sel,
                       output       uart_sel,
                       output       ram_sel
@@ -27,13 +26,12 @@ module memory_arbiter(
    localparam                      IDLE = 1;
    localparam                      WRITE_STROBE = 2;
    localparam                      READ_ACCESS = 3;
-   localparam                      READ_STORE = 4;
 
-   reg [2:0]                       arb_state;
+   reg [1:0]                       arb_state;
 
    wire                            read_stall, write_stall;
 
-   assign read_stall = (dmem_req && ((arb_state == IDLE) || (arb_state == READ_ACCESS)));
+   assign read_stall = (dmem_req && (arb_state == IDLE));
    assign write_stall = (dmem_req  && (arb_state == IDLE));
    assign stall_n = !(read_stall | write_stall);
 
@@ -46,7 +44,6 @@ module memory_arbiter(
         if(!rst_n)
           begin
              arb_state <= 0;
-             load_read_reg <= 0;
              wr_strobe <= 0;
           end
         else
@@ -68,7 +65,6 @@ module memory_arbiter(
                          if (memory_ack)
                            begin
                               arb_state <= READ_ACCESS;
-                              load_read_reg <= !dmem_wr;
                            end
                       end
                     else if (dmem_req & dmem_wr & ram_sel)
@@ -96,13 +92,6 @@ module memory_arbiter(
                       end
                  end
                READ_ACCESS:
-                 begin
-                    load_read_reg <= 0;
-                      begin
-                         arb_state <= READ_STORE;
-                      end
-                 end
-               READ_STORE:
                  begin
                     // DMEM READ low
                     if (!dmem_req)
