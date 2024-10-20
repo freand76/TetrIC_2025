@@ -220,6 +220,7 @@ module top(
 
    video video(.clk_pixel(clk_pixel),
                .clk_cpu(clk_cpu),
+               .clk_ram(clk_cpu),
                .rst_n(rst_n),
                .halt_n(flash_done),
                // To memory controller

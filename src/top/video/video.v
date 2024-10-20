@@ -1,6 +1,7 @@
 module video(
              input             clk_pixel,
              input             clk_cpu,
+             input             clk_ram,
              input             rst_n,
 
              input             halt_n,
@@ -61,7 +62,7 @@ module video(
      end // always @ (posedge clk_cpu)
 
    video_dma video_dma(
-                       .clk_cpu(clk_cpu),
+                       .clk_ram(clk_ram),
                        .rst_n(rst_n),
                        .halt_n(halt_n),
 
@@ -111,7 +112,7 @@ module video(
    line_mem line_mem_even(
                       .pixel_addr(pixel_x),
                       .pixel_data(pixel_data_even),
-                      .clk_wr(clk_cpu),
+                      .clk_wr(clk_ram),
                       .wr_en(line_strobe_even),
                       .wr_addr(line_addr),
                       .wr_data(line_data));
@@ -119,7 +120,7 @@ module video(
    line_mem line_mem_odd(
                       .pixel_addr(pixel_x),
                       .pixel_data(pixel_data_odd),
-                      .clk_wr(clk_cpu),
+                      .clk_wr(clk_ram),
                       .wr_en(line_strobe_odd),
                       .wr_addr(line_addr),
                       .wr_data(line_data));

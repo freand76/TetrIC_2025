@@ -1,6 +1,6 @@
 module video_dma(
                  // Global clk / reset
-                 input             clk_cpu,
+                 input             clk_ram,
                  input             rst_n,
 
                  input             halt_n,
@@ -40,7 +40,7 @@ module video_dma(
    assign line_strobe_odd = rsp_data_strobe & current_line;
    assign line_data = rsp_data;
 
-   always @ (posedge clk_cpu)
+   always @ (posedge clk_ram)
      begin
         if (line_strobe_even | line_strobe_odd)
           $display("WRITE_VIDEO %x (%d) => %d %d %d %d %x",
@@ -49,7 +49,7 @@ module video_dma(
                    line_addr, line_data);
      end
 
-   always @ (posedge clk_cpu)
+   always @ (posedge clk_ram)
      begin
         if (!rst_n)
           begin

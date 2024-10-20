@@ -8,7 +8,7 @@ module iverilog_top;
    initial
      begin
         $display("Hello, World");
-        #1000000
+        #2000000
           $finish;
      end
 
