@@ -53,15 +53,11 @@ module top(
    wire [31:0]          imem_addr_out, dmem_addr_out;
    wire                 dmem_req, dmem_wr;
 
-   wire                 proc_write;
-   wire                 proc_read;
    wire                 proc_stall_n;
    wire                 imem_ack;
-   reg                  load_read_reg;
-   reg                  proc_write_strobe;
+   wire                 load_read_reg;
+   wire                 proc_write_strobe;
    reg [31:0]           mem_read_reg;
-
-   reg [1:0]            arb_state;
 
    wire [19:0]          icache_read_addr;
    wire [31:0]          icache_imem_data_out;
@@ -110,59 +106,21 @@ module top(
             end
      end
 
-   assign proc_write = (dmem_req & dmem_wr & imem_ack);
-   assign proc_read = (dmem_req & !dmem_wr);
-   assign proc_stall_n = !(proc_read & ((arb_state == 1) || (arb_state == 2)));
-
-   always@(posedge clk_cpu or negedge rst_n)
-     begin
-        if(!rst_n)
-          begin
-             arb_state <= 0;
-             load_read_reg <= 0;
-             proc_write_strobe <= 0;
-          end
-        else
-          begin
-             case(arb_state)
-               0 :
-                 begin
-                    // WAIT FOR NVM to RAM copy
-                    if (flash_done)
-                      begin
-                         arb_state <= 1;
-                      end // if (flash_done)
-                 end
-               1 :
-                 begin
-                    if (dmem_req)
-                      begin
-                         // DMEM READ (Address out)
-                         arb_state <= 2;
-                         load_read_reg <= !dmem_wr;
-                         proc_write_strobe <= dmem_wr;
-                      end
-                 end
-               2:
-                 begin
-                    load_read_reg <= 0;
-                    proc_write_strobe <= 0;
-                    if (dmem_wr)
-                      arb_state <= 1;
-                    else
-                      arb_state <= 3;
-                 end
-               3:
-                 begin
-                    // DMEM READ (Data to Reg) + IMEM ACK
-                    if (!dmem_req)
-                      begin
-                         arb_state <= 1;
-                      end
-                 end
-             endcase // case (arb_state)
-          end
-     end
+   memory_arbiter memory_arbiter(
+                                 .clk_cpu(clk_cpu),
+                                 .rst_n(rst_n),
+                                 .halt_n(flash_done),
+                                 .dmem_req(dmem_req),
+                                 .dmem_wr(dmem_wr),
+                                 .memory_ack(1'b1),
+                                 .write_address(dmem_addr_out),
+                                 .stall_n(proc_stall_n),
+                                 .wr_strobe(proc_write_strobe),
+                                 .load_read_reg(load_read_reg),
+                                 .video_sel(video_sel),
+                                 .uart_sel(uart_sel),
+                                 .ram_sel(ram_sel)
+                                 );
 
    always@(posedge clk_cpu)
      begin
@@ -170,12 +128,7 @@ module top(
           mem_read_reg <= mem_data_out;
      end
 
-   assign ram_sel = dmem_addr_out[31:28] == 4'h0;
-   assign video_sel = dmem_addr_out[31:28] == 4'he;
-   assign uart_sel = dmem_addr_out[31:28] == 4'hf;
-
-   assign mem_read_addr = ((arb_state == 1) & dmem_req & !dmem_wr) ?
-                          dmem_addr_out[9:0] : icache_read_addr[9:0];
+   assign mem_read_addr = (dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : icache_read_addr[9:0];
    assign mem_write_addr = flash_done ? dmem_addr_out[9:0] : memcpy_write_addr;
    assign mem_write_data = flash_done ? dmem_data_out : flash_data_out;
    assign mem_strobe = flash_done ? (dmem_wr & ram_sel & imem_ack) : flash_strobe;
@@ -215,7 +168,7 @@ module top(
 
    always@(posedge clk_cpu)
      begin
-        if (proc_write)
+        if (proc_write_strobe)
           $display("PROC_WRITE: %x == %x", dmem_data_out, dmem_addr_out);
      end
 
@@ -225,7 +178,7 @@ module top(
                .addr_in(dmem_addr_out),
                .data_in(dmem_data_out),
                .sel(video_sel),
-               .wr(proc_write),
+               .wr(proc_write_strobe),
                .tmds_r(tmds_r),
                .tmds_g(tmds_g),
                .tmds_b(tmds_b));

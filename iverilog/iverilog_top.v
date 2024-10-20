@@ -63,7 +63,10 @@ module uart_tx
 
    always @ (posedge tx_data_valid)
      begin
-        $display("UART: %x [%c] (time is %0t)", tx_data, tx_data, $time);
+        if ((tx_data >= 8'h20) && (tx_data < 8'h80))
+          $display("UART: %x [%c] (time is %0t)", tx_data, tx_data, $time);
+        else
+          $display("UART: %x [0x%x] (time is %0t)", tx_data, tx_data, $time);
         tx_data_ready <= 0;
         #1000
           tx_data_ready <= 1;

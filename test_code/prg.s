@@ -184,6 +184,7 @@ _loop_word:
     mov $t1, $t2
     srl $t1, $t1, 24
     sll $t2, $t2, 8
+    nop
     beq  $zero, $t1, _done
     nop
     nop
