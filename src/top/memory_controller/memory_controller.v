@@ -8,6 +8,12 @@ module memory_controller(
                          output [31:0]     icache_rsp_data,
                          output reg        icache_rsp_data_strobe,
 
+                         // VIDEO signals
+                         input             video_req_data_16,
+                         input [19:0]      video_req_address,
+                         output [31:0]     video_rsp_data,
+                         output reg        video_rsp_data_strobe,
+
                          // ARBITER signals
                          input             arbiter_ram_read_access,
                          input             arbiter_ram_write_access,
@@ -28,16 +34,19 @@ module memory_controller(
                          );
 
    assign icache_rsp_data = memory_data_in;
+   assign video_rsp_data = memory_data_in;
    assign proc_dmem_data_in = memory_data_in;
    assign memory_data_out = proc_dmem_data_out;
 
    localparam                              IDLE = 0;
    localparam                              READ_ICACHE_BURST = 1;
    localparam                              READ_ICACHE_BURST_END = 2;
-   localparam                              READ_DMEM_SINGLE = 3;
-   localparam                              READ_DMEM_SINGLE_ACK = 4;
-   localparam                              WRITE_DMEM_SINGLE = 5;
-   localparam                              WRITE_DMEM_SINGLE_ACK = 6;
+   localparam                              READ_VIDEO_BURST = 3;
+   localparam                              READ_VIDEO_BURST_END = 4;
+   localparam                              READ_DMEM_SINGLE = 5;
+   localparam                              READ_DMEM_SINGLE_ACK = 6;
+   localparam                              WRITE_DMEM_SINGLE = 7;
+   localparam                              WRITE_DMEM_SINGLE_ACK = 8;
 
    reg [3:0]                               mem_ctrl_state;
    reg [3:0]                               read_count;
@@ -51,12 +60,19 @@ module memory_controller(
              read_count <= 0;
              icache_rsp_data_strobe <= 0;
              memory_write_strobe <= 0;
+             video_rsp_data_strobe <= 0;
           end
         else
           case(mem_ctrl_state)
             IDLE :
               begin
-                 if (icache_req_data_16)
+                 if (video_req_data_16)
+                   begin
+                      mem_ctrl_state <= READ_VIDEO_BURST;
+                      memory_addr <= video_req_address;
+                      read_count <= 0;
+                   end
+                 else if (icache_req_data_16)
                    begin
                       mem_ctrl_state <= READ_ICACHE_BURST;
                       memory_addr <= icache_req_address;
@@ -89,6 +105,21 @@ module memory_controller(
             READ_ICACHE_BURST_END:
               begin
                  icache_rsp_data_strobe <= 0;
+                 mem_ctrl_state <= IDLE;
+              end
+            READ_VIDEO_BURST:
+              begin
+                 video_rsp_data_strobe <= 1;
+                 read_count <= read_count + 1;
+                 memory_addr <= memory_addr + 1;
+                 if (read_count == 4'hf)
+                   begin
+                      mem_ctrl_state <= READ_VIDEO_BURST_END;
+                   end
+              end
+            READ_VIDEO_BURST_END:
+              begin
+                 video_rsp_data_strobe <= 0;
                  mem_ctrl_state <= IDLE;
               end
             READ_DMEM_SINGLE:

@@ -32,6 +32,7 @@ VERILOG_FILES = \
 	$(SRC_TOP)/uart_tx/uart_tx.v \
 	$(SRC_TOP)/flash_reader/flash_reader.v \
 	$(SRC_TOP)/video/video.v \
+	$(SRC_TOP)/video/video_dma.v \
 	$(SRC_TOP)/video/line_mem.v \
 	$(SRC_TOP)/video/dvi/dvi_generator.v \
 	$(SRC_TOP)/video/dvi/tmds_channel.v \

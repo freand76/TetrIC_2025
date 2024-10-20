@@ -23,8 +23,8 @@ module dvi_generator(input clk_pixel,
 
    logic                              hsync, vsync;
 
-   assign line_end  = (xpos == FRAME_WIDTH-1'b1);
-   assign frame_end = (xpos == FRAME_WIDTH-1'b1) && (ypos == FRAME_HEIGHT-1'b1);
+   assign line_end  = (xpos == SCREEN_WIDTH-1'b1) && (ypos < SCREEN_HEIGHT-1'b1);
+   assign frame_end = (xpos == SCREEN_WIDTH-1'b1) && (ypos == SCREEN_HEIGHT-1'b1);
 
    always @ (xpos, ypos)
      begin

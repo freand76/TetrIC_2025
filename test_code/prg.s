@@ -16,12 +16,16 @@ start:
     nop
     nop
     lui $t2, 0xf800
+    ori $t2, $t2, 0xffff
     lui $t1, 0xffe0
     ori $t1, $t1, 0x07e0
+    lui $t3, 0xffff
+    ori $t3, $t3, 0xf800
     nop
-    lui $a0, 0x00e0
+    lui $a0, 0x0000
+    ori $a0, $a, 0x0200
     sw $t2, 0($a0)
-    sw $t2, 159($a0)
+    sw $t3, 159($a0)
     sw $t1, 1($a0)
     sw $t1, 2($a0)
     sw $t1, 3($a0)
@@ -37,10 +41,10 @@ start:
     lui $t1, 0x001f
     ori $t1, $t1, 0xf800
     nop
-    lui $a0, 0x00e0
-    ori $a0, $a0, 0x0100
+    lui $a0, 0x0000
+    ori $a0, $a, 0x0300
     sw $t2, 0($a0)
-    sw $t2, 159($a0)
+    sw $t3, 159($a0)
     sw $t1, 1($a0)
     sw $t1, 2($a0)
     sw $t1, 3($a0)
@@ -290,3 +294,5 @@ _memcopy_loop:
     nop
     nop
     nop
+
+    .pad 1024, 0x07e0001f

@@ -71,6 +71,12 @@ module top(
    wire [31:0]          icache_rsp_data;
    wire                 icache_rsp_data_strobe;
 
+   // VIDEO
+   wire                 video_req_data_16;
+   wire [19:0]          video_req_address;
+   wire [31:0]          video_rsp_data;
+   wire                 video_rsp_data_strobe;
+
    // RAM
    wire [9:0]           ram_read_addr;
    wire [9:0]           ram_write_addr;
@@ -133,6 +139,12 @@ module top(
                                        .icache_req_address(icache_req_address),
                                        .icache_rsp_data(icache_rsp_data),
                                        .icache_rsp_data_strobe(icache_rsp_data_strobe),
+
+                                       // VIDEO signals
+                                       .video_req_data_16(video_req_data_16),
+                                       .video_req_address(video_req_address),
+                                       .video_rsp_data(video_rsp_data),
+                                       .video_rsp_data_strobe(video_rsp_data_strobe),
 
                                        // ARBITER signals
                                        .arbiter_ram_read_access(arbiter_ram_read_access),
@@ -209,6 +221,12 @@ module top(
    video video(.clk_pixel(clk_pixel),
                .clk_cpu(clk_cpu),
                .rst_n(rst_n),
+               .halt_n(flash_done),
+               // To memory controller
+               .req_16(video_req_data_16),
+               .req_address(video_req_address),
+               .rsp_data(video_rsp_data),
+               .rsp_data_strobe(video_rsp_data_strobe),
                .addr_in(proc_dmem_addr_out),
                .data_in(proc_dmem_data_out),
                .sel(arbiter_video_sel),
