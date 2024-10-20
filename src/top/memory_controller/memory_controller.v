@@ -9,8 +9,8 @@ module memory_controller(
                          output reg        icache_rsp_data_strobe,
 
                          // ARBITER signals
-                         input             arbiter_ram_sel,
-                         input             arbiter_wr_strobe,
+                         input             arbiter_ram_read_access,
+                         input             arbiter_ram_write_access,
                          output reg        arbiter_memory_ack,
 
                          // PROCESSOR signals
@@ -22,13 +22,14 @@ module memory_controller(
 
                          // MEMORY signals
                          output reg [19:0] memory_addr,
-                         output            memory_write_strobe,
-                         input [31:0]      memory_data_in
+                         output reg        memory_write_strobe,
+                         input [31:0]      memory_data_in,
+                         output [31:0]     memory_data_out
                          );
 
-   assign memory_write_strobe = arbiter_wr_strobe & arbiter_ram_sel;
    assign icache_rsp_data = memory_data_in;
    assign proc_dmem_data_in = memory_data_in;
+   assign memory_data_out = proc_dmem_data_out;
 
    localparam                              IDLE = 0;
    localparam                              READ_ICACHE_BURST = 1;
@@ -49,6 +50,7 @@ module memory_controller(
              memory_addr <= 0;
              read_count <= 0;
              icache_rsp_data_strobe <= 0;
+             memory_write_strobe <= 0;
           end
         else
           case(mem_ctrl_state)
@@ -60,17 +62,18 @@ module memory_controller(
                       memory_addr <= icache_req_address;
                       read_count <= 0;
                    end
-                 else if (proc_dmem_req && !proc_dmem_wr)
+                 else if (arbiter_ram_read_access)
                    begin
                       // READ
                       mem_ctrl_state <= READ_DMEM_SINGLE;
                       memory_addr <= proc_dmem_addr;
                    end
-                 else if (proc_dmem_req && proc_dmem_wr)
+                 else if (arbiter_ram_write_access)
                    begin
                       // WRITE
                       mem_ctrl_state <= WRITE_DMEM_SINGLE;
                       memory_addr <= proc_dmem_addr;
+                      memory_write_strobe <= 1;
                    end
               end
             READ_ICACHE_BURST:
@@ -96,12 +99,15 @@ module memory_controller(
               end
             READ_DMEM_SINGLE_ACK:
               begin
+                 $display("MEM_READ: (%x) => %x", memory_addr, memory_data_in);
                  arbiter_memory_ack <= 0;
                  mem_ctrl_state <= IDLE;
               end
             WRITE_DMEM_SINGLE:
               begin
                  // Data Ready one clock after address
+                 $display("MEM_WRITE: (%x) <= %x", memory_addr, memory_data_out);
+                 memory_write_strobe <= 0;
                  arbiter_memory_ack <= 1;
                  mem_ctrl_state <= WRITE_DMEM_SINGLE_ACK;
               end

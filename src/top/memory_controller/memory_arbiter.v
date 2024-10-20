@@ -6,6 +6,7 @@ module memory_arbiter(
 
                       input        halt_n,
 
+                      input        imem_ack, // High when processor consumes instructions
                       input        dmem_req, // High from processor for data access
                       input        dmem_wr, // High from processor for data write acess
                       input        memory_ack, // High from memory when data access is done
@@ -16,24 +17,22 @@ module memory_arbiter(
                       output       stall_n,
 
                       // OUTPUT
-                      output reg   wr_strobe,
+                      output reg   ram_read_access,
+                      output reg   ram_write_access,
+                      output reg   peripheral_write_strobe,
                       output       video_sel,
-                      output       uart_sel,
-                      output       ram_sel
+                      output       uart_sel
                       );
 
    localparam                      HALTED = 0;
    localparam                      IDLE = 1;
-   localparam                      WRITE_STROBE = 2;
-   localparam                      READ_ACCESS = 3;
+   localparam                      PERIPHERAL = 2;
+   localparam                      DONE = 3;
 
    reg [1:0]                       arb_state;
+   wire                            ram_sel;
 
-   wire                            read_stall, write_stall;
-
-   assign read_stall = (dmem_req && (arb_state == IDLE));
-   assign write_stall = (dmem_req && (arb_state == IDLE));
-   assign stall_n = !(read_stall | write_stall);
+   assign stall_n = !(dmem_req && (arb_state == IDLE));
 
    assign ram_sel = write_address[23:20] == 4'h0;
    assign video_sel = write_address[23:20] == 4'he;
@@ -44,7 +43,9 @@ module memory_arbiter(
         if(!rst_n)
           begin
              arb_state <= 0;
-             wr_strobe <= 0;
+             ram_write_access <= 0;
+             ram_read_access <= 0;
+             peripheral_write_strobe <= 0;
           end
         else
           begin
@@ -55,42 +56,44 @@ module memory_arbiter(
                     if (halt_n)
                       begin
                          arb_state <= IDLE;
-                      end // if (flash_done)
+                      end
                  end
                IDLE :
                  begin
-                    if (dmem_req & !dmem_wr & ram_sel)
+                    if (imem_ack & dmem_req & !dmem_wr & ram_sel)
                       begin
                          // READ RAM
+                         ram_read_access <= 1;
                          if (memory_ack)
                            begin
-                              arb_state <= READ_ACCESS;
+                              ram_read_access <= 0;
+                              arb_state <= DONE;
                            end
                       end
-                    else if (dmem_req & dmem_wr & ram_sel)
+                    else if (imem_ack & dmem_req & dmem_wr & ram_sel)
                       begin
                          // Write RAM (ack needed before we can go ahead)
+                         ram_write_access <= 1;
                          if (memory_ack)
                            begin
-                              wr_strobe <= dmem_wr;
-                              arb_state <= WRITE_STROBE;
+                              ram_write_access <= 0;
+                              arb_state <= DONE;
                            end
                       end
-                    else if (dmem_req & dmem_wr &!ram_sel)
+                    else if (imem_ack & dmem_req & dmem_wr & !ram_sel)
                       begin
                          // Write Peripheral (no ack needed, they are always ready)
-                         wr_strobe <= dmem_wr;
-                         arb_state <= WRITE_STROBE;
+                         peripheral_write_strobe <= 1;
+                         arb_state <= PERIPHERAL;
                       end
                  end // case: IDLE
-               WRITE_STROBE:
+               PERIPHERAL:
                  begin
-                    wr_strobe <= 0;
+                    peripheral_write_strobe <= 0;
                     arb_state <= IDLE;
                  end
-               READ_ACCESS:
+               DONE :
                  begin
-                    // DMEM READ low
                     arb_state <= IDLE;
                  end
              endcase // case (arb_state)

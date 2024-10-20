@@ -44,7 +44,6 @@ module top(
    wire [23:0]          flash_mem_address;
 
    // ARBITER
-   wire                 arbiter_ram_sel;
    wire                 arbiter_uart_sel;
    wire                 arbiter_video_sel;
    wire                 arbiter_write_strobe;
@@ -62,6 +61,7 @@ module top(
    wire [19:0]          mem_ctrl_memory_addr;
    wire                 mem_ctrl_memory_ack;
    wire                 mem_ctrl_write_strobe;
+   wire [31:0]          mem_ctrl_memory_data_out;
 
    // ICACHE
    wire                 icache_imem_ack;
@@ -113,7 +113,7 @@ module top(
 
    assign ram_read_addr = mem_ctrl_memory_addr[9:0];
    assign ram_write_addr = flash_done ? mem_ctrl_memory_addr[9:0] : flash_mem_address[9:0];
-   assign ram_write_data = flash_done ? proc_dmem_data_out : flash_data_out;
+   assign ram_write_data = flash_done ? mem_ctrl_memory_data_out : flash_data_out;
    assign ram_write_strobe = flash_done ? mem_ctrl_write_strobe : flash_strobe;
 
    processor_ram processor_ram(.clk(clk_cpu),
@@ -135,8 +135,8 @@ module top(
                                        .icache_rsp_data_strobe(icache_rsp_data_strobe),
 
                                        // ARBITER signals
-                                       .arbiter_ram_sel(ram_sel),
-                                       .arbiter_wr_strobe(arbiter_write_strobe),
+                                       .arbiter_ram_read_access(arbiter_ram_read_access),
+                                       .arbiter_ram_write_access(arbiter_ram_write_access),
                                        .arbiter_memory_ack(mem_ctrl_memory_ack),
 
                                        // PROCESSOR signals
@@ -149,7 +149,8 @@ module top(
                                        // Memory Signals
                                        .memory_addr(mem_ctrl_memory_addr),
                                        .memory_write_strobe(mem_ctrl_write_strobe),
-                                       .memory_data_in(ram_read_data)
+                                       .memory_data_in(ram_read_data),
+                                       .memory_data_out(mem_ctrl_memory_data_out)
                                        );
 
    icache icache(
@@ -172,15 +173,17 @@ module top(
                                  .clk_cpu(clk_cpu),
                                  .rst_n(rst_n),
                                  .halt_n(flash_done),
+                                 .imem_ack(icache_imem_ack),
                                  .dmem_req(proc_dmem_req),
                                  .dmem_wr(proc_dmem_wr),
                                  .memory_ack(mem_ctrl_memory_ack),
                                  .write_address(proc_dmem_addr_out),
                                  .stall_n(arbiter_proc_stall_n),
-                                 .wr_strobe(arbiter_write_strobe),
-                                 .video_sel(video_sel),
-                                 .uart_sel(uart_sel),
-                                 .ram_sel(ram_sel)
+                                 .ram_read_access(arbiter_ram_read_access),
+                                 .ram_write_access(arbiter_ram_write_access),
+                                 .peripheral_write_strobe(arbiter_write_strobe),
+                                 .video_sel(arbiter_video_sel),
+                                 .uart_sel(arbiter_uart_sel)
                                  );
 
    processor processor(.clk(clk_cpu),
@@ -198,7 +201,9 @@ module top(
    always@(posedge clk_cpu)
      begin
         if (arbiter_write_strobe)
-          $display("PROC_WRITE: %x == %x", proc_dmem_data_out, proc_dmem_addr_out);
+          $display("PERIPHERAL_WRITE: (%d:%d) %x == %x (%d:%d)", proc_dmem_req, proc_dmem_wr,
+                   proc_dmem_data_out, proc_dmem_addr_out,
+                   arbiter_uart_sel, arbiter_video_sel);
      end
 
    video video(.clk_pixel(clk_pixel),
@@ -206,7 +211,7 @@ module top(
                .rst_n(rst_n),
                .addr_in(proc_dmem_addr_out),
                .data_in(proc_dmem_data_out),
-               .sel(video_sel),
+               .sel(arbiter_video_sel),
                .wr(arbiter_write_strobe),
                .tmds_r(tmds_r),
                .tmds_g(tmds_g),
