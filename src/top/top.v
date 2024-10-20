@@ -19,7 +19,7 @@ module top(
            output [9:0] tmds_r,
            output [9:0] tmds_g,
            output [9:0] tmds_b
-);
+           );
 
 `ifdef IVERLOG
    parameter            FLASH_START = 24'h000000;
@@ -58,7 +58,7 @@ module top(
    wire                 proc_write_strobe;
    reg [31:0]           mem_read_reg;
 
-   wire [19:0]          icache_read_addr;
+   wire [19:0]          mem_ctrl_read_addr;
    wire [31:0]          icache_imem_data_out;
    wire                 icache_ram_rd;
 
@@ -110,12 +110,17 @@ module top(
                                  .ram_sel(ram_sel)
                                  );
 
-   assign mem_read_addr = imem_ack ? proc_dmem_addr_out[9:0] : icache_read_addr[9:0];
+   assign mem_read_addr = imem_ack ? proc_dmem_addr_out[9:0] : mem_ctrl_read_addr[9:0];
    assign mem_write_addr = flash_done ? proc_dmem_addr_out[9:0] : flash_mem_address[9:0];
    assign mem_write_data = flash_done ? proc_dmem_data_out : flash_data_out;
    assign mem_strobe = flash_done ? (proc_write_strobe & ram_sel) : flash_strobe;
 
    assign proc_dmem_data_in = mem_data_out;
+
+   wire icache_req_data_16;
+   wire [19:0] icache_req_address;
+   wire [31:0] icache_rsp_data;
+   wire        icache_rsp_data_strobe;
 
    processor_ram processor_ram(.clk(clk_cpu),
                                .rst(rst),
@@ -125,18 +130,36 @@ module top(
                                .r_addr(mem_read_addr),
                                .r_data(mem_data_out));
 
+   memory_controller memory_controller(
+                                       .clk_cpu(clk_cpu),
+                                       .clk_ram(clk_cpu),
+                                       .rst_n(rst_n),
+                                       // ICACHE signals
+                                       .icache_req_data_16(icache_req_data_16),
+                                       .icache_req_address(icache_req_address),
+                                       .icache_rsp_data(icache_rsp_data),
+                                       .icache_rsp_data_strobe(icache_rsp_data_strobe),
+
+                                       .memory_read_addr(mem_ctrl_read_addr),
+                                       .memory_data_in(mem_data_out)
+
+                                       );
+
    icache icache(
-              .rst_n(rst_n),
-              .halt_n(flash_done),
-              .imem_addr(proc_imem_addr_out[19:0]),
-              .imem_data(icache_imem_data_out),
-              .imem_ack(imem_ack),
-              .ram_clk(clk_cpu),
-              .ram_addr(icache_read_addr),
-              .ram_data(mem_data_out),
-              .ram_data_ready(1'b1),
-              .ram_rd(icache_ram_rd)
-              );
+                 .clk_cpu(clk_cpu),
+                 .clk_ram(clk_cpu),
+                 .rst_n(rst_n),
+                 .halt_n(flash_done),
+                 // To memory controller
+                 .req_data_16(icache_req_data_16),
+                 .req_address(icache_req_address),
+                 .rsp_data(icache_rsp_data),
+                 .rsp_data_strobe(icache_rsp_data_strobe),
+                 // To processor
+                 .imem_addr(proc_imem_addr_out[19:0]),
+                 .imem_data(icache_imem_data_out),
+                 .imem_ack(imem_ack)
+                 );
 
    processor processor(.clk(clk_cpu),
                        .n_reset(rst_n),
