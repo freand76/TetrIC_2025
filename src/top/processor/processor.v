@@ -18,7 +18,7 @@ module processor(clk, n_reset,
    output       dmem_req;
    output       dmem_wr;
    input        imem_ack, dmem_ack;
-   output [31:0] imem_addr_out, dmem_addr_out;
+   output [23:0] imem_addr_out, dmem_addr_out;
    output [31:0] dmem_data_out;
 
    input  [31:0] mfc0;
@@ -383,8 +383,8 @@ module processor(clk, n_reset,
    assign s_ex_pc7 = s_ex_pc1 + s_ex_data3;
 
    assign s_mem_data4 = dmem_data_in;
-   assign dmem_addr_out = s_mem_res;
-   assign imem_addr_out = s_if_pc2;
+   assign dmem_addr_out = s_mem_res[23:0];
+   assign imem_addr_out = s_if_pc2[23:0];
 
    assign dmem_data_out = s_mem_data2;
 

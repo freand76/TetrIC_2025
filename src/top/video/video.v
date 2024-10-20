@@ -3,7 +3,7 @@ module video(
              input        clk_cpu,
              input        rst_n,
 
-             input [31:0] addr_in,
+             input [23:0] addr_in,
              input [31:0] data_in,
              input        sel,
              input        wr,

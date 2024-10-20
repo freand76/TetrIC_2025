@@ -19,7 +19,7 @@ start:
     lui $t1, 0xffe0
     ori $t1, $t1, 0x07e0
     nop
-    lui $a0, 0xe000
+    lui $a0, 0x00e0
     sw $t2, 0($a0)
     sw $t2, 159($a0)
     sw $t1, 1($a0)
@@ -37,7 +37,7 @@ start:
     lui $t1, 0x001f
     ori $t1, $t1, 0xf800
     nop
-    lui $a0, 0xe000
+    lui $a0, 0x00e0
     ori $a0, $a0, 0x0100
     sw $t2, 0($a0)
     sw $t2, 159($a0)
@@ -149,7 +149,7 @@ print_char:
     nop
     nop
     mov $k0, $ra
-    lui $a0, 0xf000
+    lui $a0, 0x00f0
     sw $t1, 0($a0)
     jal wait_uart_ready
     nop
@@ -210,7 +210,7 @@ _done:
     nop
 
 print_hex_val:
-    lui $a0, 0xf000
+    lui $a0, 0x00f0
     movi $s1, 9
     movi $v0, 0
     movi $v1, 8

@@ -10,7 +10,7 @@ module memory_arbiter(
                       input        dmem_wr, // High from processor for data write acess
                       input        memory_ack, // High from memory when data access is done
 
-                      input [31:0] write_address,
+                      input [23:0] write_address,
 
                       // STALL CPU
                       output       stall_n,
@@ -35,9 +35,9 @@ module memory_arbiter(
    assign write_stall = (dmem_req  && (arb_state == IDLE));
    assign stall_n = !(read_stall | write_stall);
 
-   assign ram_sel = write_address[31:28] == 4'h0;
-   assign video_sel = write_address[31:28] == 4'he;
-   assign uart_sel = write_address[31:28] == 4'hf;
+   assign ram_sel = write_address[23:20] == 4'h0;
+   assign video_sel = write_address[23:20] == 4'he;
+   assign uart_sel = write_address[23:20] == 4'hf;
 
    always@(posedge clk_cpu or negedge rst_n)
      begin

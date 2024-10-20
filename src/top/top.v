@@ -45,12 +45,12 @@ module top(
 
    wire                 ram_sel, uart_sel, video_sel;
 
-   reg [9:0]            memcpy_write_addr;
+   reg [18:0]           memcpy_write_addr;
    reg [9:0]            mem_read_addr;
 
    wire [31:0]          dmem_data_out;
    wire [31:0]          mem_data_out;
-   wire [31:0]          imem_addr_out, dmem_addr_out;
+   wire [23:0]          imem_addr_out, dmem_addr_out;
    wire                 dmem_req, dmem_wr;
 
    wire                 proc_stall_n;
@@ -121,7 +121,7 @@ module top(
                                  );
 
    assign mem_read_addr = (dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : icache_read_addr[9:0];
-   assign mem_write_addr = flash_done ? dmem_addr_out[9:0] : memcpy_write_addr;
+   assign mem_write_addr = flash_done ? dmem_addr_out[9:0] : memcpy_write_addr[9:0];
    assign mem_write_data = flash_done ? dmem_data_out : flash_data_out;
    assign mem_strobe = flash_done ? (dmem_wr & ram_sel & imem_ack) : flash_strobe;
 
