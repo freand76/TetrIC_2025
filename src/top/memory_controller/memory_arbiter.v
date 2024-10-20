@@ -32,7 +32,7 @@ module memory_arbiter(
    wire                            read_stall, write_stall;
 
    assign read_stall = (dmem_req && (arb_state == IDLE));
-   assign write_stall = (dmem_req  && (arb_state == IDLE));
+   assign write_stall = (dmem_req && (arb_state == IDLE));
    assign stall_n = !(read_stall | write_stall);
 
    assign ram_sel = write_address[23:20] == 4'h0;

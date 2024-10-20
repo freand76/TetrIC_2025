@@ -120,7 +120,7 @@ module top(
                                  .ram_sel(ram_sel)
                                  );
 
-   assign mem_read_addr = (dmem_req & !dmem_wr) ? dmem_addr_out[9:0] : icache_read_addr[9:0];
+   assign mem_read_addr = imem_ack ? dmem_addr_out[9:0] : icache_read_addr[9:0];
    assign mem_write_addr = flash_done ? dmem_addr_out[9:0] : memcpy_write_addr[9:0];
    assign mem_write_data = flash_done ? dmem_data_out : flash_data_out;
    assign mem_strobe = flash_done ? (dmem_wr & ram_sel & imem_ack) : flash_strobe;
