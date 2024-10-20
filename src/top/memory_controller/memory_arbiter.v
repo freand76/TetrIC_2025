@@ -86,10 +86,7 @@ module memory_arbiter(
                WRITE_STROBE:
                  begin
                     wr_strobe <= 0;
-                    if (!dmem_req)
-                      begin
-                         arb_state <= IDLE;
-                      end
+                    arb_state <= IDLE;
                  end
                READ_ACCESS:
                  begin
