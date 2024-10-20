@@ -91,10 +91,7 @@ module memory_arbiter(
                READ_ACCESS:
                  begin
                     // DMEM READ low
-                    if (!dmem_req)
-                      begin
-                         arb_state <= IDLE;
-                      end
+                    arb_state <= IDLE;
                  end
              endcase // case (arb_state)
           end
