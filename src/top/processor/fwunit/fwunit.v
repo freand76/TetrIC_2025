@@ -17,7 +17,7 @@ module fwunit(r1_sel, r2_sel, mem_rd_sel, wb_rd_sel, mem_w_enable, wb_w_enable, 
    assign r2_is_wb_sel = r2_sel == wb_rd_sel;
 
 
-   always @ (r1_is_mem_sel, r2_is_mem_sel, r1_is_wb_sel, r2_is_wb_sel, mem_w_enable, wb_w_enable)
+   always @ (*)
      begin
         sel1 <= 2'b00;
         sel2 <= 2'b00;

@@ -26,7 +26,7 @@ module dvi_generator(input clk_pixel,
    assign line_end  = (xpos == SCREEN_WIDTH-1'b1) && (ypos < SCREEN_HEIGHT-1'b1);
    assign frame_end = (xpos == SCREEN_WIDTH-1'b1) && (ypos == SCREEN_HEIGHT-1'b1);
 
-   always @ (xpos, ypos)
+   always @ (*)
      begin
         hsync <= INVERT ^ (xpos >= SCREEN_WIDTH + HSYNC_PULSE_START && xpos < SCREEN_WIDTH + HSYNC_PULSE_START + HSYNC_PULSE_SIZE);
         // vsync pulses should begin and end at the start of hsync, so special

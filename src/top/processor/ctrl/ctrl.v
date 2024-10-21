@@ -20,7 +20,7 @@ module ctrl(instr, ife_ctrl, id_ctrl, ex_ctrl, mem_ctrl, wb_ctrl);
    reg [2:0]        f_wb_ctrl;
 
    // IFE
-   always @ (opcode)
+   always @ (*)
      begin
         case(opcode)
           6'b000010 : ife_ctrl <= 1; // J
@@ -29,7 +29,7 @@ module ctrl(instr, ife_ctrl, id_ctrl, ex_ctrl, mem_ctrl, wb_ctrl);
         endcase // case (opcode)
      end
 
-   always @ (func)
+   always @ (*)
      begin
         f_id_ctrl <= 2'b00;
         f_mem_ctrl <= 5'b00000;
@@ -118,7 +118,7 @@ module ctrl(instr, ife_ctrl, id_ctrl, ex_ctrl, mem_ctrl, wb_ctrl);
         endcase
      end
 
-   always @ (opcode, f_id_ctrl, f_ex_ctrl, f_mem_ctrl, f_wb_ctrl)
+   always @ (*)
      begin
         id_ctrl <= 2'b00;
         ex_ctrl <= 8'b00110000;

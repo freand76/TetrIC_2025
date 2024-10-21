@@ -7,7 +7,7 @@ module branchlogic(n_zero, overflow, ctrl, pcmux1_ctrl, pcmux3_ctrl);
    output reg  pcmux1_ctrl;
    output reg  pcmux3_ctrl;
 
-   always @ (n_zero, overflow, ctrl)
+   always @ (*)
      begin
         pcmux1_ctrl <= 0;
         pcmux3_ctrl <= 0;
