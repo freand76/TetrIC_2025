@@ -210,13 +210,20 @@ module top(
                        .dmem_data_out(proc_dmem_data_out),
                        .mfc0({{31{1'b0}}, uart_tx_data_ready}));
 
+`ifdef IVERLOG
    always@(posedge clk_cpu)
      begin
         if (arbiter_write_strobe)
           $display("PERIPHERAL_WRITE: (%d:%d) %x == %x (%d:%d)", proc_dmem_req, proc_dmem_wr,
                    proc_dmem_data_out, proc_dmem_addr_out,
                    arbiter_uart_sel, arbiter_video_sel);
+        if (proc_dmem_req && proc_dmem_wr && (proc_dmem_addr_out[23:20] == 4'h8))
+          begin
+             #100
+             $finish;
+          end
      end
+`endif
 
    video video(.clk_pixel(clk_pixel),
                .clk_cpu(clk_cpu),
