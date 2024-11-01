@@ -15,6 +15,7 @@ class DutTester:
         self._circuit = circuit
         self._dut = dut
         self._dut.clk.value = 0
+        self._dut.start.value = 1
         self._dut.n_reset.value = 0
         self._dut.address.value = 0
         self._dut.word_count.value = 1

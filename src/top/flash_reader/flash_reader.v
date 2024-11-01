@@ -1,6 +1,7 @@
 module flash_reader(
                     input             clk,
                     input             n_reset,
+                    input             start,
                     input [23:0]      address,
                     input [23:0]      word_count,
                     output reg [23:0] mem_address,
@@ -74,19 +75,20 @@ module flash_reader(
 
    // CTRL
 
-   parameter INIT             = 0;
-   parameter CS_LOW           = 1;
-   parameter CS_LOW_TO_CLK    = 2;
-   parameter SHIFT            = 3;
-   parameter SHIFT_AND_STROBE = 4;
-   parameter DONE             = 5;
+   parameter HALT             = 0;
+   parameter INIT             = 1;
+   parameter CS_LOW           = 2;
+   parameter CS_LOW_TO_CLK    = 3;
+   parameter SHIFT            = 4;
+   parameter SHIFT_AND_STROBE = 5;
+   parameter DONE             = 6;
 
    always @ (posedge clk, negedge n_reset)
      begin
         if (!n_reset)
           begin
              load_cmd_addr <= 0;
-             state <= 0;
+             state <= HALT;
              wcount <= 0;
              spi_cs <= 1;
              shifter_active <= 0;
@@ -98,6 +100,11 @@ module flash_reader(
         else
           begin
              case(state)
+               HALT : // WAIT FOR SOMETHING...
+                 begin
+                    if (start)
+                      state <= INIT;
+                 end
                INIT : // PRE START CYCLES
                  begin
                     bitcnt <= bitcnt - 1;

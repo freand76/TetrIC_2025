@@ -106,6 +106,7 @@ module top(
 
    flash_reader flash_reader(.clk(clk_cpu),
                              .n_reset(rst_n),
+                             .start(1'b1),
                              .address(FLASH_START),
                              .word_count(24'h00400),
                              .mem_address(flash_mem_address),
