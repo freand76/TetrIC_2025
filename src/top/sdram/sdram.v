@@ -85,7 +85,7 @@ module sdram
    //
    // SDRAM state machine
    //
-   always @(posedge clk, negedge resetn)
+   always @(posedge clk)
      begin
         cycle <= cycle == 4'd15 ? 4'd15 : cycle + 4'd1;
         // defaults
@@ -242,7 +242,7 @@ module sdram
    reg  [14:0]   rst_cnt;
    reg           rst_done, rst_done_p1, cfg_busy;
 
-   always @(posedge clk, negedge resetn)
+   always @(posedge clk)
      begin
         rst_done_p1 <= rst_done;
         cfg_now     <= rst_done & ~rst_done_p1;// Rising Edge Detect

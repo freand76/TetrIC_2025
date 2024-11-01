@@ -74,16 +74,10 @@ module sdram_model
 
         if (REFRESH)
           begin
-`ifdef SDRAM_DEBUG
-             $display("REFRESH");
-`endif
              nop_counter <= 0;
           end
         if(ACT)
           begin
-`ifdef SDRAM_DEBUG
-             $display("ACT");
-`endif
              read_mode <= 0;
              write_mode <= 0;
              nop_counter <= 0;
@@ -93,9 +87,6 @@ module sdram_model
 
         if (WRITE_CAS)
           begin
-`ifdef SDRAM_DEBUG
-             $display("WRITE CAS");
-`endif
              read_mode <= 0;
              write_mode <= 1;
              write_sdram_data <= inout_sdram_data;
@@ -106,9 +97,6 @@ module sdram_model
 
         if (READ_CAS)
           begin
-`ifdef SDRAM_DEBUG
-             $display("READ CAS");
-`endif
              write_mode <= 0;
              read_mode <= 1;
              nop_counter <= 0;

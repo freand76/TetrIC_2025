@@ -28,27 +28,42 @@ module sdram_wrap
     output                  write_ack,
     input [22:0]            addr,
     input [31:0]            din,
-    output reg [31:0]       dout
+    output reg [31:0]       dout,
+    output                  busy
     );
 
    localparam               FREQ=27_000_000;
    localparam               REFRESH_COUNT=FREQ/1000/1000*15;     // 15us refresh
 
    wire [31:0]              dout_wire;
-   wire                     busy, data_ready;
+   wire                     data_ready;
    wire                     refresh;
    wire                     rd, wr;
+
+   reg                      refresh_needed;
+   wire                     refresh_executed;
+   reg [11:0]               refresh_time;
+   reg [1:0]                state;
+   localparam               IDLE = 0;
+   localparam               REFRESH = 1;
+   localparam               READ = 2;
+   localparam               WRITE = 3;
+
+   reg                      pending_wr;
+   reg                      pending_rd;
+   reg [31:0]               pending_data;
+   reg [22:0]               pending_addr;
 
    sdram #(.FREQ(FREQ)) u_sdram
      (
       .clk(clk),
       .clk_sdram(clk_sdram),
       .resetn(resetn),
-      .addr(addr),
+      .addr(pending_addr),
       .rd(rd),
       .wr(wr),
       .refresh(refresh),
-      .din(din),
+      .din(pending_data),
       .dout(dout_wire),
       .data_ready(data_ready),
       .busy(busy),
@@ -65,24 +80,48 @@ module sdram_wrap
       .SDRAM_DQM(SDRAM_DQM)
       );
 
-   reg                      refresh_needed;
-   wire                     refresh_executed;
-   reg [11:0]               refresh_time;
-   reg [1:0]                state;
-   localparam               IDLE = 0;
-   localparam               REFRESH = 1;
-   localparam               READ = 2;
-   localparam               WRITE = 3;
-
    assign refresh = (!busy & refresh_needed & !refresh_executed) && (state == IDLE);
    assign refresh_executed = !busy && (state == REFRESH);
    assign read_ack = !busy && (state == READ);
    assign write_ack = !busy && (state == WRITE);
 
-   assign rd = !busy & read & sel & (state == IDLE);
+   assign rd = !busy & pending_rd & sel & (state == IDLE);
    assign read_ack = !busy && (state == READ);
-   assign wr = !busy & write & sel & (state == IDLE);
+   assign wr = !busy & pending_wr & sel & (state == IDLE);
    assign write_ack = !busy && (state == WRITE);
+
+   always @(posedge clk, negedge resetn)
+     begin
+        if (!resetn)
+          begin
+             pending_data <= 0;
+             pending_addr <= 0;
+             pending_wr <= 0;
+             pending_rd <= 0;
+          end
+        else
+          begin
+             if (write)
+               begin
+                  pending_data <= din;
+                  pending_addr <= addr;
+                  pending_wr <= 1;
+               end
+             if (read)
+               begin
+                  pending_addr <= addr;
+                  pending_rd <= 1;
+               end
+             if (write_ack)
+               begin
+                  pending_wr <= 0;
+               end
+             if (read_ack)
+               begin
+                  pending_rd <= 0;
+               end
+          end
+     end
 
    always @(posedge clk, negedge resetn)
      begin
@@ -107,11 +146,11 @@ module sdram_wrap
                            begin
                               state <= REFRESH;
                            end
-                         else if (rd)
+                         else if (pending_rd)
                            begin
                               state <= READ;
                            end
-                         else if (wr)
+                         else if (pending_wr)
                            begin
                               state <= WRITE;
                            end
