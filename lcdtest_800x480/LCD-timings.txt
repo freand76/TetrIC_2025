@@ -1,0 +1,34 @@
+PClk: "typ"=30 .. "max"=50 [M]
+hline: "min"=889, typ=928, "max"=1143
+hsync: "min"=1, typ=48, "max"=255
+hs_fp: "min"=1, typ=40, "max"=255
+
+vlines: "min"=513, typ=525, "max"=767
+vsync: "min"=3, typ=3, "max"=255
+vs_fp: "min"=1, typ=13, "max"=255
+
+
+31,5MHz (= 126/4)
+513 V_cnt   (33 bl-lines = 33759 bl-clks / frame)
+1023 H_cnt  (223 bl-clks / line)
+-> 60.023 FPS
+
+
+31,5MHz (= 126/4)
+525 V_cnt   (45 bl-lines = 45000 bl-clks / frame)
+1000 H_cnt  (200 bl-clks / line)
+-> 60.000 FPS
+
+
+
+27 MHz
+512 V_cnt   (32 bl.lines = bl-clks / frame)
+879 H_cnt   (79 bl.clks / line)
+-> 59.9936 FPS
+
+
+27MHz
+506 V_cnt
+889 H_cnt
+-> 60.022 FPS
+

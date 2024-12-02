@@ -1,0 +1,38 @@
+[*]
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Sun Oct 27 11:15:04 2024
+[*]
+[dumpfile] "(null)"
+[savefile] "/home/mjoh/projects/TetrIC/TetrIC_2025/lcdtest_480x272/lcdtest-top_tb.gtkw"
+[timestart] 0
+[size] 2531 1022
+[pos] -1 -1
+*-30.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb_top.
+[treeopen] tb_top.uut.
+[sst_width] 200
+[signals_width] 142
+[sst_expanded] 1
+[sst_vpaned_height] 298
+@28
+tb_top.uut.sys_clk
+tb_top.uut.rst
+tb_top.uut.rst_n
+tb_top.uut.p77_LCD_CLK
+tb_top.uut.p49_LCD_BL
+@22
+tb_top.uut.LCD_R[4:0]
+tb_top.uut.LCD_G[5:0]
+tb_top.uut.LCD_B[4:0]
+@28
+tb_top.uut.p48_LCD_DEN
+tb_top.uut.p25_LCD_HSYNC
+tb_top.uut.p26_LCD_VSYNC
+tb_top.uut.lcd_ctrl.enabled
+@22
+tb_top.uut.lcd_ctrl.frame_cnt[3:0]
+@24
+tb_top.uut.lcd_ctrl.h_count[9:0]
+tb_top.uut.lcd_ctrl.v_count[8:0]
+[pattern_trace] 1
+[pattern_trace] 0
