@@ -109,6 +109,11 @@ endmodule
 
 module RAM16SDP4(DI, WRE, CLK, WAD, RAD, DO);
 
+   parameter INIT_0 = 16'h0000;
+   parameter INIT_1 = 16'h0000;
+   parameter INIT_2 = 16'h0000;
+   parameter INIT_3 = 16'h0000;
+
    input [3:0] DI;
    input       WRE;
    input       CLK;

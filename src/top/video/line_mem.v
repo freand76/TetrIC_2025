@@ -10,15 +10,15 @@ module pix32_mem(
 
    wire [15:0]                 lpixel, rpixel;
 
-   RAM16SDP4 pix16_data_31_28(.DI(wr_data[31:28]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(lpixel[15:12]));
-   RAM16SDP4 pix16_data_27_24(.DI(wr_data[27:24]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(lpixel[11:8]));
-   RAM16SDP4 pix16_data_23_20(.DI(wr_data[23:20]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(lpixel[7:4]));
-   RAM16SDP4 pix16_data_19_16(.DI(wr_data[19:16]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(lpixel[3:0]));
+   RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) pix16_data_31_28(.DI(wr_data[31:28]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(lpixel[15:12]));
+   RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) pix16_data_27_24(.DI(wr_data[27:24]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(lpixel[11:8]));
+   RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) pix16_data_23_20(.DI(wr_data[23:20]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(lpixel[7:4]));
+   RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) pix16_data_19_16(.DI(wr_data[19:16]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(lpixel[3:0]));
 
-   RAM16SDP4 pix16_data_15_12(.DI(wr_data[15:12]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[15:12]));
-   RAM16SDP4 pix16_data_11_08(.DI(wr_data[11:8]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[11:8]));
-   RAM16SDP4 pix16_data_07_04(.DI(wr_data[7:4]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[7:4]));
-   RAM16SDP4 pix16_data_03_00(.DI(wr_data[3:0]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[3:0]));
+   RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) pix16_data_15_12(.DI(wr_data[15:12]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[15:12]));
+   RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) pix16_data_11_08(.DI(wr_data[11:8]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[11:8]));
+   RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) pix16_data_07_04(.DI(wr_data[7:4]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[7:4]));
+   RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) pix16_data_03_00(.DI(wr_data[3:0]), .WRE(wr_en), .CLK(clk_wr), .WAD(wr_addr[3:0]), .RAD(pixel_addr[4:1]), .DO(rpixel[3:0]));
 
    assign pixel_data = pixel_addr[0] ? rpixel : lpixel;
 
@@ -42,7 +42,7 @@ module line_mem(
    assign wr_en0 = wr_addr[7:4] == 4'b0000 ? wr_en : 1'b0;
    assign wr_en1 = wr_addr[7:4] == 4'b0001 ? wr_en : 1'b0;
    assign wr_en2 = wr_addr[7:4] == 4'b0010 ? wr_en : 1'b0;
-   assign wr_en3 = wr_addr[7:4] == 4'b0010 ? wr_en : 1'b0;
+   assign wr_en3 = wr_addr[7:4] == 4'b0011 ? wr_en : 1'b0;
    assign wr_en4 = wr_addr[7:4] == 4'b0100 ? wr_en : 1'b0;
    assign wr_en5 = wr_addr[7:4] == 4'b0101 ? wr_en : 1'b0;
    assign wr_en6 = wr_addr[7:4] == 4'b0110 ? wr_en : 1'b0;
