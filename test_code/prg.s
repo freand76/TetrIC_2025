@@ -23,7 +23,7 @@ start:
     ori $t3, $t3, 0xf800
     nop
     lui $a0, 0x0000
-    ori $a0, $a, 0x0200
+    ori $a0, $a0, 0x0200
     sw $t2, 0($a0)
     sw $t3, 159($a0)
     sw $t1, 1($a0)
@@ -42,7 +42,7 @@ start:
     ori $t1, $t1, 0xf800
     nop
     lui $a0, 0x0000
-    ori $a0, $a, 0x0300
+    ori $a0, $a0, 0x0300
     sw $t2, 0($a0)
     sw $t3, 159($a0)
     sw $t1, 1($a0)
