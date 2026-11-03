@@ -28,10 +28,18 @@ IO_PORT "mspi_do" PULL_MODE=NONE DRIVE=8 IO_TYPE=LVCMOS33;
 
 IO_LOC "led[0]" 15;
 IO_LOC "led[1]" 16;
-IO_LOC "led[2]" 17;
-IO_LOC "led[3]" 18;
-IO_LOC "led[4]" 19;
-IO_LOC "led[5]" 20;
+
+// Gamepad (PlayStation protocol, pins as nand2mario's nano20k.cst;
+// pins 17-20 are shared with LED 2-5)
+
+IO_LOC "ds_clk" 17;
+IO_PORT "ds_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8;
+IO_LOC "ds_cs" 18;
+IO_PORT "ds_cs" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8;
+IO_LOC "ds_miso" 19;
+IO_PORT "ds_miso" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "ds_mosi" 20;
+IO_PORT "ds_mosi" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8;
 
 // DVI
 

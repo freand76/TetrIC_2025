@@ -9,13 +9,19 @@ module top(
            output       uart_tx,
 
            // LED (Active LOW)
-           output [5:0] led,
+           output [1:0] led,
 
            // spi flash interface
            output       mspi_cs,
            output       mspi_clk,
            output       mspi_di,
            input        mspi_do,
+
+           // PlayStation style gamepad
+           output       ds_clk,
+           output       ds_cs,
+           output       ds_mosi,
+           input        ds_miso,
 
            // SDRAM (O_sdram_clk is driven with clk_ram by the board top)
            output        O_sdram_cke,
@@ -47,7 +53,6 @@ module top(
    parameter            UART_FRE = 115200;
 
    // DEBUG
-   reg [4:0]            led_cnt;
 
    // UART
    wire                 uart_tx_data_ready;
@@ -102,25 +107,22 @@ module top(
    wire                 rst_cpu_n;
    reset_sync rs_cpu(.clk(clk_cpu), .rst_n_in(rst_n), .rst_n_out(rst_cpu_n));
 
-   assign led[0] = !led_cnt[0];
-   assign led[1] = !led_cnt[1];
-   assign led[2] = !led_cnt[2];
-   assign led[3] = !led_cnt[3];
-   assign led[4] = !led_cnt[4];
-   assign led[5] = !copy_done;
+   // GAMEPAD (MFC2: {8'h00, buttons2, buttons1, joy}, all active low)
+   wire [7:0]           pad_buttons1, pad_buttons2, pad_joy;
 
-   always@(posedge clk_cpu or negedge rst_cpu_n)
-     begin
-        if(rst_cpu_n == 1'b0)
-          begin
-             led_cnt <= 0;
-          end
-        else
-          if (flash_strobe)
-            begin
-               led_cnt <= led_cnt + 1;
-            end
-     end // always@ (posedge clk or negedge rst_n)
+   gamepad #(.FREQ(CLK_FRE)) gamepad(.clk(clk_cpu),
+                                     .rst_n(rst_cpu_n),
+                                     .ds_clk(ds_clk),
+                                     .ds_cs(ds_cs),
+                                     .ds_mosi(ds_mosi),
+                                     .ds_miso(ds_miso),
+                                     .buttons1(pad_buttons1),
+                                     .buttons2(pad_buttons2),
+                                     .joy(pad_joy));
+
+   // LEDs (active low): 0 = flash copied to SDRAM, 1 = gamepad button pressed
+   assign led[0] = !copy_done;
+   assign led[1] = &{pad_buttons1, pad_buttons2};
 
    // Copy COPY_WORDS words from flash to SDRAM, once the SDRAM is initialised
    flash_reader flash_reader(.clk(clk_cpu),
@@ -233,7 +235,8 @@ module top(
                        .dmem_wr(proc_dmem_wr),
                        .dmem_data_out(proc_dmem_data_out),
                        .mfc0({{31{1'b0}}, uart_tx_data_ready}),
-                       .mfc1(video_status));
+                       .mfc1(video_status),
+                       .mfc2({8'h00, pad_buttons2, pad_buttons1, pad_joy}));
 
 `ifdef IVERLOG
    always@(posedge clk_cpu)

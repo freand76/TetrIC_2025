@@ -7,13 +7,19 @@ module tangnano20k_top(
                        output            uart_tx,
 
                        // LED (Active LOW)
-                       output [5:0]      led,
+                       output [1:0]      led,
 
                        // spi flash interface
                        output            mspi_cs,
                        output            mspi_clk,
                        output            mspi_di,
                        input             mspi_do,
+
+                       // PlayStation style gamepad (retro kit connector)
+                       output            ds_clk,
+                       output            ds_cs,
+                       output            ds_mosi,
+                       input             ds_miso,
 
                        // SDRAM (embedded in the GW2AR-18)
                        output            O_sdram_clk,
@@ -66,6 +72,10 @@ module tangnano20k_top(
            .mspi_clk(mspi_clk),
            .mspi_di(mspi_di),
            .mspi_do(mspi_do),
+           .ds_clk(ds_clk),
+           .ds_cs(ds_cs),
+           .ds_mosi(ds_mosi),
+           .ds_miso(ds_miso),
            .O_sdram_cke(O_sdram_cke),
            .O_sdram_cs_n(O_sdram_cs_n),
            .O_sdram_cas_n(O_sdram_cas_n),

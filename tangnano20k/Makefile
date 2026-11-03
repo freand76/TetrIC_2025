@@ -33,6 +33,7 @@ VERILOG_FILES = \
 	$(SRC_TOP)/icache/icache_mem.v \
 	$(SRC_TOP)/uart_tx/uart_tx.v \
 	$(SRC_TOP)/flash_reader/flash_reader.v \
+	$(SRC_TOP)/gamepad/gamepad.v \
 	$(SRC_TOP)/video/video.v \
 	$(SRC_TOP)/video/video_dma.v \
 	$(SRC_TOP)/video/line_mem.v \

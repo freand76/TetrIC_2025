@@ -42,7 +42,8 @@ module iverilog_top;
         forever #(SDRAM_PERIOD / 2) clk_ram = ~clk_ram;
      end
 
-   wire [5:0] led;
+   wire [1:0] led;
+   wire       ds_clk, ds_cs, ds_mosi;
    wire       uart_tx;
    wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
 
@@ -62,6 +63,10 @@ module iverilog_top;
            .mspi_clk(mspi_clk),
            .mspi_di(mspi_di),
            .mspi_do(mspi_do),
+           .ds_clk(ds_clk),
+           .ds_cs(ds_cs),
+           .ds_mosi(ds_mosi),
+           .ds_miso(1'b1),               // no gamepad: all released
            .O_sdram_cke(sdram_cke),
            .O_sdram_cs_n(sdram_cs_n),
            .O_sdram_cas_n(sdram_cas_n),

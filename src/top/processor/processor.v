@@ -9,7 +9,8 @@ module processor(clk, n_reset,
                  dmem_ack,
                  dmem_data_out,
                  mfc0,
-                 mfc1
+                 mfc1,
+                 mfc2
                  );
 
    input        clk, n_reset;
@@ -24,6 +25,7 @@ module processor(clk, n_reset,
 
    input  [31:0] mfc0;
    input  [31:0] mfc1;
+   input  [31:0] mfc2;
 
    wire          n_stall, n_mem_stall;
 
@@ -101,7 +103,8 @@ module processor(clk, n_reset,
            .n_zero(s_ex_n_zero),
            .overflow(s_ex_overflow),
            .mfc0(mfc0),
-           .mfc1(mfc1));
+           .mfc1(mfc1),
+           .mfc2(mfc2));
 
    mux2 pcmux1(.A(s_if_pc1),
                .B(s_if_pc6),
