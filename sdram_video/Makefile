@@ -21,7 +21,7 @@ FLASH_START = 0x600000
 
 CORE_FILES = \
 	sdram_video_core.v \
-	sdram_ctrl.v \
+	../src/top/sdram/sdram_ctrl.v \
 	../src/top/flash_reader/flash_reader.v \
 	../src/top/video/dvi/dvi_generator.v \
 	../src/top/video/dvi/tmds_channel.v \
@@ -35,7 +35,7 @@ VERILOG_FILES = \
 
 SIM_FILES = \
 	sim/tb_sdram_video.v \
-	sim/sdram_model_burst.v \
+	../src/top/sdram/sdram_model_burst.v \
 	sim/gowin_sim.v \
 	$(SPI_FLASH_MODEL)/W25Q64JVxxIM.v \
 	$(CORE_FILES)

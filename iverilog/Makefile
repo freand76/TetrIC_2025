@@ -28,6 +28,9 @@ PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
 VERILOG_FILES = \
 	$(PROCESSOR_FILES) \
 	$(SPI_FLASH_MDOEL) \
+	$(SRC_TOP)/cdc/cdc.v \
+	$(SRC_TOP)/sdram/sdram_ctrl.v \
+	$(SRC_TOP)/sdram/sdram_model_burst.v \
 	$(SRC_TOP)/memory_controller/memory_controller.v \
 	$(SRC_TOP)/memory_controller/memory_arbiter.v \
 	$(SRC_TOP)/icache/icache.v \

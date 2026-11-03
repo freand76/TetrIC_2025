@@ -1,4 +1,4 @@
-YOSYS = yosys
+YOSYS ?= yosys
 NEXTPNR = nextpnr-himbaechel
 GOWIN_PACK = gowin_pack
 
@@ -25,6 +25,8 @@ PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
 
 VERILOG_FILES = \
 	$(PROCESSOR_FILES) \
+	$(SRC_TOP)/cdc/cdc.v \
+	$(SRC_TOP)/sdram/sdram_ctrl.v \
 	$(SRC_TOP)/memory_controller/memory_controller.v \
 	$(SRC_TOP)/memory_controller/memory_arbiter.v \
 	$(SRC_TOP)/icache/icache.v \
@@ -40,7 +42,6 @@ VERILOG_FILES = \
 
 TANGNANO20K_FILES = \
 	tangnano20k_top.v \
-	processor_ram.v \
 	pll.v
 
 CST=tangnano20k.cst
@@ -61,11 +62,11 @@ clean:
 
 $(BUILD_DIR)/top_synth.json : $(VERILOG_FILES) $(TANGNANO20K_FILES)
 	mkdir -p $(BUILD_DIR)
-	$(YOSYS) -p "read_verilog -sv $^; synth_gowin -json $@"
+	$(YOSYS) -q -l $(BUILD_DIR)/yosys.log -p "read_verilog -sv $^; synth_gowin -top tangnano20k_top -json $@"
 
 $(BUILD_DIR)/top_pnr.json : $(BUILD_DIR)/top_synth.json $(CST)
 	mkdir -p $(BUILD_DIR)
-	$(NEXTPNR) --json $< --write $@ --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C --vopt cst=$(CST)
+	$(NEXTPNR) --json $< --write $@ --device GW2AR-LV18QN88C8/I7 --vopt family=GW2A-18C --vopt cst=$(CST) -l $(BUILD_DIR)/nextpnr.log
 
 $(BUILD_DIR)/top.fs: $(BUILD_DIR)/top_pnr.json
 	$(GOWIN_PACK) -d GW2A-18C -o $@ $<
