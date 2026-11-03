@@ -6,19 +6,16 @@ module regbank(clk, n_reset, r1_sel, r2_sel, rd_sel, w_enable, w_data, r1_data, 
    input        w_enable;
    input [31:0] w_data;
 
-   output reg [31:0] r1_data, r2_data;
+   output [31:0] r1_data, r2_data;
 
    reg [31:0]        register_bank[32];
 
-   always @ (r1_sel)
-     begin
-        r1_data = register_bank[r1_sel];
-     end
-
-   always @ (r2_sel)
-     begin
-        r2_data = register_bank[r2_sel];
-     end
+   // write-through: a register written this cycle (WB) reads as the new value
+   // (as the register file of the original VHDL design, old_vhdl/reg.vhd)
+   assign r1_data = (r1_sel == 0) ? 0 :
+                    (w_enable && rd_sel == r1_sel) ? w_data : register_bank[r1_sel];
+   assign r2_data = (r2_sel == 0) ? 0 :
+                    (w_enable && rd_sel == r2_sel) ? w_data : register_bank[r2_sel];
 
    always @(posedge clk or negedge n_reset)
      begin

@@ -26,29 +26,25 @@ Do **not** put a branch or jump in any delay slot (see [Control flow](#control-f
 
 ### Register dependencies
 
-| Producer → consumer | d=1 | d=2 | d=3 | d≥4 | NOPs needed |
-|---|---|---|---|---|---|
-| ALU result → ALU operand, branch operand, `jr` target, `lw`/`sw` base address | ✅ | ✅ | ❌¹ | ✅ | 0. But **never exactly 2 instructions in between**: if d=3, add 1 NOP. |
-| `lw` result → same uses as above | ❌² | ✅ | ❌¹ | ✅ | **1 NOP** after `lw`, and avoid d=3. |
-| ALU result or `lw` result → **`sw` data register** (`rt`) | ❌ | ❌ | ❌¹ | ✅ | **3 NOPs** between producer and `sw`. |
-| `jal`/`jalr` → `$ra` (`$31`) | ❌³ | ✅ | ❌¹ | ✅ | Do not read `$ra` in the delay slot, and avoid d=3. |
-| `mfc0..3` → ALU operand | ✅ | ✅ | ❌¹ | ✅ | Same as ALU. |
+| Producer → consumer | d=1 | d=2 | d≥3 | NOPs needed |
+|---|---|---|---|---|
+| ALU result → ALU operand, branch operand, `jr` target, `lw`/`sw` base address | ✅ | ✅ | ✅ | 0 |
+| `lw` result → same uses as above | ❌¹ | ✅ | ✅ | **1 NOP** after `lw` |
+| ALU result or `lw` result → **`sw` data register** (`rt`) | ❌ | ❌ | ✅ | **2 NOPs** between producer and `sw` |
+| `jal`/`jalr` → `$ra` (`$31`) | ❌² | ✅ | ✅ | Do not read `$ra` in the delay slot |
+| `mfc0..3` → ALU operand | ✅ | ✅ | ✅ | 0 |
 
-1. **d = 3 gives the old register value.** Whether it goes wrong depends on timing:
-   - If the pipeline stalls at that moment (icache miss, SDRAM access), the result happens to be correct. Without a stall it is wrong.
-   - It is therefore an **intermittent bug**, and code can work in one build or simulation and fail in another.
-   - One case is deterministic. If the instruction directly after the producer is a `lw`/`sw`, its memory stall always masks the hazard. The `sw` base-register case in `prg.s` relies on this; see the notes in [Data hazards](#data-hazards).
-2. `lw` at d = 1 forwards the **address** instead of the loaded data.
-3. In the `jal` delay slot, `$ra` reads as **0** (the ALU result of `jal`).
+1. `lw` at d = 1 forwards the **address** instead of the loaded data.
+2. In the `jal` delay slot, `$ra` reads as **0** (the ALU result of `jal`).
+
+d = 1 and 2 are forwarded. d = 3 is covered by the register file write-through, as in the original VHDL design (`old_vhdl/reg.vhd`).
 
 ### Practical rules (safe and simple)
 
 * After `beq/bne/bge/bgt/beqz/bnez/bgez/bgtz/b/jr/jalr`: 3 NOPs.
 * After `j`/`jal`: 1 NOP. After `jal`, the NOP also runs again on return. `prg.s` uses 3, which also works.
 * After `lw`: 1 NOP before using the loaded register.
-* Before `sw`: the stored register must be written ≥ 4 instructions earlier, so 3 NOPs.
-* Never use a register exactly 3 instructions after it was written, unless the instruction directly after the producer is a `lw`/`sw`.
-  The simplest way is "use it immediately, one instruction later, or ≥ 4 instructions later".
+* Before `sw`: the stored register must be written ≥ 3 instructions earlier, so 2 NOPs. The old TetrIC `_SW` macro (`nop; nop; sw`) does exactly this.
 * No branches or jumps in delay slots.
 
 ## Assembler check
@@ -56,8 +52,8 @@ Do **not** put a branch or jump in any delay slot (see [Control flow](#control-f
 `tools/abnasm.py` checks these rules after assembling. The default is that a broken rule is an **error**:
 
 ```
-prg.s:50: error: $8 written by ADDI $08 $00 0x0005 (line 47) at distance 3: distance 3 reads the old register value
 prg.s:83: error: $8 written by LW $08 0x0400 $00 (line 82) at distance 1: lw result is not available at distance 1 (1 nop needed)
+prg.s:165: error: $8 written by ADDI $08 $00 0x0005 (line 163) at distance 2: sw data register is not forwarded, needs distance >= 3
 prg.s:587: error: J in delay slot 2 of BEQ $00 $00 0x0007 (line 585)
 prg.s: 3 pipeline hazard error(s), no prg.bin written (...)
 ```
@@ -68,7 +64,7 @@ prg.s: 3 pipeline hazard error(s), no prg.bin written (...)
   * `j`/`jal` targets;
   * `jr` returning to every `jal`+1.
 
-  So hazards across a branch, into a subroutine or out of one are found too. For example, `jr $ra` as the 2nd instruction of a subroutine is distance 3 from the `jal`.
+  So hazards across a branch, into a subroutine or out of one are found too. For example, an `lw` in the last delay slot of a branch, used at the branch target, is distance 1.
 * **Not covered:** `jr` to computed addresses other than `jal` return points.
 * **Delay slots:** a branch or jump in a delay slot is an error. A non-NOP `jal` delay slot is a warning, because it is executed again after the return.
 * **Options:** `--hazards=warn` reports violations without failing, and `--hazards=off` disables the check.
@@ -80,20 +76,19 @@ prg.s: 3 pipeline hazard error(s), no prg.bin written (...)
 ```
 $ python3 tools/abnasm.py --suggest-nops prg.s
 prg.s:63-65: remove 2 of 3 nops (keep 1)   after JAL 0x000000e3 (line 62), before LUI $09 0x0123 (line 66)
-prg.s:152-154: remove 1 of 3 nops (keep 2)   at label PRINT_CHAR, before MOV $26 $31 (line 155)
+prg.s:152-154: remove 3 of 3 nops (keep 0)   at label PRINT_CHAR, before MOV $26 $31 (line 155)
 prg.s:175-181: remove 7 of 7 nops (keep 0)   after LW $10 0x0000 $01 (line 174), before ADDI $01 $01 0x0001 (line 182)
-prg.s:278-284: remove 4 of 7 nops (keep 3)   after LW $03 0x0000 $09 (line 277), before SW $03 0x0000 $10 (line 285)
+prg.s:278-284: remove 5 of 7 nops (keep 2)   after LW $03 0x0000 $09 (line 277), before SW $03 0x0000 $10 (line 285)
 ...
-prg.s: 69 of 135 nops can be removed (52 nops are in delay slots and are kept; 265 instructions -> 196)
+prg.s: 78 of 135 nops can be removed (52 nops are in delay slots and are kept; 265 instructions -> 187)
 ```
 
 * **How it works:** each NOP is removed in turn, and the full hazard check is run again on the new layout. That means shifted addresses, moved branch targets and new execution paths. A removal is kept only if there are no errors and no new warnings. The final set is therefore checked as a whole.
 * **Delay-slot NOPs are never proposed.** Removing one moves the next instruction into the slot, which then runs whether the branch is taken or not and changes what the program does. Filling delay slots with useful instructions is a manual optimisation.
 * **Macro NOPs:** `--remove-nops` only deletes source lines that contain nothing but a `nop`. NOPs generated inside macros are reported but left in place.
 * **Timing:** removing NOPs changes timing, which matters for code that relies on cycle counts.
-* **Verified on `prg.s`:**
-  * After `--remove-nops`, the program assembled with no hazards: 265 instructions became 197, plus one `_LDA` macro NOP left in place.
-  * In the full CPU + SDRAM simulation (`iverilog/`) it printed exactly the same UART output.
+* **Verified on `prg.s`** (before the register file write-through, with the stricter rules of that time):
+  * After `--remove-nops`, the program assembled with no hazards, and printed exactly the same UART output in the full CPU + SDRAM simulation (`iverilog/`).
 
 ## Why (RTL details)
 
@@ -112,10 +107,8 @@ prg.s: 69 of 135 nops can be removed (52 nops are in delay slots and are kept; 2
 * **Forwarding unit** (`fwunit`): during ID it compares the source registers with the destination of the instruction in EX (d=1) and in MEM (d=2). In EX, `fwmux1/2` then select `s_mem_res` (d=1) or `s_wb_data` (d=2).
   * The d=1 path forwards the **ALU result**. For `lw` that is the address, and for `jal` it is 0.
   * The d=2 path forwards the final WB value, so load data and link address are both correct there.
-* **d = 3.** The producer is in WB while the consumer is in ID. `regbank_sram` uses RAM16SDP4: the write happens on the clock edge, the read is asynchronous. The ID/EX register latches the old value at the same edge as the write, and `fwunit` doesn't cover d=3.
-  * If the pipeline is stalled (`imem_ack` low) during that cycle, the write lands first and the value is correct.
-  * When the instruction directly after the producer is a `lw`/`sw`, the `memory_arbiter` always stalls it in MEM for at least one cycle. The hazard is then masked deterministically.
-* **`sw` data** (`rt`) goes to memory through `exmem_data2 <= s_ex_data2`, the value read in ID, **without forwarding**. Only the base address (`rs`) is forwarded.
+* **d = 3.** The producer is in WB while the consumer is in ID. `regbank_sram` writes its RAM16SDP4 cells on the clock edge, but a read of the register that is written in the same cycle returns `w_data` directly (write-through, as `old_vhdl/reg.vhd`). Without it, the ID/EX register latched the old value, unless a pipeline stall happened to let the write land first, which made d = 3 an intermittent bug.
+* **`sw` data** (`rt`) goes to memory through `exmem_data2 <= s_ex_data2`, the value read in ID, **without forwarding**. Only the base address (`rs`) is forwarded. With the write-through, d = 3 reads the right value.
 
 ## How this was verified
 
@@ -128,19 +121,16 @@ prg.s: 69 of 135 nops can be removed (52 nops are in delay slots and are kept; 2
    * the delay-slot counts, by counting executed increments;
    * the `jal` return address;
    * `$ra` read in the `jal` delay slot;
-   * a `j` in the 2nd slot of a taken branch;
-   * the masking by a following `lw`/`sw`.
-3. **Results:**
+   * a `j` in the 2nd slot of a taken branch.
+3. **Results** (with the write-through):
    * Without stalls, the results match the table exactly.
-   * With 40 % random stalls (6 seeds), every d = 3 case and the `sw`-data d = 3 case passed in some runs and failed in others.
-   * Everything else, including all delay-slot counts, was identical in every run.
-
-`test_code/prg.s` was scanned for these hazards in straight-line code. No violations were found: the two d = 3 `sw` base-address cases are masked by the `sw` directly after the producer.
+   * With 40 % random stalls (4 seeds), every result was identical to the run without stalls.
+   * Before the write-through, all d = 3 cases (and `sw` data at d = 3) failed without stalls, and passed or failed randomly with stalls.
+4. **Assembler check:** on the test program it reports exactly the cases that fail in simulation, and nothing else.
 
 ## Possible hardware improvements
 
 These are not implemented.
 
-* **Register file write-through:** when `w_enable && rd_sel == r1_sel/r2_sel`, return `w_data` in `regbank`. This removes all d = 3 hazards, including the intermittent ones.
-* **Forward `sw` data:** use the forwarded `s_ex_pre_alu1` instead of `s_ex_data2` for `exmem_data2`. With write-through, `sw` data then only needs the `lw` → use NOP.
+* **Forward `sw` data:** use the forwarded `s_ex_pre_alu1` instead of `s_ex_data2` for `exmem_data2`. `sw` data then only needs the `lw` → use NOP.
 * **Load-use:** a 1-cycle interlock (stall ID/IF when EX is a `lw` and its destination is used) would remove the last data NOP.

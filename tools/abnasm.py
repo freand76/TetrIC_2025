@@ -667,11 +667,10 @@ class Assembler:
 #   * branches, jr, jalr: 3 delay slots; j, jal: 1 delay slot (always executed)
 #   * no branch/jump in a delay slot
 #   * a register written by instruction P and read by C, d instructions later
-#     in execution order (d = 1 is the next instruction):
-#       - d = 3 reads the old value (unless the instruction right after P is a
-#         lw/sw, whose memory stall always lets the write through)
+#     in execution order (d = 1 is the next instruction). d = 1, 2 are
+#     forwarded, d = 3 is covered by the register file write-through:
 #       - lw / jal / jalr result at d = 1 is wrong (address / 0 is forwarded)
-#       - sw data register (rt) is not forwarded at all: needs d >= 4
+#       - sw data register (rt) is not forwarded: needs d >= 3
 #   * jal delay slot is executed again after return (jal + 1): warn if not nop
 
 BRANCH_OPS = {1, 4, 5, 7}       # bge, beq, bne, bgt
@@ -799,17 +798,14 @@ class _Program:
             p = path[-1]
             kind, _, dest, _ = dec[p]
             if dest == reg:
-                after = path[-2] if d >= 2 else c      # executed right after the producer
                 if role == "sw data":
-                    report(c, p, reg, d, "sw data register is not forwarded, needs distance >= 4")
+                    report(c, p, reg, d, "sw data register is not forwarded, needs distance >= 3")
                 elif d == 1 and kind == "lw":
                     report(c, p, reg, d, "lw result is not available at distance 1 (1 nop needed)")
                 elif d == 1 and kind in ("jal", "jalr"):
                     report(c, p, reg, d, "$ra is not available in the jump delay slot")
-                elif d == 3 and dec[after][0] not in ("lw", "sw"):
-                    report(c, p, reg, d, "distance 3 reads the old register value")
                 return
-            if d < 3:
+            if d < 2:
                 for q in pred[p]:
                     walk(c, reg, role, path + [q])
 
