@@ -4,7 +4,7 @@ module lshifter(A, shift, O);
 
    output reg [31:0] O;
 
-   always @ (A, shift)
+   always @ (*)
      begin
         case(shift)
           0 : O <= A[31:0];

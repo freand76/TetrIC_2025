@@ -9,7 +9,7 @@ module rshifter(A, shift, arithmetic, O);
 
    assign shift_in = A[31] & arithmetic;
 
-   always @ (A, shift, arithmetic)
+   always @ (*)
      begin
         case(shift)
           0 : O <= A[31:0];
