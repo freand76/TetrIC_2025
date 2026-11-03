@@ -1,4 +1,4 @@
-module alu(A, B, ctrl, O, n_zero, overflow, mfc0);
+module alu(A, B, ctrl, O, n_zero, overflow, mfc0, mfc1);
 
    input [31:0] A, B;
    input [4:0]  ctrl;
@@ -8,6 +8,7 @@ module alu(A, B, ctrl, O, n_zero, overflow, mfc0);
    output reg        overflow;
 
    input [31:0]      mfc0;
+   input [31:0]      mfc1;   // graphics status
 
    reg [31:0]        result;
 
@@ -70,7 +71,7 @@ module alu(A, B, ctrl, O, n_zero, overflow, mfc0);
           5'b11010 : result <= {31'd0, sub_result[31]}; // SLT, SLTI (as old_vhdl/alu.vhd: sign of A-B)
           5'b11011 : result <= {31'd0, sub_result[32]}; // SLTU, SLTIU (borrow of A-B)
           5'b11100 : result <= mfc0;
-          5'b11101 : result <= 0;                       // WIP: MFC1 GFX Status register
+          5'b11101 : result <= mfc1;                    // MFC1 GFX Status register
           5'b11110 : result <= 0;                       // WIP: MFC2 Joystick Data
           5'b11111 : result <= 0;                       // WIP: MFC3 Modplayer
           default:   result <= 0;

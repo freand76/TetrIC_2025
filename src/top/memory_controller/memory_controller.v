@@ -1,6 +1,6 @@
 // Memory controller: SDRAM shared between
 //   * flash copy (single word writes, only before copy_done)
-//   * video line fetch    (160 word burst reads)   - highest read priority
+//   * video line fetch    (burst reads, 1..160 words) - highest read priority
 //   * icache line fill    (8 word burst reads)
 //   * processor DMEM      (single word read/write)
 //
@@ -46,6 +46,7 @@ module memory_controller
     // VIDEO (clk_ram), req is held until req_ack
     input             video_req,
     input [19:0]      video_req_address,
+    input [8:0]       video_req_len,     // 1..256 words
     output reg        video_req_ack,
     output [31:0]     video_rsp_data,
     output            video_rsp_data_strobe,
@@ -70,7 +71,6 @@ module memory_controller
     output [3:0]      sdram_dqm
     );
 
-   localparam [8:0]  VIDEO_LEN  = 9'd160;
    localparam [8:0]  ICACHE_LEN = 9'd8;
    localparam [23:0] COPY_WORDS24 = COPY_WORDS;
 
@@ -250,8 +250,8 @@ module memory_controller
                       video_req_ack <= 1;
                       rd_req <= 1;
                       rd_addr <= {1'b0, video_req_address};
-                      rd_len <= VIDEO_LEN;
-                      rd_left <= VIDEO_LEN;
+                      rd_len <= video_req_len;
+                      rd_left <= video_req_len;
                       owner <= M_VIDEO;
                       state <= S_RD;
                    end

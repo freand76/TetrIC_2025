@@ -92,6 +92,8 @@ module top(
    // VIDEO
    wire                 video_req;
    wire [19:0]          video_req_address;
+   wire [8:0]           video_req_len;
+   wire [31:0]          video_status;
    wire                 video_req_ack;
    wire [31:0]          video_rsp_data;
    wire                 video_rsp_data_strobe;
@@ -159,6 +161,7 @@ module top(
                      // VIDEO signals
                      .video_req(video_req),
                      .video_req_address(video_req_address),
+                     .video_req_len(video_req_len),
                      .video_req_ack(video_req_ack),
                      .video_rsp_data(video_rsp_data),
                      .video_rsp_data_strobe(video_rsp_data_strobe),
@@ -229,7 +232,8 @@ module top(
                        .dmem_req(proc_dmem_req),
                        .dmem_wr(proc_dmem_wr),
                        .dmem_data_out(proc_dmem_data_out),
-                       .mfc0({{31{1'b0}}, uart_tx_data_ready}));
+                       .mfc0({{31{1'b0}}, uart_tx_data_ready}),
+                       .mfc1(video_status));
 
 `ifdef IVERLOG
    always@(posedge clk_cpu)
@@ -252,9 +256,11 @@ module top(
                .rst_n(rst_n),
                .enable(copy_done_ram),
                .frame_counter(),
+               .status(video_status),
                // To memory controller
                .req(video_req),
                .req_address(video_req_address),
+               .req_len(video_req_len),
                .req_ack(video_req_ack),
                .rsp_data(video_rsp_data),
                .rsp_data_strobe(video_rsp_data_strobe),

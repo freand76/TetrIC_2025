@@ -140,11 +140,23 @@ module iverilog_top;
    reg [31:0] vw;
    reg [15:0] vp;
 
+   // video register values used for the checked frame
+   integer    v_top, v_left, v_ppl, v_lines, v_gfx, v_delta, v_pixread, v_sx, v_sy, v_ix, v_iy;
+
    always @(negedge clk)
      if (video_capture && vx_d2 < 640 && vy_d2 < 480)
        begin
-          vw = sdram.mem[top.video.fb_address + (vy_d2 >> 1) * 160 + (vx_d2 >> 2)];
-          vp = vx_d2[1] ? vw[15:0] : vw[31:16];
+          v_sx = vx_d2 >> 1;
+          v_sy = vy_d2 >> 1;
+          v_ix = (vx_d2 >= 2 * v_left) ? (vx_d2 - 2 * v_left) / v_pixread : -1;
+          v_iy = v_sy - v_top;
+          if (v_ix >= 0 && v_ix < v_ppl && v_iy >= 0 && v_iy < v_lines)
+            begin
+               vw = sdram.mem[v_gfx + v_iy * ((v_ppl + 1) / 2 + v_delta) + v_ix / 2];
+               vp = v_ix[0] ? vw[15:0] : vw[31:16];
+            end
+          else
+            vp = 16'h0000;   // outside the image: black
           if (top.video.rgb_data !== expand(vp))
             begin
                if (video_errors < 10)
@@ -158,8 +170,14 @@ module iverilog_top;
       begin
          // line 0 is fetched at ypos 524, so start from the next full frame
          wait (top.video.ypos == 10'd523);
+         // registers that become active at the start of the next frame
+         v_top = top.video.p_toppos;      v_left = top.video.p_leftpos;
+         v_ppl = top.video.p_pixperline;  v_lines = top.video.p_lineperimg;
+         v_gfx = top.video.p_gfxaddr;     v_delta = top.video.p_deltaaddr;
+         v_pixread = (top.video.p_pixread == 0) ? 1 : top.video.p_pixread;
          wait (vy_d2 == 10'd0 && vx_d2 == 10'd0);
-         $display("%t checking video frame (frame buffer at %x)", $realtime, top.video.fb_address);
+         $display("%t checking video frame: TOPPOS %0d LEFTPOS %0d PIXPERLINE %0d LINEPERIMG %0d GFXADDR %x DELTAADDR %0d PIXREAD %0d",
+                  $realtime, v_top, v_left, v_ppl, v_lines, v_gfx, v_delta, v_pixread);
          video_capture = 1;
          wait (vy_d2 == 10'd480);
          video_capture = 0;
