@@ -67,6 +67,8 @@ module alu(A, B, ctrl, O, n_zero, overflow, mfc0);
           5'b10101 : result <= A | B;                   // OR, ORI
           5'b10110 : result <= A ^ B;                   // XOR, XORI
           5'b10111 : result <= ~(A | B);                // NOR
+          5'b11010 : result <= {31'd0, sub_result[31]}; // SLT, SLTI (as old_vhdl/alu.vhd: sign of A-B)
+          5'b11011 : result <= {31'd0, sub_result[32]}; // SLTU, SLTIU (borrow of A-B)
           5'b11100 : result <= mfc0;
           5'b11101 : result <= 0;                       // WIP: MFC1 GFX Status register
           5'b11110 : result <= 0;                       // WIP: MFC2 Joystick Data
