@@ -9,7 +9,7 @@ SRC_TOP=../src/top
 VERILOG_FILES = \
 	top.v \
 	pll126.v \
-	$(SRC_TOP)/video/dvi/dvi_generator.v \
+	$(SRC_TOP)/video/dvi/hdmi_generator.v \
 	$(SRC_TOP)/video/dvi/tmds_channel.v
 
 CST=tangnano20k.cst
@@ -46,3 +46,15 @@ program-sram-top: $(BUILD_DIR)/top.fs
 .PHONY: program-flash-top
 program-flash-top: $(BUILD_DIR)/top.fs
 	openFPGALoader -btangnano20k -f $<
+
+# ---- simulation ----
+# Decodes the HDMI stream and checks the audio (4 kHz sine) for SIM_MS ms.
+SIM_MS ?= 50
+SIM_DIR = $(BUILD_DIR)/sim
+
+.PHONY: sim
+sim:
+	mkdir -p $(SIM_DIR)
+	iverilog -g2012 -DSIM_MS=$(SIM_MS) -s tb_hdmi -o $(SIM_DIR)/tb_hdmi.vvp \
+		sim/tb_hdmi.v sim/gowin_sim.v $(filter-out pll126.v,$(VERILOG_FILES)) pll126.v
+	cd $(SIM_DIR) && vvp -n tb_hdmi.vvp

@@ -14,7 +14,7 @@ module top(input wire        sys_clk,
    // DVI
    wire [2:0]                tmds;
    wire [9:0]                tmds_r, tmds_g, tmds_b;
-   wire [10:0]               xpos, ypos;
+   wire [9:0]                xpos, ypos;
    wire                      line_end, frame_end;
 
    // --- PATTERN GENERATOR ----------------------------------------------------------------
@@ -46,6 +46,48 @@ module top(input wire        sys_clk,
      end // always @ (posedge clk_pixel)
    // --- PATTERN GENERATOR ----------------------------------------------------------------
 
+   // --- 4 kHz SINE, 48 kHz SAMPLE RATE ---------------------------------------------------
+   // 25.2 MHz / 525 = 48 kHz, and 48 kHz / 12 = 4 kHz, so one period is 12 samples.
+   logic [9:0]               sample_div;
+   logic [3:0]               sine_idx;
+   logic signed [15:0]       sine;
+   logic                     audio_valid;
+
+   always @(posedge clk_pixel)
+     begin
+        if (!rst_n)
+          begin
+             sample_div <= 0;
+             sine_idx <= 0;
+             audio_valid <= 0;
+          end
+        else
+          begin
+             audio_valid <= sample_div == 10'd524;
+             sample_div <= sample_div == 10'd524 ? 10'd0 : sample_div + 1'b1;
+             if (sample_div == 10'd524)
+               sine_idx <= sine_idx == 4'd11 ? 4'd0 : sine_idx + 1'b1;
+          end
+     end
+
+   always @(posedge clk_pixel)
+     case (sine_idx)
+          4'd0: sine <= 16'sd0;
+          4'd1: sine <= 16'sd8192;
+          4'd2: sine <= 16'sd14189;
+          4'd3: sine <= 16'sd16384;
+          4'd4: sine <= 16'sd14189;
+          4'd5: sine <= 16'sd8192;
+          4'd6: sine <= 16'sd0;
+          4'd7: sine <= -16'sd8192;
+          4'd8: sine <= -16'sd14189;
+          4'd9: sine <= -16'sd16384;
+          4'd10: sine <= -16'sd14189;
+          4'd11: sine <= -16'sd8192;
+       default: sine <= 16'sd0;
+     endcase
+   // --- 4 kHz SINE ------------------------------------------------------------------------
+
    // pixel_clock_x5 is 126MHz
    // pixel_clock    is 25.2MHz
    PLL126 dvi_pll(.clkin_27mhz(sys_clk),
@@ -57,9 +99,15 @@ module top(input wire        sys_clk,
                                      .RESETN(pll_lock)
                                      );
 
-   dvi_generator dvi_gen(.clk_pixel(clk_pixel),
+   hdmi_generator #(.SPD_VENDOR("TetrIC"),
+                    .SPD_PRODUCT("TetrIC hdmitest"),
+                    .SPD_SOURCE(8'h08))
+   hdmi_gen(.clk_pixel(clk_pixel),
                          .n_reset(rst_n),
                          .rgb_data(rgb_data),
+                         .audio_l(sine),
+                         .audio_r(sine),
+                         .audio_valid(audio_valid),
                          .tmds_r(tmds_r),
                          .tmds_g(tmds_g),
                          .tmds_b(tmds_b),
