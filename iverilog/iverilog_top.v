@@ -20,6 +20,8 @@ module iverilog_top;
    initial
      begin
         $display("Hello, World");
+        if ($test$plusargs("run_ns"))
+          #(1.0e12);
         #(TIMEOUT_NS);
         $display("TIMEOUT");
         finish_sim;
@@ -43,7 +45,22 @@ module iverilog_top;
      end
 
    wire [1:0] led;
-   wire       ds_clk, ds_cs, ds_mosi;
+   wire       ds_clk, ds_cs, ds_mosi, pad_miso;
+
+   // gamepad: nothing pressed, unless +press_ns=<t> +release_ns=<t> (START)
+   ps2pad_model pad(.clk(ds_clk), .cs(ds_cs), .mosi(ds_mosi), .miso(pad_miso));
+   real pad_press_ns, pad_release_ns;
+   initial
+     if ($value$plusargs("press_ns=%f", pad_press_ns) &&
+         $value$plusargs("release_ns=%f", pad_release_ns))
+       begin
+          #(pad_press_ns);
+          pad.buttons1 = ~8'h08;          // START
+          $display("%t gamepad: START pressed", $realtime);
+          #(pad_release_ns - pad_press_ns);
+          pad.buttons1 = 8'hff;
+          $display("%t gamepad: START released", $realtime);
+       end
    wire       uart_tx;
    wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
 
@@ -66,7 +83,7 @@ module iverilog_top;
            .ds_clk(ds_clk),
            .ds_cs(ds_cs),
            .ds_mosi(ds_mosi),
-           .ds_miso(1'b1),               // no gamepad: all released
+           .ds_miso(pad_miso),
            .O_sdram_cke(sdram_cke),
            .O_sdram_cs_n(sdram_cs_n),
            .O_sdram_cas_n(sdram_cas_n),
@@ -119,12 +136,47 @@ module iverilog_top;
 
    initial
      begin
+        if ($test$plusargs("run_ns"))
+          wait (0);                       // +run_ns decides when to stop
         wait (uart_chars > 0);
         while ($realtime - t_last_uart < UART_IDLE_NS)
           #(10000.0);
         if (CHECK_VIDEO)
           check_frame;
         finish_sim;
+     end
+
+   // ---- options for running other programs (e.g. game_code) ----
+   //   +preload=<file>  $readmemh image (one 32-bit word per line) loaded
+   //                    into the SDRAM model, so the program does not have to
+   //                    be copied from the flash model (the copied words are
+   //                    the same when MEM.TXT is the same image)
+   //   +run_ns=<ns>     stop after this time: check one frame and finish
+   //   +ppm             write the checked frame to frame.ppm
+   //   +frames=<n>      check (and write, frame0.ppm ...) n frames
+   reg [8*256-1:0] preload_file;
+   real            run_ns;
+   integer         ppm_fd = 0;
+   integer         n_frames, frame_i = 0;
+   reg [8*32-1:0]  ppm_name;
+   initial
+     begin
+        if ($value$plusargs("preload=%s", preload_file))
+          begin
+             $readmemh(preload_file, sdram.mem);
+             $display("SDRAM preloaded from %0s", preload_file);
+          end
+        if ($value$plusargs("run_ns=%f", run_ns))
+          begin
+             #(run_ns);
+             $display("%t run_ns reached: PC %x, game frame counter (MFC1) %0d", $realtime,
+                      top.processor.imem_addr_out, top.video.frame_counter);
+             if (!$value$plusargs("frames=%d", n_frames))
+               n_frames = 1;
+             for (frame_i = 0; frame_i < n_frames; frame_i = frame_i + 1)
+               check_frame;
+             finish_sim;
+          end
      end
 
    // ---- video check: one 640x480 frame against the SDRAM model ----
@@ -162,6 +214,9 @@ module iverilog_top;
             end
           else
             vp = 16'h0000;   // outside the image: black
+          if (ppm_fd)
+            $fwrite(ppm_fd, "%0d %0d %0d\n", top.video.rgb_data[23:16],
+                    top.video.rgb_data[15:8], top.video.rgb_data[7:0]);
           if (top.video.rgb_data !== expand(vp))
             begin
                if (video_errors < 10)
@@ -183,9 +238,20 @@ module iverilog_top;
          wait (vy_d2 == 10'd0 && vx_d2 == 10'd0);
          $display("%t checking video frame: TOPPOS %0d LEFTPOS %0d PIXPERLINE %0d LINEPERIMG %0d GFXADDR %x DELTAADDR %0d PIXREAD %0d",
                   $realtime, v_top, v_left, v_ppl, v_lines, v_gfx, v_delta, v_pixread);
+         if ($test$plusargs("ppm"))
+           begin
+              $sformat(ppm_name, "frame%0d.ppm", frame_i);
+              ppm_fd = $fopen(ppm_name, "w");
+              $fwrite(ppm_fd, "P3\n640 480\n255\n");
+           end
          video_capture = 1;
          wait (vy_d2 == 10'd480);
          video_capture = 0;
+         if (ppm_fd)
+           begin
+              $fclose(ppm_fd);
+              ppm_fd = 0;
+           end
          $display("%t video frame: %0d pixel errors", $realtime, video_errors);
       end
    endtask
