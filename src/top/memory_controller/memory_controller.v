@@ -98,7 +98,35 @@ module memory_controller
           fl_tog <= ~fl_tog;
        end
 
-   // ---- DMEM access: hold + toggle, ack toggle back ----
+   // ---- DMEM writes: posted through an asynchronous FIFO ----
+   // A store is acknowledged as soon as it is in the FIFO (8 entries); the
+   // clk_ram side writes it to SDRAM in the background. Pointers cross the
+   // clock domains as Gray code. A load waits until the FIFO is empty, so
+   // it always sees the earlier stores (the SDRAM controller executes the
+   // requests in order).
+   localparam WF_DEPTH = 8;
+   reg [51:0] wf_mem [0:WF_DEPTH-1];   // {addr, data}, written in clk_cpu
+   reg [3:0]  wf_wptr, wf_wptr_gray;   // clk_cpu (one extra bit for full/empty)
+   reg [3:0]  wf_rptr, wf_rptr_gray;   // clk_ram
+   reg [3:0]  wf_rptr_gray_s1, wf_rptr_gray_cpu;   // rptr synchronised to clk_cpu
+   reg [3:0]  wf_wptr_gray_s1, wf_wptr_gray_ram;   // wptr synchronised to clk_ram
+   wire [3:0] wf_wptr_next = wf_wptr + 4'd1;
+   wire       wf_full  = (wf_wptr_gray == {~wf_rptr_gray_cpu[3:2], wf_rptr_gray_cpu[1:0]});
+   wire       wf_empty_cpu = (wf_wptr_gray == wf_rptr_gray_cpu);
+
+   always @(posedge clk_cpu or negedge rst_cpu_n)
+     if (!rst_cpu_n)
+       begin
+          wf_rptr_gray_s1 <= 0;
+          wf_rptr_gray_cpu <= 0;
+       end
+     else
+       begin
+          wf_rptr_gray_s1 <= wf_rptr_gray;
+          wf_rptr_gray_cpu <= wf_rptr_gray_s1;
+       end
+
+   // ---- DMEM reads: hold + toggle, ack toggle back ----
    reg        dm_tog;
    reg        dm_busy;
    reg        dm_waitdrop;
@@ -110,6 +138,11 @@ module memory_controller
    wire       dm_ack_cpu;
 
    assign proc_dmem_data_in = dm_rdata;
+
+   wire wf_push = !dm_busy && !dm_waitdrop && arbiter_ram_write_access && !wf_full;
+   always @(posedge clk_cpu)
+     if (wf_push)
+       wf_mem[wf_wptr[2:0]] <= {proc_dmem_addr, proc_dmem_data_out};
 
    sync_toggle st_dm_ack(.clk(clk_cpu), .rst_n(rst_cpu_n), .toggle(dm_ack_tog), .pulse(dm_ack_cpu));
 
@@ -123,6 +156,8 @@ module memory_controller
           dm_addr_h <= 0;
           dm_data_h <= 0;
           arbiter_memory_ack <= 0;
+          wf_wptr <= 0;
+          wf_wptr_gray <= 0;
        end
      else
        begin
@@ -142,9 +177,19 @@ module memory_controller
                if (!arbiter_ram_read_access && !arbiter_ram_write_access)
                  dm_waitdrop <= 0;
             end
-          else if (arbiter_ram_read_access || arbiter_ram_write_access)
+          else if (arbiter_ram_write_access)
             begin
-               dm_wr_h <= arbiter_ram_write_access;
+               if (!wf_full)
+                 begin
+                    wf_wptr <= wf_wptr_next;
+                    wf_wptr_gray <= wf_wptr_next ^ (wf_wptr_next >> 1);
+                    dm_waitdrop <= 1;
+                    arbiter_memory_ack <= 1;
+                 end
+            end
+          else if (arbiter_ram_read_access && wf_empty_cpu)
+            begin
+               dm_wr_h <= 1'b0;
                dm_addr_h <= proc_dmem_addr;
                dm_data_h <= proc_dmem_data_out;
                dm_tog <= ~dm_tog;
@@ -175,11 +220,16 @@ module memory_controller
    wire        rd_valid;
    wire [31:0] rd_data;
 
-   localparam [1:0] M_FLASH = 2'd0, M_VIDEO = 2'd1, M_ICACHE = 2'd2, M_DMEM = 2'd3;
+   localparam [2:0] M_FLASH = 3'd0, M_VIDEO = 3'd1, M_ICACHE = 3'd2, M_DMEM = 3'd3, M_WFIFO = 3'd4;
    localparam [1:0] S_IDLE = 2'd0, S_RD = 2'd1, S_WR = 2'd2;
 
    reg [1:0]   state;
-   reg [1:0]   owner;
+   reg [2:0]   owner;
+
+   // posted write FIFO, read side
+   wire        wf_empty_ram = (wf_rptr_gray == wf_wptr_gray_ram);
+   wire [3:0]  wf_rptr_next = wf_rptr + 4'd1;
+   wire [51:0] wf_entry = wf_mem[wf_rptr[2:0]];   // stable: written before wptr moved
    reg [8:0]   rd_left;
 
    reg         fl_pending;
@@ -215,11 +265,17 @@ module memory_controller
           dm_ack_tog <= 0;
           video_req_ack <= 0;
           icache_req_ack <= 0;
+          wf_rptr <= 0;
+          wf_rptr_gray <= 0;
+          wf_wptr_gray_s1 <= 0;
+          wf_wptr_gray_ram <= 0;
        end
      else
        begin
           video_req_ack <= 0;
           icache_req_ack <= 0;
+          wf_wptr_gray_s1 <= wf_wptr_gray;
+          wf_wptr_gray_ram <= wf_wptr_gray_s1;
 
           if (fl_ev)
             begin
@@ -265,24 +321,24 @@ module memory_controller
                       owner <= M_ICACHE;
                       state <= S_RD;
                    end
+                 else if (!wf_empty_ram)
+                   begin
+                      // posted DMEM write
+                      wr_req <= 1;
+                      wr_addr <= {1'b0, wf_entry[51:32]};
+                      wr_data <= wf_entry[31:0];
+                      owner <= M_WFIFO;
+                      state <= S_WR;
+                   end
                  else if (dm_pending)
                    begin
+                      // DMEM read (the CPU only reads when its writes are done)
                       owner <= M_DMEM;
-                      if (dm_wr_h)
-                        begin
-                           wr_req <= 1;
-                           wr_addr <= {1'b0, dm_addr_h};
-                           wr_data <= dm_data_h;
-                           state <= S_WR;
-                        end
-                      else
-                        begin
-                           rd_req <= 1;
-                           rd_addr <= {1'b0, dm_addr_h};
-                           rd_len <= 9'd1;
-                           rd_left <= 9'd1;
-                           state <= S_RD;
-                        end
+                      rd_req <= 1;
+                      rd_addr <= {1'b0, dm_addr_h};
+                      rd_len <= 9'd1;
+                      rd_left <= 9'd1;
+                      state <= S_RD;
                    end
               end
 
@@ -322,8 +378,9 @@ module memory_controller
                         end
                       else
                         begin
-                           dm_pending <= 0;
-                           dm_ack_tog <= ~dm_ack_tog;
+                           // posted write handed to the SDRAM controller
+                           wf_rptr <= wf_rptr_next;
+                           wf_rptr_gray <= wf_rptr_next ^ (wf_rptr_next >> 1);
                         end
                    end
               end
@@ -336,7 +393,7 @@ module memory_controller
 `ifdef MEMCTRL_DEBUG
    always @(posedge clk_ram)
      begin
-        if (state == S_WR && wr_ack && owner == M_DMEM)
+        if (state == S_WR && wr_ack && owner == M_WFIFO)
           $display("MEM_WRITE: (%x) <= %x", wr_addr, wr_data);
         if (state == S_RD && rd_valid && owner == M_DMEM)
           $display("MEM_READ: (%x) => %x", rd_addr, rd_data);

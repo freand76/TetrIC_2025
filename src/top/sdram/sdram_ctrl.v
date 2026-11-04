@@ -124,7 +124,7 @@ module sdram_ctrl
                     S_RD_CMD  = 4'd7,
                     S_RD_BURST= 4'd8,
                     S_WR_CMD  = 4'd9,
-                    S_WR_HOLD = 4'd10;
+                    S_WR_OPEN = 4'd10;
 
    reg [3:0]         state, next_after_wait;
    reg [15:0]        timer;
@@ -135,6 +135,9 @@ module sdram_ctrl
    reg [8:0]         seg_len;     // words in current segment
    reg [8:0]         cnt;         // cycles since READ/WRITE command
    reg [31:0]        wdata;
+   reg [7:0]         act_cnt;     // cycles since ACTIVE of the open write row
+   wire [12:0]       open_row = cur_addr[20:8];        // bank + row of the open write row
+   localparam [7:0]  T_ACT_PRE = (T_RAS > T_RC - T_RP) ? T_RAS : T_RC - T_RP;
 
    // refresh bookkeeping
    reg [15:0]        ref_timer;
@@ -152,7 +155,6 @@ module sdram_ctrl
    wire [8:0]        this_seg = (remaining < col_room) ? remaining : col_room;
 
    wire [8:0]        rd_pre_at  = (seg_len > T_MIN_PRE) ? seg_len : T_MIN_PRE[8:0];
-   localparam [8:0]  WR_PRE_AT  = (T_WR > T_MIN_PRE) ? T_WR : T_MIN_PRE;
 
    always @(posedge clk)
      begin
@@ -176,6 +178,7 @@ module sdram_ctrl
              remaining <= 0;
              cur_addr <= 0;
              wdata <= 0;
+             act_cnt <= 0;
              next_after_wait <= S_IDLE;
           end
         else
@@ -262,6 +265,7 @@ module sdram_ctrl
                          SDRAM_BA <= wr_addr[20:19];
                          SDRAM_A  <= wr_addr[18:8];
                          timer <= T_RCD - 1;
+                         act_cnt <= 1;
                          state <= S_WR_CMD;
                       end
                  end
@@ -308,6 +312,7 @@ module sdram_ctrl
                // ---------------- single write ----------------
                S_WR_CMD:
                  begin
+                    act_cnt <= act_cnt + 1;
                     if (timer == 0)
                       begin
                          {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_WR;
@@ -315,16 +320,34 @@ module sdram_ctrl
                          dq_out <= wdata;
                          dq_oe <= 1;
                          cnt <= 1;
-                         state <= S_WR_HOLD;
+                         state <= S_WR_OPEN;
                       end
                     else
                       timer <= timer - 1;
                  end
 
-               S_WR_HOLD:
+               // The row stays open after a write: more writes to the same
+               // row only need the WRITE command (e.g. a screen clear). It is
+               // closed (PRECHARGE) for anything else and before a refresh.
+               S_WR_OPEN:
                  begin
-                    cnt <= cnt + 1;
-                    if (cnt == WR_PRE_AT)
+                    cnt <= (cnt == 9'h1ff) ? cnt : cnt + 1;
+                    act_cnt <= (act_cnt == 8'hff) ? act_cnt : act_cnt + 1;
+                    if (wr_req && ref_pending == 0 && cnt >= 2 &&
+                        wr_addr[20:8] == open_row)
+                      begin
+                         // write to the open row (cnt >= 2: the previous
+                         // request has been removed after its wr_ack)
+                         wr_ack <= 1;
+                         cur_addr <= wr_addr;
+                         {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_WR;
+                         SDRAM_A <= {3'b000, wr_addr[7:0]};
+                         dq_out <= wr_data;
+                         dq_oe <= 1;
+                         cnt <= 1;
+                      end
+                    else if ((rd_req || wr_req || ref_pending != 0) &&
+                             cnt >= T_WR && act_cnt >= T_ACT_PRE)
                       begin
                          {SDRAM_nRAS, SDRAM_nCAS, SDRAM_nWE} <= CMD_PRE;
                          SDRAM_A[10] <= 1'b0;
