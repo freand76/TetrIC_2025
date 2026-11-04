@@ -79,7 +79,7 @@ InitSound:
 	_LI	$sfx,SfxBase
 	_LI	$t0,Lut-108
 	_SW	$t0,SFX_LUT($sfx)
-	_LI	$t0,480000
+	_LI	$t0,504000			; MOD tick: 25.2 MHz / 50 Hz (480000 at 24 MHz)
 	_SW	$t0,SFX_WAITCLK($sfx)
 	movi	$t0,732
 	_SW	$t0,SFX_STEPCLK($sfx)

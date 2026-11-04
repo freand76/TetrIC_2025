@@ -1,6 +1,6 @@
 GAME_MUSIC = 0
 
-BEAT_TARGETVOL = 32
+BEAT_TARGETVOL = 64			; full volume (32 on the original)
 
 StartMusic:
 	; a0 - 0 = silent , 1 = music
