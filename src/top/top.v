@@ -66,6 +66,7 @@ module top(
    // ARBITER
    wire                 arbiter_uart_sel;
    wire                 arbiter_video_sel;
+   wire                 arbiter_sound_sel;
    wire                 arbiter_write_strobe;
    wire                 arbiter_proc_stall_n;
 
@@ -102,6 +103,15 @@ module top(
    wire                 video_req_ack;
    wire [31:0]          video_rsp_data;
    wire                 video_rsp_data_strobe;
+
+   // SOUND
+   wire                 sound_req;
+   wire [19:0]          sound_req_address;
+   wire                 sound_req_ack;
+   wire [31:0]          sound_rsp_data;
+   wire                 sound_rsp_data_strobe;
+   wire [15:0]          audio_l, audio_r;
+   wire                 audio_valid;
 
    // CPU domain reset
    wire                 rst_cpu_n;
@@ -168,6 +178,13 @@ module top(
                      .video_rsp_data(video_rsp_data),
                      .video_rsp_data_strobe(video_rsp_data_strobe),
 
+                     // SOUND signals
+                     .sound_req(sound_req),
+                     .sound_req_address(sound_req_address),
+                     .sound_req_ack(sound_req_ack),
+                     .sound_rsp_data(sound_rsp_data),
+                     .sound_rsp_data_strobe(sound_rsp_data_strobe),
+
                      // ARBITER signals
                      .arbiter_ram_read_access(arbiter_ram_read_access),
                      .arbiter_ram_write_access(arbiter_ram_write_access),
@@ -221,6 +238,7 @@ module top(
                                  .ram_write_access(arbiter_ram_write_access),
                                  .peripheral_write_strobe(arbiter_write_strobe),
                                  .video_sel(arbiter_video_sel),
+                                 .sound_sel(arbiter_sound_sel),
                                  .uart_sel(arbiter_uart_sel)
                                  );
 
@@ -271,9 +289,32 @@ module top(
                .data_in(proc_dmem_data_out),
                .sel(arbiter_video_sel),
                .wr(arbiter_write_strobe),
+               .audio_l(audio_l),
+               .audio_r(audio_r),
+               .audio_valid(audio_valid),
                .tmds_r(tmds_r),
                .tmds_g(tmds_g),
                .tmds_b(tmds_b));
+
+   sound sound(.clk_cpu(clk_cpu),
+               .clk_pixel(clk_pixel),
+               .clk_ram(clk_ram),
+               .rst_n(rst_n),
+               .enable(copy_done_ram),
+               .addr_in(proc_dmem_addr_out),
+               .data_in(proc_dmem_data_out),
+               .sel(arbiter_sound_sel),
+               .wr(arbiter_write_strobe),
+               // To memory controller
+               .req(sound_req),
+               .req_address(sound_req_address),
+               .req_ack(sound_req_ack),
+               .rsp_data(sound_rsp_data),
+               .rsp_data_strobe(sound_rsp_data_strobe),
+               // To HDMI
+               .audio_l(audio_l),
+               .audio_r(audio_r),
+               .audio_valid(audio_valid));
 
    uart_tx#
      (

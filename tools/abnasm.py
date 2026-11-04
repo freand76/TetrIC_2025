@@ -31,7 +31,7 @@ Syntax summary
   Numbers: 123, -5, 0x1f, 0b101, 017 (octal), 'a'
   Immediates may be labels or expressions with + - * / ^ ~ | & and [ ].
   label.L / label.H selects the low / high 16 bits.
-  Directives: .ORG .DC .PAD .FILE .ASCII .EQU (=) .END .MACRO/.ENDMACRO
+  Directives: .ORG .DC .PAD .FILE (name [words], default whole file) .ASCII .EQU (=) .END .MACRO/.ENDMACRO
               .TRANSTAB .TR .TRANSLATE .TRANSOFF
 """
 
@@ -403,9 +403,17 @@ class Assembler:
                         args += " %s %s" % (length, value)
                         pc += self.getvalue(length, lineno)
                     elif command == ".FILE":
-                        if len(spt) < 2:
+                        if len(spt) < 1:
                             self.die(lineno, "Missing args")
-                        fname, length = spt[0].replace('"', ""), spt[1]
+                        fname = spt[0].replace('"', "")
+                        if len(spt) >= 2:
+                            length = spt[1]
+                        else:
+                            # no length: the whole file, rounded up to words
+                            try:
+                                length = str((os.path.getsize(fname) + 3) // 4)
+                            except OSError:
+                                self.die(lineno, "Could not find incbin file %s" % fname)
                         args += " %s %s" % (fname, length)
                         pc += self.getvalue(length, lineno)
             elif command in self.macros:
@@ -619,6 +627,9 @@ class Assembler:
                 try:
                     with open(fname, "rb") as fh:
                         data = fh.read(4 * length)
+                        if len(fh.read(4)) == 4:   # a whole word or more left out
+                            sys.stderr.write("warning: .file %s truncated to %d words (file is %d bytes)\n"
+                                             % (fname, length, os.path.getsize(fname)))
                 except OSError:
                     raise AsmError("Could not find incbin file %s" % fname)
                 out += data + bytes(4 * length - len(data))

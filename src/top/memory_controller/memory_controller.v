@@ -1,6 +1,7 @@
 // Memory controller: SDRAM shared between
 //   * flash copy (single word writes, only before copy_done)
 //   * video line fetch    (burst reads, 1..160 words) - highest read priority
+//   * sound sample fetch  (single word reads)
 //   * icache line fill    (8 word burst reads)
 //   * processor DMEM      (single word read/write)
 //
@@ -50,6 +51,13 @@ module memory_controller
     output reg        video_req_ack,
     output [31:0]     video_rsp_data,
     output            video_rsp_data_strobe,
+
+    // SOUND (clk_ram), req is held until req_ack, one word
+    input             sound_req,
+    input [19:0]      sound_req_address,
+    output reg        sound_req_ack,
+    output [31:0]     sound_rsp_data,
+    output            sound_rsp_data_strobe,
 
     // ARBITER / PROCESSOR (clk_cpu)
     input             arbiter_ram_read_access,
@@ -220,7 +228,7 @@ module memory_controller
    wire        rd_valid;
    wire [31:0] rd_data;
 
-   localparam [2:0] M_FLASH = 3'd0, M_VIDEO = 3'd1, M_ICACHE = 3'd2, M_DMEM = 3'd3, M_WFIFO = 3'd4;
+   localparam [2:0] M_FLASH = 3'd0, M_VIDEO = 3'd1, M_ICACHE = 3'd2, M_DMEM = 3'd3, M_WFIFO = 3'd4, M_SOUND = 3'd5;
    localparam [1:0] S_IDLE = 2'd0, S_RD = 2'd1, S_WR = 2'd2;
 
    reg [1:0]   state;
@@ -241,6 +249,8 @@ module memory_controller
 
    assign video_rsp_data         = rd_data;
    assign icache_rsp_data        = rd_data;
+   assign sound_rsp_data         = rd_data;
+   assign sound_rsp_data_strobe  = rd_valid && (owner == M_SOUND);
    assign video_rsp_data_strobe  = rd_valid && (owner == M_VIDEO);
    assign icache_rsp_data_strobe = rd_valid && (owner == M_ICACHE);
 
@@ -265,6 +275,7 @@ module memory_controller
           dm_ack_tog <= 0;
           video_req_ack <= 0;
           icache_req_ack <= 0;
+          sound_req_ack <= 0;
           wf_rptr <= 0;
           wf_rptr_gray <= 0;
           wf_wptr_gray_s1 <= 0;
@@ -274,6 +285,7 @@ module memory_controller
        begin
           video_req_ack <= 0;
           icache_req_ack <= 0;
+          sound_req_ack <= 0;
           wf_wptr_gray_s1 <= wf_wptr_gray;
           wf_wptr_gray_ram <= wf_wptr_gray_s1;
 
@@ -309,6 +321,16 @@ module memory_controller
                       rd_len <= video_req_len;
                       rd_left <= video_req_len;
                       owner <= M_VIDEO;
+                      state <= S_RD;
+                   end
+                 else if (sound_req && !sound_req_ack)
+                   begin
+                      sound_req_ack <= 1;
+                      rd_req <= 1;
+                      rd_addr <= {1'b0, sound_req_address};
+                      rd_len <= 9'd1;
+                      rd_left <= 9'd1;
+                      owner <= M_SOUND;
                       state <= S_RD;
                    end
                  else if (icache_req)

@@ -125,7 +125,7 @@ Scroll_Slide:		.dc	0
 Scroll_LastChar:	.dc	0
 Scroll_Speed:		.dc	0
 
-Scroll_Text:	.file	TheText.txt 512/4
+Scroll_Text:	.file	TheText.txt
 Scroll_Text_End:
 Scroll_Pad:	.pad	4,0
 Scroll_Length = 4*[Scroll_Text_End-Scroll_Text]

@@ -21,6 +21,7 @@ module memory_arbiter(
                       output reg   ram_write_access,
                       output reg   peripheral_write_strobe,
                       output       video_sel,
+                      output       sound_sel,
                       output       uart_sel
                       );
 
@@ -36,6 +37,7 @@ module memory_arbiter(
 
    assign ram_sel = write_address[23:20] == 4'h0;
    assign video_sel = write_address[23:20] == 4'he;
+   assign sound_sel = write_address[23:20] == 4'h4;
    assign uart_sel = write_address[23:20] == 4'hf;
 
    always@(posedge clk_cpu or negedge rst_n)

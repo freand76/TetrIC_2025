@@ -179,6 +179,30 @@ module iverilog_top;
           end
      end
 
+   // ---- sound log (+audio=<file>) for tools/sound_ref.py ----
+   //   W <pass> <phase> <reg> <data>   register write, when the sound unit
+   //                                   applies it; phase = mixer channel in
+   //                                   that clock, 8 = between passes
+   //   S <left> <right>                one 48 kHz output sample
+   reg [8*256-1:0] audio_file;
+   integer         audio_fd = 0, audio_samples = 0;
+   initial
+     if ($value$plusargs("audio=%s", audio_file))
+       audio_fd = $fopen(audio_file, "w");
+
+   always @(negedge clk)
+     if (audio_fd)
+       begin
+          if (top.sound.op == top.sound.OP_WRITE)
+            $fwrite(audio_fd, "W %0d %0d %0d %0d\n", top.sound.tick_count,
+                    top.sound.mixing ? top.sound.mch : 8, top.sound.q_reg, top.sound.q_data);
+          if (top.audio_valid)
+            begin
+               $fwrite(audio_fd, "S %0d %0d\n", $signed(top.audio_l), $signed(top.audio_r));
+               audio_samples = audio_samples + 1;
+            end
+       end
+
    // ---- video check: one 640x480 frame against the SDRAM model ----
    function [23:0] expand;
       input [15:0] p;
@@ -262,6 +286,14 @@ module iverilog_top;
          sdram.report;
          if (top.memory_controller.copy_overrun) $display("ERROR: flash copy overrun");
          if (top.video.video_dma.late)           $display("ERROR: video line fetch late");
+         if (audio_fd)
+           begin
+              $fclose(audio_fd);
+              $display("sound: %0d output samples, %0d mix passes, %0d underruns",
+                       audio_samples, top.sound.tick_count, top.sound.underruns);
+           end
+         if (top.sound.underruns != 0)           $display("ERROR: sound underrun");
+         if (top.sound.wq_overflow)              $display("ERROR: sound register write queue overflow");
          $finish;
       end
    endtask

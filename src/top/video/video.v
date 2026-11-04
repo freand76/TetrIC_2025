@@ -1,4 +1,5 @@
-// Video: RGB565 frame buffer in SDRAM, shown on a fixed 640x480 DVI output.
+// Video: RGB565 frame buffer in SDRAM, shown on a fixed 640x480 HDMI output
+// (with the 48 kHz audio from the sound unit).
 // Every image pixel is 2x2 DVI pixels, so the screen is 320x240 "pixels".
 //
 // Register set and control follow the old TetrIC gfxbox (old_vhdl/gfxbox.vhd).
@@ -43,6 +44,11 @@ module video(
              input [31:0]      data_in,
              input             sel,
              input             wr,
+
+             // AUDIO (clk_pixel), 48 kHz
+             input [15:0]      audio_l,
+             input [15:0]      audio_r,
+             input             audio_valid,
 
              output [9:0]      tmds_r,
              output [9:0]      tmds_g,
@@ -282,9 +288,12 @@ module video(
                         pixel_data[4:0],   pixel_data[4:2] };
        end
 
-   dvi_generator dvi_gen(.clk_pixel(clk_pixel),
+   hdmi_generator hdmi_gen(.clk_pixel(clk_pixel),
                          .n_reset(rst_pixel_n),
                          .rgb_data(rgb_data),
+                         .audio_l(audio_l),
+                         .audio_r(audio_r),
+                         .audio_valid(audio_valid),
                          .tmds_r(tmds_r),
                          .tmds_g(tmds_g),
                          .tmds_b(tmds_b),
