@@ -15,17 +15,19 @@
 //                 [30:28] ch4 [26:24] ch5 [22:20] ch6 [18:16] ch7
 //                 [14:12] ch0 [10:8]  ch1 [6:4]   ch2 [2:0]   ch3
 //                 7 = full, 6 = half, ... 0 = off
-//   0, 1, 3, 28..36  MOD player registers: not implemented yet (ignored)
+//   0, 1, 3, 28  MOD player: OFFSET, LUT, SONGSTATUS, WAITCLK, see
+//                sound_seq.v (29, 31..36 are ignored)
 //
-// Channels 0..3 are for the MOD player (not implemented yet, silent).
+// Channels 0..3 are played by the MOD sequencer (sound_seq.v), which
+// changes them with the same writes as above (START, VOL, END, ...).
 // Mixing is Amiga style: left = ch 0,3,4,7, right = ch 1,2,5,6.
 //
 // Samples are signed 8 bit, 4 per word, first sample in bits 31:24.
 // A channel plays the words START .. END-1. Writing START restarts the
 // channel; it starts playing (one silent sample later) as soon as
 // START < END, so the game writes END last. When LEND != 0 the channel
-// jumps to LSTART when it reaches LEND. END = 0 stops the channel (also a
-// looping one), after the up to 8 samples it has already fetched.
+// jumps to LSTART when it reaches LEND. END = 0 stops the channel at once
+// (also a looping one).
 //
 // Each channel buffers two words and fetches the next word from SDRAM as
 // soon as one is free, so a word has 4..8 output samples (>= 83 us at
@@ -40,7 +42,11 @@
 // clock and audio output in clk_pixel (25.2 MHz / 525), SDRAM requests in
 // clk_ram. The output rate follows clk_pixel, as HDMI expects.
 
-module sound(
+module sound
+  #(
+    parameter [9:0] SAMPLE_DIV = 10'd525      // clk_pixel clocks per sample (48 kHz)
+    )
+   (
              input             clk_cpu,
              input             clk_pixel,
              input             clk_ram,
@@ -73,7 +79,6 @@ module sound(
    reset_sync rs_ram  (.clk(clk_ram),   .rst_n_in(rst_n), .rst_n_out(rst_ram_n));
 
    // ============================ clk_pixel ============================
-   localparam [9:0] SAMPLE_DIV = 10'd525;   // 25.2 MHz / 48 kHz
 
    reg [9:0]  div;
    reg        tick_tog;
@@ -131,13 +136,15 @@ module sound(
    //   CLEAR  clear the records after reset (8 clocks)
    //   RSP    put a fetched word into the channel buffer
    //   MIX    mix one channel (8 clocks per 48 kHz tick)
+   //   SEQW   apply one channel write from the MOD sequencer (ch 0..3)
    //   WRITE  apply one register write from the write queue
    //   FETCH  check one channel (round robin) and request its next word
    wire tick_ev, rsp_ev;
    sync_toggle st_tick(.clk(clk_cpu), .rst_n(rst_cpu_n), .toggle(tick_tog),  .pulse(tick_ev));
    sync_toggle st_rsp (.clk(clk_cpu), .rst_n(rst_cpu_n), .toggle(f_rsp_tog), .pulse(rsp_ev));
 
-   localparam [2:0] OP_CLEAR = 3'd0, OP_RSP = 3'd1, OP_MIX = 3'd2, OP_WRITE = 3'd3, OP_FETCH = 3'd4;
+   localparam [2:0] OP_CLEAR = 3'd0, OP_RSP = 3'd1, OP_MIX = 3'd2, OP_WRITE = 3'd3, OP_FETCH = 3'd4,
+                    OP_SEQW = 3'd5;
 
    // ---- register write queue (the CPU writes without waiting) ----
    wire        wen = sel && wr;
@@ -158,7 +165,17 @@ module sound(
    reg [7:0]   chan_on;        // bit 7 = ch0
    reg [23:0]  mvol;           // 3 bits per channel, ch0 in [2:0]
 
+   // ---- MOD sequencer ----
+   wire        seq_rd_req, seq_w_req;
+   wire [19:0] seq_rd_addr, seq_w_data;
+   wire [5:0]  seq_w_reg;
+   wire [1:0]  seq_w_ch;
+   reg         seq_rd_valid;
+   reg  [3:0]  seq_gap;        // clocks without sequencer reads (sample fetches)
+   wire        seq_ev_start, seq_ev_tick, seq_ev_stop;
+
    // ---- fetch: one request in flight ----
+   reg         f_seq;          // the word in flight is for the sequencer
    reg         f_busy;
    reg [2:0]   f_ch;
    reg         f_discard;      // channel restarted while its word was in flight
@@ -186,6 +203,7 @@ module sound(
         if (!cleared)       begin op = OP_CLEAR; op_ch = clr_ch; end
         else if (rsp_pend)  begin op = OP_RSP;   op_ch = f_ch;   end
         else if (mixing)    begin op = OP_MIX;   op_ch = mch;    end
+        else if (seq_w_req) begin op = OP_SEQW;  op_ch = {1'b0, seq_w_ch}; end
         else if (!wq_empty) begin op = OP_WRITE; op_ch = 3'd4 + q_reg[1:0]; end
         else                begin op = OP_FETCH; op_ch = rr;     end
      end
@@ -230,7 +248,7 @@ module sound(
    wire [17:0] m_pos  = r_frac + m_inc;
    wire [2:0]  m_ni   = r_idx + m_pos[17:16];
    wire        m_more = r_faddr < r_fend;
-   wire        m_left = m_more || r_nxt_v || (f_busy && f_ch == op_ch && !f_discard);
+   wire        m_left = m_more || r_nxt_v || (f_busy && !f_seq && f_ch == op_ch && !f_discard);
    wire        m_on   = chan_on[3'd7 - op_ch];
    wire signed [15:0] m_sample = (r_play && r_cur_v && m_on) ? m_prod : 16'sd0;
    wire        m_is_left = op_ch[0] ~^ op_ch[1];
@@ -240,13 +258,30 @@ module sound(
 
    // ---- fetch arithmetic ----
    wire        f_need   = m_more && !(r_cur_v && r_nxt_v);
-   wire        f_issue  = !f_busy && f_need;
+   // sequencer reads only in a fetch slot of a channel that needs nothing
+   // (the sample words go first)
+   wire        seq_take = !f_busy && seq_rd_req && seq_gap == 0 && !f_need;
+   wire        f_issue  = !f_busy && f_need && !seq_take;
    wire [19:0] f_next0  = r_faddr + 1'b1;
    wire [19:0] f_next   = (r_lend != 0 && f_next0 >= r_lend) ? r_lstart : f_next0;
 
    function [15:0] sat16(input signed [16:0] v);
       sat16 = (v > 17'sd32767) ? 16'h7fff : (v < -17'sd32768) ? 16'h8000 : v[15:0];
    endfunction
+
+   // ---- register write (CPU queue or sequencer) ----
+   wire [5:0]  w_reg  = (op == OP_SEQW) ? seq_w_reg : q_reg;
+   wire [31:0] w_data = (op == OP_SEQW) ? {12'd0, seq_w_data} : q_data;
+
+   sound_seq seq(.clk(clk_cpu), .rst_n(rst_cpu_n),
+                 .cpu_w(op == OP_WRITE), .cpu_reg(q_reg), .cpu_data(q_data),
+                 .mix_tick(tick_ev),
+                 .rd_req(seq_rd_req), .rd_addr(seq_rd_addr),
+                 .rd_ack(op == OP_FETCH && seq_take),
+                 .rd_valid(seq_rd_valid), .rd_data(f_data),
+                 .w_req(seq_w_req), .w_reg(seq_w_reg), .w_ch(seq_w_ch), .w_data(seq_w_data),
+                 .w_ack(op == OP_SEQW),
+                 .ev_start(seq_ev_start), .ev_tick(seq_ev_tick), .ev_stop(seq_ev_stop));
 
    // ---- record update (combinational) ----
    always @(*)
@@ -299,38 +334,40 @@ module sound(
                  rec_n[18] = 1'b0;   // sample done
             end
 
-          OP_WRITE:
-            case (q_reg)
-              6'd4, 6'd5, 6'd6, 6'd7:     // START: restart the channel
+          OP_WRITE, OP_SEQW:
+            case (w_reg[5:2])
+              4'd1:                       // START: restart the channel
                 begin
                    rec_we = 1;
-                   rec_n = {r_vol, r_freq, r_lend, r_lstart, r_fend, q_data[19:0],
+                   rec_n = {r_vol, r_freq, r_lend, r_lstart, r_fend, w_data[19:0],
                             r_nxt, r_cur, 1'b0, 1'b0, 1'b0, 2'd0, 16'd0};
                 end
-              6'd8, 6'd9, 6'd10, 6'd11:
+              4'd2:                       // VOL
                 begin
                    rec_we = 1;
-                   rec_n[187:181] = q_data[6:0];
+                   rec_n[187:181] = w_data[6:0];
                 end
-              6'd12, 6'd13, 6'd14, 6'd15:
+              4'd3:                       // END (0: stop now)
                 begin
                    rec_we = 1;
-                   rec_n[124:105] = q_data[19:0];
+                   rec_n[124:105] = w_data[19:0];
+                   if (w_data[19:0] == 0)
+                     rec_n[20:18] = 3'b000;     // nxt_v, cur_v, play
                 end
-              6'd16, 6'd17, 6'd18, 6'd19:
+              4'd4:                       // LSTART
                 begin
                    rec_we = 1;
-                   rec_n[144:125] = q_data[19:0];
+                   rec_n[144:125] = w_data[19:0];
                 end
-              6'd20, 6'd21, 6'd22, 6'd23:
+              4'd5:                       // LEND
                 begin
                    rec_we = 1;
-                   rec_n[164:145] = q_data[19:0];
+                   rec_n[164:145] = w_data[19:0];
                 end
-              6'd24, 6'd25, 6'd26, 6'd27:
+              4'd6:                       // FREQ
                 begin
                    rec_we = 1;
-                   rec_n[180:165] = q_data[15:0];
+                   rec_n[180:165] = w_data[15:0];
                 end
               default: ;
             endcase
@@ -358,6 +395,9 @@ module sound(
           chan_on <= 8'hff;
           mvol <= 24'hffffff;
           f_busy <= 0;
+          f_seq <= 0;
+          seq_rd_valid <= 0;
+          seq_gap <= 0;
           f_ch <= 0;
           f_discard <= 0;
           f_tog <= 0;
@@ -383,8 +423,19 @@ module sound(
                else
                  wq_w <= wq_w + 1'b1;
             end
+          seq_rd_valid <= 0;
+          if (seq_gap != 0)
+            seq_gap <= seq_gap - 1'b1;
           if (rsp_ev)
-            rsp_pend <= 1;
+            begin
+               if (f_seq)
+                 begin
+                    seq_rd_valid <= 1;   // f_data is held until the next request
+                    f_busy <= 0;
+                 end
+               else
+                 rsp_pend <= 1;
+            end
           if (tick_ev)
             begin
                mixing <= 1;
@@ -424,6 +475,12 @@ module sound(
                    end
               end
 
+            OP_SEQW:
+              // a restarted / stopped channel drops the word in flight for it
+              if ((w_reg[5:2] == 4'd1 || (w_reg[5:2] == 4'd3 && w_data[19:0] == 0)) &&
+                  f_busy && !f_seq && f_ch == op_ch)
+                f_discard <= 1;
+
             OP_WRITE:
               begin
                  wq_r <= wq_r + 1'b1;
@@ -432,7 +489,11 @@ module sound(
                      chan_on <= q_data[7:0];
                    6'd4, 6'd5, 6'd6, 6'd7:
                      // a restarted channel drops the word in flight for it
-                     if (f_busy && f_ch == op_ch)
+                     if (f_busy && !f_seq && f_ch == op_ch)
+                       f_discard <= 1;
+                   6'd12, 6'd13, 6'd14, 6'd15:
+                     // END = 0 stops the channel now, also the word in flight
+                     if (q_data[19:0] == 0 && f_busy && !f_seq && f_ch == op_ch)
                        f_discard <= 1;
                    6'd37:
                      mvol <= {q_data[18:16], q_data[22:20], q_data[26:24], q_data[30:28],
@@ -442,17 +503,27 @@ module sound(
               end
 
             OP_FETCH:
-              begin
-                 rr <= rr + 1'b1;
-                 if (f_issue)
-                   begin
-                      f_addr_h <= r_faddr;
-                      f_ch <= op_ch;
-                      f_tog <= ~f_tog;
-                      f_busy <= 1;
-                      f_discard <= 0;
-                   end
-              end
+              if (seq_take)
+                begin
+                   f_addr_h <= seq_rd_addr;
+                   f_seq <= 1;
+                   f_tog <= ~f_tog;
+                   f_busy <= 1;
+                   seq_gap <= 4'd12;
+                end
+              else
+                begin
+                   rr <= rr + 1'b1;
+                   if (f_issue)
+                     begin
+                        f_addr_h <= r_faddr;
+                        f_ch <= op_ch;
+                        f_seq <= 0;
+                        f_tog <= ~f_tog;
+                        f_busy <= 1;
+                        f_discard <= 0;
+                     end
+                end
 
             default: ;
           endcase

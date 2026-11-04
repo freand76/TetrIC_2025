@@ -38,6 +38,7 @@ VERILOG_FILES = \
 	$(SRC_TOP)/video/video_dma.v \
 	$(SRC_TOP)/video/line_mem.v \
 	$(SRC_TOP)/sound/sound.v \
+	$(SRC_TOP)/sound/sound_seq.v \
 	$(SRC_TOP)/video/dvi/hdmi_generator.v \
 	$(SRC_TOP)/video/dvi/tmds_channel.v \
 	$(SRC_TOP)/top.v
