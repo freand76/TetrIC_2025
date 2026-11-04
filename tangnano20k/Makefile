@@ -79,9 +79,13 @@ check: $(TANGNANO20K_FILES)
 	iverilog -g2005-sv -DIVERLOG $^ -i && rm -rf a.out
 
 .PHONY: program-sram-top
-program-sram-top: $(BUILD_DIR)/top.fs
-	openFPGALoader -btangnano20k -m $<
+# no build dependency: build the bitstream first (make)
+program-sram-top:
+	@test -f $(BUILD_DIR)/top.fs || { echo "$(BUILD_DIR)/top.fs missing, run make first"; exit 1; }
+	openFPGALoader -btangnano20k -m $(BUILD_DIR)/top.fs
 
 .PHONY: program-flash-top
-program-flash-top: $(BUILD_DIR)/top.fs
-	openFPGALoader -btangnano20k -f $<
+# no build dependency: build the bitstream first (make)
+program-flash-top:
+	@test -f $(BUILD_DIR)/top.fs || { echo "$(BUILD_DIR)/top.fs missing, run make first"; exit 1; }
+	openFPGALoader -btangnano20k -f $(BUILD_DIR)/top.fs

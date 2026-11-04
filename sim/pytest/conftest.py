@@ -7,6 +7,7 @@ import pathlib
 
 import pytest
 
+
 PYTEST_DIR = pathlib.Path(__file__).resolve().parent
 RTL_DIR = PYTEST_DIR.parents[1] / "rtl"
 

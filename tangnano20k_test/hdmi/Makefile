@@ -41,12 +41,16 @@ $(BUILD_DIR)/top.fs: $(BUILD_DIR)/top_pnr.json
 	$(GOWIN_PACK) -d GW2A-18C -o $@ $<
 
 .PHONY: program-sram-top
-program-sram-top: $(BUILD_DIR)/top.fs
-	openFPGALoader -btangnano20k -m $<
+# no build dependency: build the bitstream first (make)
+program-sram-top:
+	@test -f $(BUILD_DIR)/top.fs || { echo "$(BUILD_DIR)/top.fs missing, run make first"; exit 1; }
+	openFPGALoader -btangnano20k -m $(BUILD_DIR)/top.fs
 
 .PHONY: program-flash-top
-program-flash-top: $(BUILD_DIR)/top.fs
-	openFPGALoader -btangnano20k -f $<
+# no build dependency: build the bitstream first (make)
+program-flash-top:
+	@test -f $(BUILD_DIR)/top.fs || { echo "$(BUILD_DIR)/top.fs missing, run make first"; exit 1; }
+	openFPGALoader -btangnano20k -f $(BUILD_DIR)/top.fs
 
 # ---- simulation ----
 # Decodes the HDMI stream and checks the audio (4 kHz sine) for SIM_MS ms.

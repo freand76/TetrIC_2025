@@ -298,7 +298,5 @@ def test_overflow_flag(dut_tester):
 
     # Overflow BUG: BGE / BGT only handles positive numbers
     # Overflow is 0 even if 6 is greater than -10
-    assert 0xFFFFFFF0 == dut_tester.run(
-        -10 & 0xFFFFFFFF, 6
-    )  # ports take unsigned values
+    assert 0xFFFFFFF0 == dut_tester.run(-10 & 0xFFFFFFFF, 6)  # ports take unsigned values
     assert dut_tester.overflow() == 0

@@ -40,19 +40,79 @@ import os
 import re
 import sys
 
+
 # simple mapping from register name to register number
 REGS = {
-    "ZERO": 0, "AT": 1, "V0": 2, "V1": 3, "A0": 4, "A1": 5, "A2": 6, "A3": 7,
-    "T0": 8, "T1": 9, "T2": 10, "T3": 11, "T4": 12, "T5": 13, "T6": 14, "T7": 15,
-    "S0": 16, "S1": 17, "S2": 18, "S3": 19, "S4": 20, "S5": 21, "S6": 22, "S7": 23,
-    "T8": 24, "T9": 25, "K0": 26, "K1": 27, "GP": 28, "SP": 29, "FP": 30, "RA": 31,
+    "ZERO": 0,
+    "AT": 1,
+    "V0": 2,
+    "V1": 3,
+    "A0": 4,
+    "A1": 5,
+    "A2": 6,
+    "A3": 7,
+    "T0": 8,
+    "T1": 9,
+    "T2": 10,
+    "T3": 11,
+    "T4": 12,
+    "T5": 13,
+    "T6": 14,
+    "T7": 15,
+    "S0": 16,
+    "S1": 17,
+    "S2": 18,
+    "S3": 19,
+    "S4": 20,
+    "S5": 21,
+    "S6": 22,
+    "S7": 23,
+    "T8": 24,
+    "T9": 25,
+    "K0": 26,
+    "K1": 27,
+    "GP": 28,
+    "SP": 29,
+    "FP": 30,
+    "RA": 31,
     "S8": 30,
     # Some TetrIC-specific aliases
-    "SFX": 26, "GFX": 27, "LUT": 28, "SCR": 30,
-    "R0": 0, "R1": 1, "R2": 2, "R3": 3, "R4": 4, "R5": 5, "R6": 6, "R7": 7,
-    "R8": 8, "R9": 9, "R10": 10, "R11": 11, "R12": 12, "R13": 13, "R14": 14, "R15": 15,
-    "R16": 16, "R17": 17, "R18": 18, "R19": 19, "R20": 20, "R21": 21, "R22": 22, "R23": 23,
-    "R24": 24, "R25": 25, "R26": 26, "R27": 27, "R28": 28, "R29": 29, "R30": 30, "R31": 31,
+    "SFX": 26,
+    "GFX": 27,
+    "LUT": 28,
+    "SCR": 30,
+    "R0": 0,
+    "R1": 1,
+    "R2": 2,
+    "R3": 3,
+    "R4": 4,
+    "R5": 5,
+    "R6": 6,
+    "R7": 7,
+    "R8": 8,
+    "R9": 9,
+    "R10": 10,
+    "R11": 11,
+    "R12": 12,
+    "R13": 13,
+    "R14": 14,
+    "R15": 15,
+    "R16": 16,
+    "R17": 17,
+    "R18": 18,
+    "R19": 19,
+    "R20": 20,
+    "R21": 21,
+    "R22": 22,
+    "R23": 23,
+    "R24": 24,
+    "R25": 25,
+    "R26": 26,
+    "R27": 27,
+    "R28": 28,
+    "R29": 29,
+    "R30": 30,
+    "R31": 31,
 }
 
 # First four chars: expected arguments, read left to right, space terminates.
@@ -60,45 +120,76 @@ REGS = {
 #   B 16 bit branch immediate (pc relative if label)   J 26 bit immediate
 # Rest: instruction code in hex.
 INSTRS = {
-    "ADD": "DST 00000020", "ADDU": "DST 00000021",
-    "ADDI": "TSI 20000000", "ADDIU": "TSI 24000000",
-    "AND": "DST 00000024", "ANDI": "TSI 30000000",
-    "NOR": "DST 00000027", "OR": "DST 00000025",
-    "ORI": "TSI 34000000", "SLLV": "DTS 00000004",
-    "SRAV": "DTS 00000007", "SRLV": "DTS 00000006",
-    "SUB": "DST 00000022", "SUBU": "DST 00000023",
-    "XOR": "DST 00000026", "XORI": "TSI 38000000",
-    "LUI": "TI  3C000000", "SLT": "DST 0000002A",
-    "SLTU": "DST 0000002B", "SLTI": "TSI 28000000",
-    "SLTIU": "TSI 2C000000", "BEQ": "STB 10000000",
-    "BGE": "STB 04000000", "BGT": "STB 1C000000",
-    "BNE": "STB 14000000", "J": "J   08000000",
-    "JAL": "J   0C000000", "JALR": "SD  00000009",
-    "JR": "S   00000008", "LW": "TIS 8C000000",
+    "ADD": "DST 00000020",
+    "ADDU": "DST 00000021",
+    "ADDI": "TSI 20000000",
+    "ADDIU": "TSI 24000000",
+    "AND": "DST 00000024",
+    "ANDI": "TSI 30000000",
+    "NOR": "DST 00000027",
+    "OR": "DST 00000025",
+    "ORI": "TSI 34000000",
+    "SLLV": "DTS 00000004",
+    "SRAV": "DTS 00000007",
+    "SRLV": "DTS 00000006",
+    "SUB": "DST 00000022",
+    "SUBU": "DST 00000023",
+    "XOR": "DST 00000026",
+    "XORI": "TSI 38000000",
+    "LUI": "TI  3C000000",
+    "SLT": "DST 0000002A",
+    "SLTU": "DST 0000002B",
+    "SLTI": "TSI 28000000",
+    "SLTIU": "TSI 2C000000",
+    "BEQ": "STB 10000000",
+    "BGE": "STB 04000000",
+    "BGT": "STB 1C000000",
+    "BNE": "STB 14000000",
+    "J": "J   08000000",
+    "JAL": "J   0C000000",
+    "JALR": "SD  00000009",
+    "JR": "S   00000008",
+    "LW": "TIS 8C000000",
     "SW": "TIS AC000000",
     # tetric project specific
     "SLL": "DSH 00000000",  # should be DTH in real MIPS!
     "SRA": "DSH 00000003",  # should be DTH in real MIPS!
     "SRL": "DSH 00000002",  # should be DTH in real MIPS!
-    "MFC0": "D   40000000", "MFC1": "DT  44000000",
-    "MFC2": "D   48000000", "MFC3": "D   4C000000",
+    "MFC0": "D   40000000",
+    "MFC1": "DT  44000000",
+    "MFC2": "D   48000000",
+    "MFC3": "D   4C000000",
     # aliases
-    "CLR": "D   00000025",   # based on or
+    "CLR": "D   00000025",  # based on or
     "NOP": "    00000000",
-    "MOV": "DT  00000025",   # based on or
+    "MOV": "DT  00000025",  # based on or
     "MOVI": "TI  20000000",  # based on addi -> sign extend
-    "MOVIU": "TI  34000000", # based on ori, no sign extend
-    "NOT": "DT  00000027",   # based on nor (rd:= $0 nor rt)
-    "NEG": "DT  00000022",   # based on sub (rd:= $0-rt)
+    "MOVIU": "TI  34000000",  # based on ori, no sign extend
+    "NOT": "DT  00000027",  # based on nor (rd:= $0 nor rt)
+    "NEG": "DT  00000022",  # based on sub (rd:= $0-rt)
     "BEQZ": "SB  10000000",  # based on Bxx with rt=$0
     "BGEZ": "SB  04000000",
     "BGTZ": "SB  1C000000",
     "BNEZ": "SB  14000000",
-    "B": "B   10000000",     # unconditional branch (beq $0,$0,offset)
+    "B": "B   10000000",  # unconditional branch (beq $0,$0,offset)
 }
 
-DIRECTIVES = {".DC", ".ORG", ".END", ".MACRO", ".FILE", ".PAD", ".ENDMACRO",
-              "=", ".EQU", ".TRANSTAB", ".TRANSLATE", ".TRANSOFF", ".TR", ".ASCII"}
+DIRECTIVES = {
+    ".DC",
+    ".ORG",
+    ".END",
+    ".MACRO",
+    ".FILE",
+    ".PAD",
+    ".ENDMACRO",
+    "=",
+    ".EQU",
+    ".TRANSTAB",
+    ".TRANSLATE",
+    ".TRANSOFF",
+    ".TR",
+    ".ASCII",
+}
 
 # bit position of the S, T and D register fields
 STD_SHIFT = {"S": 21, "T": 16, "D": 11}
@@ -131,11 +222,11 @@ def perl_oct(s):
     """Perl oct(): 0x.. hex, 0b.. binary, otherwise octal (stops at bad digit)."""
     s = s.strip()
     low = s.lower()
-    if low.startswith("0x") or low.startswith("x"):
-        m = re.match(r"[0-9a-fA-F_]*", s[low.index("x") + 1:])
+    if low.startswith(("0x", "x")):
+        m = re.match(r"[0-9a-fA-F_]*", s[low.index("x") + 1 :])
         return int(m.group(0).replace("_", "") or "0", 16)
-    if low.startswith("0b") or low.startswith("b"):
-        m = re.match(r"[01_]*", s[low.index("b") + 1:])
+    if low.startswith(("0b", "b")):
+        m = re.match(r"[01_]*", s[low.index("b") + 1 :])
         return int(m.group(0).replace("_", "") or "0", 2)
     m = re.match(r"[0-7_]*", s)
     return int(m.group(0).replace("_", "") or "0", 8)
@@ -155,19 +246,21 @@ def todec(v):
 
 def isnum(v):
     s = re.sub(r"\.[LH]$", "", str(v))
-    return bool(re.match(r"^0[0-7]*$", s) or          # octal or zero
-                re.match(r"^[-]?[1-9][0-9]*$", s) or  # decimal, may be negative
-                re.match(r"^0x[A-Fa-f0-9]+$", s) or   # hex
-                re.match(r"^0b[0-1]+$", s) or         # bin
-                s.startswith("'"))                    # ASCII
+    return bool(
+        re.match(r"^0[0-7]*$", s)  # octal or zero
+        or re.match(r"^[-]?[1-9][0-9]*$", s)  # decimal, may be negative
+        or re.match(r"^0x[A-Fa-f0-9]+$", s)  # hex
+        or re.match(r"^0b[0-1]+$", s)  # bin
+        or s.startswith("'")
+    )  # ASCII
 
 
 def _hex(v, width):
     # 32-bit two's complement. Perl: on a 64-bit Perl, %x of a negative
     # number has 16 digits and pack("H8") then keeps "ffffffff", so every
     # negative .dc/.pad value became -1. The original 32-bit Perl did this.
-    v = perl_num(v) & 0xffffffff
-    return "%x" % v if len("%x" % v) >= width else ("%x" % v).rjust(width, "0")
+    v = perl_num(v) & 0xFFFFFFFF
+    return f"{v:x}" if len(f"{v:x}") >= width else (f"{v:x}").rjust(width, "0")
 
 
 def hex8(v):
@@ -204,15 +297,15 @@ class Assembler:
         if self.name1 == name:
             self.name1, self.name2, self.name3 = name + ".1", name + ".2", name + ".bin"
         self.labels = {}
-        self.code = []      # assembled instructions: (pc, word, lineno, mnemonic, args)
+        self.code = []  # assembled instructions: (pc, word, lineno, mnemonic, args)
         self.macros = {}
         self.trans = {}
 
     def die(self, lineno, msg):
-        raise AsmError("%s:%s: %s at line %s" % (self.namei, lineno, msg, lineno))
+        raise AsmError(f"{self.namei}:{lineno}: {msg} at line {lineno}")
 
     def warn(self, lineno, msg):
-        sys.stderr.write("%s:%s: # %s at line %s\n" % (self.namei, lineno, msg, lineno))
+        sys.stderr.write(f"{self.namei}:{lineno}: # {msg} at line {lineno}\n")
 
     # ---- expression evaluation
     def evaluate(self, data, lineno):
@@ -224,18 +317,20 @@ class Assembler:
             if label.upper() in self.labels:
                 # Perl: s/$label/value/g (label used as a regex)
                 value = str(self.labels[label.upper()])
-                data = re.sub(label, lambda _m: value, data)
+                data = re.sub(label, lambda _m, value=value: value, data)
             else:
-                self.die(lineno, 'Label "%s" not defined' % label)
+                self.die(lineno, f'Label "{label}" not defined')
         expr = data.lower()
         # Perl number literals: 0x.., 0b.., 0... is octal
-        expr = re.sub(r"\b0x[0-9a-f]+\b|\b0b[01]+\b|\b0[0-7]+\b|\b\d+\b",
-                      lambda m: str(perl_oct(m.group(0)) if m.group(0).startswith("0")
-                                    else int(m.group(0))), expr)
+        expr = re.sub(
+            r"\b0x[0-9a-f]+\b|\b0b[01]+\b|\b0[0-7]+\b|\b\d+\b",
+            lambda m: str(perl_oct(m.group(0)) if m.group(0).startswith("0") else int(m.group(0))),
+            expr,
+        )
         try:
             return int(eval(expr, {"__builtins__": {}}, {}))
-        except Exception:
-            return 0   # Perl: a failing eval gives undef -> 0
+        except (ArithmeticError, NameError, SyntaxError, TypeError, ValueError):
+            return 0  # Perl: a failing eval gives undef -> 0
 
     def getvalue(self, val, lineno):
         val = str(val)
@@ -245,9 +340,9 @@ class Assembler:
             val = self.evaluate(val, lineno)
         val = perl_num(todec(val))
         if lohi == "L":
-            val &= 0xffff
+            val &= 0xFFFF
         elif lohi == "H":
-            val = (val >> 16) & 0xffff
+            val = (val >> 16) & 0xFFFF
         return val
 
     # ---- pass 1: parse and macro expand -> list file
@@ -255,7 +350,7 @@ class Assembler:
         out = []
         it = iter(src_lines)
         macroname = ""
-        eat = False      # defining a macro
+        eat = False  # defining a macro
         # macro expansions in progress: [remaining lines, argument translation].
         # Perl: a macro used inside a macro replaced the outer expansion, so the
         # rest of the outer macro was silently lost. Here they nest properly.
@@ -266,8 +361,13 @@ class Assembler:
         pc = 0
 
         def write(label, command, args):
-            out.append(prettyp(lineno, 6) + prettyp(label, 16) +
-                       prettyp(command, 8) + prettyp(args, 16) + "\n")
+            out.append(
+                prettyp(lineno, 6)
+                + prettyp(label, 16)
+                + prettyp(command, 8)
+                + prettyp(args, 16)
+                + "\n"
+            )
 
         while True:
             label, command, args = "", "", ""
@@ -315,8 +415,8 @@ class Assembler:
                 tb, tc = argb[1:], argc[1:]
                 if command == "LW":
                     # Perl: leftover debug prints end up in the list file
-                    out.append("%s\n" % tc)
-                    out.append("$%s\n" % tc)
+                    out.append(f"{tc}\n")
+                    out.append(f"${tc}\n")
                 if tb in REGS:
                     spt = [arga, "0", argb]
                 elif tc not in REGS and not isnum(tc):
@@ -349,7 +449,9 @@ class Assembler:
                         if not transtab:
                             self.die(lineno, "Should get to TRANSLATE from TRANSTAB")
                         transtab, translate = False, True
-                        args = "; __TR " + "".join("[%s->%s] " % kv for kv in self.trans.items())
+                        args = "; __TR " + "".join(
+                            "[{}->{}] ".format(*kv) for kv in self.trans.items()
+                        )
                         write(label, "", args)
                         continue
                     if command == ".TRANSOFF":
@@ -386,7 +488,7 @@ class Assembler:
                             label_done = True
                         right = raw.rfind('"')
                         left = raw.rfind('"', 0, right)
-                        string = raw[left:right + 1]
+                        string = raw[left : right + 1]
                         write(label, command, string)
                         pc += (len(string) - 2) // 4 + 1
                         continue
@@ -400,7 +502,7 @@ class Assembler:
                         if len(spt) < 2:
                             self.die(lineno, "Missing args")
                         length, value = spt[0], spt[1]
-                        args += " %s %s" % (length, value)
+                        args += f" {length} {value}"
                         pc += self.getvalue(length, lineno)
                     elif command == ".FILE":
                         if len(spt) < 1:
@@ -413,8 +515,8 @@ class Assembler:
                             try:
                                 length = str((os.path.getsize(fname) + 3) // 4)
                             except OSError:
-                                self.die(lineno, "Could not find incbin file %s" % fname)
-                        args += " %s %s" % (fname, length)
+                                self.die(lineno, f"Could not find incbin file {fname}")
+                        args += f" {fname} {length}"
                         pc += self.getvalue(length, lineno)
             elif command in self.macros:
                 if not eat:
@@ -426,8 +528,9 @@ class Assembler:
                     mstack.append([macrotext, transarg])
                     for i, arg in enumerate(template):
                         transarg[arg] = spt[i] if i < len(spt) else None
-                    args = "; %s " % command + "".join(
-                        " [%s->%s]" % (k, "" if v is None else v) for k, v in transarg.items())
+                    args = f"; {command} " + "".join(
+                        " [{}->{}]".format(k, "" if v is None else v) for k, v in transarg.items()
+                    )
                     write(label, "", args)
                     if label != "":
                         self.labels[label] = pc
@@ -436,7 +539,7 @@ class Assembler:
                 if not eat:
                     code = INSTRS[command]
                     args = ""
-                    for sub in code[:code.index(" ")]:
+                    for sub in code[: code.index(" ")]:
                         if sub in "STD":
                             if not spt:
                                 self.die(lineno, "Missing arg")
@@ -450,9 +553,9 @@ class Assembler:
                                 # register number in dec, hex, oct or bin
                                 outreg = perl_num(todec(reg.lower()))
                                 if outreg >= 32:
-                                    self.die(lineno, 'Register number "%s" out of range' % arg)
+                                    self.die(lineno, f'Register number "{arg}" out of range')
                             else:
-                                self.die(lineno, 'Unknown register "%s"' % arg)
+                                self.die(lineno, f'Unknown register "{arg}"')
                             args += " $" + str(outreg)
                         elif sub in "IBJH":
                             if not spt:
@@ -474,16 +577,17 @@ class Assembler:
                 self.labels[label] = line_pc
 
         lineno_end = lineno
-        out.append(prettyp(lineno_end, 6) + prettyp("", 16) + prettyp(".END", 8) +
-                   prettyp("", 16) + "\n")
+        out.append(
+            prettyp(lineno_end, 6) + prettyp("", 16) + prettyp(".END", 8) + prettyp("", 16) + "\n"
+        )
         out.append("-------------------------------------\n")
         for name, text in self.macros.items():
-            out.append("MACRO\t%s\nargs:\t" % name)
+            out.append(f"MACRO\t{name}\nargs:\t")
             out.append("".join(text) + "\n\n")
         out.append("-------------------------------------\n")
         for name in sorted(self.labels):
             value = perl_num(self.labels[name])
-            out.append(prettyp(name, 32) + " = " + hex8(value) + " = " + "%10d\n" % value)
+            out.append(prettyp(name, 32) + " = " + hex8(value) + " = " + f"{value:10d}\n")
         return out
 
     # ---- pass 2: list file -> hex file
@@ -495,7 +599,7 @@ class Assembler:
             orig = line
             line = re.sub(r";.*", "", line)
             line = re.sub(r"#.*", "", line)
-            line = re.sub(r"^(......)\w+", r"\1", line, count=1)   # remove label
+            line = re.sub(r"^(......)\w+", r"\1", line, count=1)  # remove label
             line = re.sub(r"[\t ,]+", " ", line)
             if re.match(r"^\s*$", line):
                 continue
@@ -512,16 +616,36 @@ class Assembler:
                     if filler < 0:
                         self.die(lineno, "ORGing to self or backwards")
                     if filler > 0:
-                        out.append("\n" + hex8(pc) + "  /0x00000000 " + prettyp("%d/" % filler, 7) +
-                                   "; " + prettyp(lineno, 6) + prettyp(command, 6) + " " + org)
+                        out.append(
+                            "\n"
+                            + hex8(pc)
+                            + "  /0x00000000 "
+                            + prettyp(f"{filler}/", 7)
+                            + "; "
+                            + prettyp(lineno, 6)
+                            + prettyp(command, 6)
+                            + " "
+                            + org
+                        )
                     pc = perl_num(todec(org))
                 elif command == ".PAD":
                     length_s = rest.pop(0)
                     length = self.getvalue(length_s, lineno)
                     data = self.getvalue(rest.pop(0), lineno)
-                    out.append(hex8(pc) + "  " + "/" + hex8(data) + " " + prettyp("%d/" % length, 7) +
-                               "; " + prettyp(lineno, 6) + prettyp(command, 6) + " " +
-                               prettyp(length, 6) + hex8(data))
+                    out.append(
+                        hex8(pc)
+                        + "  "
+                        + "/"
+                        + hex8(data)
+                        + " "
+                        + prettyp(f"{length}/", 7)
+                        + "; "
+                        + prettyp(lineno, 6)
+                        + prettyp(command, 6)
+                        + " "
+                        + prettyp(length, 6)
+                        + hex8(data)
+                    )
                     pc += length
                 elif command == ".DC":
                     first = True
@@ -538,7 +662,7 @@ class Assembler:
                     first = True
                     right = orig.rfind('"')
                     left = orig.rfind('"', 0, right)
-                    string = orig[left + 1:right]
+                    string = orig[left + 1 : right]
                     i = 0
                     for ch in string:
                         if i % 4 == 0:
@@ -561,8 +685,15 @@ class Assembler:
                     out.append("\n" + hex8(pc))
                     fname = rest.pop(0)
                     length = self.getvalue(rest.pop(0), lineno)
-                    out.append(" " * 21 + "; " + prettyp(lineno, 6) + prettyp(command, 6) +
-                               fname + " " + hex8(length))
+                    out.append(
+                        " " * 21
+                        + "; "
+                        + prettyp(lineno, 6)
+                        + prettyp(command, 6)
+                        + fname
+                        + " "
+                        + hex8(length)
+                    )
                     pc += length
                 elif command == ".END":
                     break
@@ -571,7 +702,7 @@ class Assembler:
                 if code is None:
                     self.die(lineno, "Unknown command in list file")
                 pars, binv = code[:4], int(code[4:12], 16)
-                for sub in pars[:pars.index(" ")] if " " in pars else pars:
+                for sub in pars[: pars.index(" ")] if " " in pars else pars:
                     arg = rest.pop(0) if rest else ""
                     if sub in "STD":
                         arg = re.sub(r"^\$", "", arg)
@@ -585,25 +716,32 @@ class Assembler:
                         relbranch = not isnum(arg)
                         val = self.getvalue(arg, lineno)
                         if sub == "B" and relbranch:
-                            val = val - pc - 1   # pc relative if branch to label
+                            val = val - pc - 1  # pc relative if branch to label
                         if sub in "IB":
                             if val < -32768 or val > 65535:
                                 self.warn(lineno, "Integer arg exceeds 16 bits")
-                            val &= 0xffff
+                            val &= 0xFFFF
                             args += " " + hex4(val)
                         elif sub == "J":
-                            if val < 0 or val > 0x03ffffff:
+                            if val < 0 or val > 0x03FFFFFF:
                                 self.warn(lineno, "Integer arg exceeds 26 bits")
-                            val &= 0x03ffffff
+                            val &= 0x03FFFFFF
                             args += " " + hex8(val)
                         elif sub == "H":
-                            if val < 0 or val > 0x1f:
+                            if val < 0 or val > 0x1F:
                                 self.warn(lineno, "SHAMT exceeds 5 bits")
-                            val = (val & 0x1f) << 6
+                            val = (val & 0x1F) << 6
                             args += " " + hex2(val)
                         binv |= val
-                out.append(hex8(pc) + "  " + hex8(binv) + "         ; " +
-                           prettyp(lineno, 6) + prettyp(command, 6) + prettyp(args, 16))
+                out.append(
+                    hex8(pc)
+                    + "  "
+                    + hex8(binv)
+                    + "         ; "
+                    + prettyp(lineno, 6)
+                    + prettyp(command, 6)
+                    + prettyp(args, 16)
+                )
                 self.code.append((pc, binv, lineno, command, args.strip()))
                 pc += 1
             out.append("\n")
@@ -627,11 +765,13 @@ class Assembler:
                 try:
                     with open(fname, "rb") as fh:
                         data = fh.read(4 * length)
-                        if len(fh.read(4)) == 4:   # a whole word or more left out
-                            sys.stderr.write("warning: .file %s truncated to %d words (file is %d bytes)\n"
-                                             % (fname, length, os.path.getsize(fname)))
+                        if len(fh.read(4)) == 4:  # a whole word or more left out
+                            sys.stderr.write(
+                                f"warning: .file {fname} truncated to {length} words "
+                                f"(file is {os.path.getsize(fname)} bytes)\n"
+                            )
                 except OSError:
-                    raise AsmError("Could not find incbin file %s" % fname)
+                    raise AsmError(f"Could not find incbin file {fname}")
                 out += data + bytes(4 * length - len(data))
             elif line.startswith("/"):
                 f = line.replace("/", "").split()
@@ -639,7 +779,7 @@ class Assembler:
                 data = re.sub(r"0[xX]", "", data, count=1)
                 out += h8(data) * amount
             else:
-                word = re.sub(r"\s.*", "", line, flags=re.S)
+                word = re.sub(r"\s.*", "", line, flags=re.DOTALL)
                 word = re.sub(r"0[xX]", "", word, count=1)
                 out += h8(word)
         return bytes(out)
@@ -659,16 +799,18 @@ class Assembler:
         if hazards != "off":
             errors, warnings = check_hazards(self.code)
             for lineno, msg in warnings:
-                sys.stderr.write("%s:%s: warning: %s\n" % (self.namei, lineno, msg))
+                sys.stderr.write(f"{self.namei}:{lineno}: warning: {msg}\n")
             kind = "error" if hazards == "error" else "warning"
             for lineno, msg in errors:
-                sys.stderr.write("%s:%s: %s: %s\n" % (self.namei, lineno, kind, msg))
+                sys.stderr.write(f"{self.namei}:{lineno}: {kind}: {msg}\n")
             if errors and hazards == "error":
                 if os.path.exists(self.name3):
                     os.remove(self.name3)
-                raise AsmError("%s: %d pipeline hazard error(s), no %s written "
-                               "(see rtl/processor/PIPELINE_HAZARDS.md, "
-                               "--hazards=warn to override)" % (self.namei, len(errors), self.name3))
+                raise AsmError(
+                    f"{self.namei}: {len(errors)} pipeline hazard error(s), no {self.name3} written "
+                    "(see rtl/processor/PIPELINE_HAZARDS.md, "
+                    "--hazards=warn to override)"
+                )
         with open(self.name3, "wb") as f:
             f.write(self.pass3(hex_text))
         if suggest_nops or remove_nops:
@@ -686,7 +828,7 @@ class Assembler:
 #       - sw data register (rt) is not forwarded: needs d >= 3
 #   * jal delay slot is executed again after return (jal + 1): warn if not nop
 
-BRANCH_OPS = {1, 4, 5, 7}       # bge, beq, bne, bgt
+BRANCH_OPS = {1, 4, 5, 7}  # bge, beq, bne, bgt
 
 
 def _decode(w):
@@ -708,13 +850,13 @@ def _decode(w):
         return "branch", {rs, rt}, None, None
     if op == 0x23:
         return "lw", {rs}, rt, None
-    if op == 0x2b:
+    if op == 0x2B:
         return "sw", {rs}, None, rt
     if op in (0x10, 0x11, 0x12, 0x13):
         return "mfc", set(), rd, None
-    if op == 0x0f:
-        return "alu", set(), rt, None                  # lui
-    return "alu", {rs}, rt, None                       # immediate ALU ops
+    if op == 0x0F:
+        return "alu", set(), rt, None  # lui
+    return "alu", {rs}, rt, None  # immediate ALU ops
 
 
 SLOTS = {"branch": 3, "jr": 3, "jalr": 3, "j": 1, "jal": 1}
@@ -737,16 +879,16 @@ class _Program:
         for i, (pc, w, _, _, _) in enumerate(self.code):
             kind = self.dec[i][0]
             if kind == "branch":
-                off = w & 0xffff
+                off = w & 0xFFFF
                 off = off - 0x10000 if off & 0x8000 else off
                 self.target[i] = index.get(pc + 1 + off)
                 self.always[i] = (w >> 26) == 4 and ((w >> 21) & 31) == ((w >> 16) & 31)
             elif kind in ("j", "jal"):
-                self.target[i] = index.get(w & 0x03ffffff)
+                self.target[i] = index.get(w & 0x03FFFFFF)
 
     def desc(self, i):
         c = self.code[i]
-        return "%s %s (line %s)" % (c[3], c[4], c[2])
+        return f"{c[3]} {c[4]} (line {c[2]})"
 
     def check(self, removed=frozenset()):
         """-> (errors, warnings), lists of (lineno, message)"""
@@ -774,8 +916,12 @@ class _Program:
                     break
                 last = slot
                 if dec[slot][0] in SLOTS:
-                    errors.append((self.code[slot][2], "%s in delay slot %d of %s" %
-                                   (self.code[slot][3], k, self.desc(i))))
+                    errors.append(
+                        (
+                            self.code[slot][2],
+                            f"{self.code[slot][3]} in delay slot {k} of {self.desc(i)}",
+                        )
+                    )
             if slot is None:
                 continue
             target = skip(self.target[i])
@@ -787,9 +933,16 @@ class _Program:
                 # after the return the delay slot continues to the next instruction
                 succ[last] = {target, nxt[last]} - {None}
                 if dec[last][0] != "nop":
-                    warnings.append((self.code[last][2], "jal delay slot %s is executed again after "
-                                     "the return (return address = jal + 1)" % self.desc(last)))
-            else:   # jr / jalr: assume a return to any jal/jalr + 1
+                    warnings.append(
+                        (
+                            self.code[last][2],
+                            (
+                                f"jal delay slot {self.desc(last)} is executed again after "
+                                "the return (return address = jal + 1)"
+                            ),
+                        )
+                    )
+            else:  # jr / jalr: assume a return to any jal/jalr + 1
                 succ[last] = set(return_points)
 
         pred = {i: set() for i in live}
@@ -802,8 +955,12 @@ class _Program:
         def report(c, p, reg, d, why):
             if (c, p, reg, why) not in seen:
                 seen.add((c, p, reg, why))
-                errors.append((self.code[c][2], "$%d written by %s at distance %d: %s" %
-                               (reg, self.desc(p), d, why)))
+                errors.append(
+                    (
+                        self.code[c][2],
+                        f"${reg} written by {self.desc(p)} at distance {d}: {why}",
+                    )
+                )
 
         def walk(c, reg, role, path):
             # path: instructions executed before the consumer, nearest first
@@ -878,7 +1035,7 @@ def nop_report(code, name, labels=None, src_lines=None, out_name=None):
     prog = _Program(code)
     removable = prog.suggest_nop_removal()
     if removable is None:
-        return "%s: fix the pipeline hazard errors before looking for removable nops\n" % name
+        return f"{name}: fix the pipeline hazard errors before looking for removable nops\n"
     at_label = {}
     for lab, val in (labels or {}).items():
         if isinstance(val, int):
@@ -894,18 +1051,20 @@ def nop_report(code, name, labels=None, src_lines=None, out_name=None):
             i += 1
             continue
         run = [i]
-        while prog.orig_next[run[-1]] is not None and prog.dec[prog.orig_next[run[-1]]][0] == "nop":
+        while (
+            prog.orig_next[run[-1]] is not None and prog.dec[prog.orig_next[run[-1]]][0] == "nop"
+        ):
             run.append(prog.orig_next[run[-1]])
         i = run[-1] + 1
         rm = [k for k in run if k in removable]
         if not rm:
             continue
         lines = sorted({prog.code[k][2] for k in run}, key=int)
-        where = lines[0] if len(lines) == 1 else "%s-%s" % (lines[0], lines[-1])
+        where = lines[0] if len(lines) == 1 else f"{lines[0]}-{lines[-1]}"
         prev = run[0] - 1
         pc0 = prog.code[run[0]][0]
         if pc0 in at_label:
-            after = "at label %s" % at_label[pc0]
+            after = f"at label {at_label[pc0]}"
         elif prev >= 0 and prog.orig_next[prev] == run[0]:
             after = "after " + prog.desc(prev)
         else:
@@ -913,11 +1072,14 @@ def nop_report(code, name, labels=None, src_lines=None, out_name=None):
         nxt = prog.orig_next[run[-1]]
         before = prog.desc(nxt) if nxt is not None else "end"
         keep = len(run) - len(rm)
-        out.append("%s:%s: remove %d of %d nop%s (keep %d)   %s, before %s\n" %
-                   (name, where, len(rm), len(run), "s" if len(run) > 1 else "", keep, after, before))
-    out.append("%s: %d of %d nops can be removed (%d nops are in delay slots and are kept; "
-               "%d instructions -> %d)\n" %
-               (name, len(removable), total, in_slots, prog.n, prog.n - len(removable)))
+        out.append(
+            f"{name}:{where}: remove {len(rm)} of {len(run)} nop{'s' if len(run) > 1 else ''} "
+            f"(keep {keep})   {after}, before {before}\n"
+        )
+    out.append(
+        f"{name}: {len(removable)} of {total} nops can be removed ({in_slots} nops are in "
+        f"delay slots and are kept; {prog.n} instructions -> {prog.n - len(removable)})\n"
+    )
 
     if out_name and src_lines is not None:
         # instructions per source line: only remove lines that are a single nop
@@ -928,33 +1090,46 @@ def nop_report(code, name, labels=None, src_lines=None, out_name=None):
         for k in removable:
             ln = int(prog.code[k][2])
             text = src_lines[ln - 1] if ln - 1 < len(src_lines) else ""
-            if per_line[ln] == 1 and re.match(r"^\s+nop\s*([;#].*)?$", text, re.I):
+            if per_line[ln] == 1 and re.match(r"^\s+nop\s*([;#].*)?$", text, re.IGNORECASE):
                 drop.add(ln)
             else:
                 kept += 1
         with open(out_name, "w", encoding="latin-1", newline="") as f:
             f.write("".join(t for n, t in enumerate(src_lines, 1) if n not in drop))
-        out.append("%s: wrote %s with %d nop lines removed%s\n" %
-                   (name, out_name, len(drop),
-                    "" if not kept else " (%d nops from macros left in place)" % kept))
+        out.append(
+            f"{name}: wrote {out_name} with {len(drop)} nop lines removed"
+            + ("" if not kept else f" ({kept} nops from macros left in place)")
+            + "\n"
+        )
     return "".join(out)
+
 
 def main(argv):
     ap = argparse.ArgumentParser(description="TetrIC assembler (prg.s -> prg.1, prg.2, prg.bin)")
     ap.add_argument("source")
-    ap.add_argument("--hazards", choices=("error", "warn", "off"), default="error",
-                    help="pipeline hazard check: error (default, no .bin written), "
-                         "warn (report only) or off")
-    ap.add_argument("--suggest-nops", action="store_true",
-                    help="list nops that can be removed without breaking the pipeline rules")
-    ap.add_argument("--remove-nops", metavar="OUT.s",
-                    help="like --suggest-nops, and write a copy of the source without those nops")
+    ap.add_argument(
+        "--hazards",
+        choices=("error", "warn", "off"),
+        default="error",
+        help="pipeline hazard check: error (default, no .bin written), warn (report only) or off",
+    )
+    ap.add_argument(
+        "--suggest-nops",
+        action="store_true",
+        help="list nops that can be removed without breaking the pipeline rules",
+    )
+    ap.add_argument(
+        "--remove-nops",
+        metavar="OUT.s",
+        help="like --suggest-nops, and write a copy of the source without those nops",
+    )
     a = ap.parse_args(argv[1:])
     try:
-        Assembler(a.source).run(hazards=a.hazards, suggest_nops=a.suggest_nops,
-                                remove_nops=a.remove_nops)
+        Assembler(a.source).run(
+            hazards=a.hazards, suggest_nops=a.suggest_nops, remove_nops=a.remove_nops
+        )
     except AsmError as e:
-        sys.stderr.write("%s\n" % e)
+        sys.stderr.write(f"{e}\n")
         return 1
     return 0
 

@@ -1,0 +1,23 @@
+# Same rules as digsim (pyproject.toml [tool.ruff] there)
+line-length = 99
+target-version = "py311"
+
+show-fixes = true
+output-format = "full"
+
+[lint]
+# "extend" here adds to the ruff defaults, rather than replacing.
+# Q = flake8-quotes, TID = flake8-tidy-imports, I = isort, FA = flake8-future-annotations
+extend-select = ["Q", "TID", "I", "FA"]
+# E501 = "line too long". Handled by the formatter.
+extend-ignore = ["E501"]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[lint.isort]
+lines-after-imports = 2
+known-third-party = ["digsim", "pytest"]

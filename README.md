@@ -89,6 +89,8 @@ make -C tangnano20k synth
 
 ### Program FPGA (RAM)
 
+The program targets don't build: build the bitstream (`make -C tangnano20k`) first.
+
 ```
 make -C tangnano20k program-sram-top
 ```
@@ -113,9 +115,12 @@ or with the packages above installed: `pytest`. Arguments go to pytest, e.g.
 
 ## Code Formatting
 
+The Verilog files are formatted with the digsim 1.10.0 formatter, the Python code with ruff
+(the rules of digsim, in `ruff.toml`):
+
 ```
-ruff check
-ruff format
+./uv_format_verilog.sh          # or --check to only list the files that would change
+./uv_ruff.sh                    # ruff format + ruff check
 ```
 
 # BUGS found

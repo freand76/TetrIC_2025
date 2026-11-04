@@ -22,25 +22,24 @@ module tb_top;
 
     // Instantiate the TOP test module
     top uut (
-             .sys_clk(sys_clk),
-             .rst(rst),
-             .p77_LCD_CLK(lcd_clk),
-             .p25_LCD_HSYNC(hsync),
-             .p26_LCD_VSYNC(vsync),
-             .LCD_R(r),
-             .LCD_G(g),
-             .LCD_B(b),
-             .p48_LCD_DEN(de),
-             .p49_LCD_BL(bl),
-             .led(dbg_leds)
-             );
+        .sys_clk(sys_clk),
+        .rst(rst),
+        .p77_LCD_CLK(lcd_clk),
+        .p25_LCD_HSYNC(hsync),
+        .p26_LCD_VSYNC(vsync),
+        .LCD_R(r),
+        .LCD_G(g),
+        .LCD_B(b),
+        .p48_LCD_DEN(de),
+        .p49_LCD_BL(bl),
+        .led(dbg_leds)
+    );
 
     // Generate VCD waveforms
     initial begin
         $dumpfile("waveform.vcd"); // Specify the VCD file name
         $dumpvars(0, tb_top); // Dump all variables in the testbench scope
     end
-
 
     // Clock generation
     initial begin
@@ -58,8 +57,8 @@ module tb_top;
     // Simulation monitoring
     initial begin
         // Monitor outputs
-        $monitor("Time: %0t | R: %h | G: %h | B: %h | LCD_CLK: %b | HSYNC: %b | VSYNC: %b | DE: %b", 
-                 $time, r, g, b, lcd_clk, hsync, vsync, de);
+        $monitor("Time: %0t | R: %h | G: %h | B: %h | LCD_CLK: %b | HSYNC: %b | VSYNC: %b | DE: %b",
+            $time, r, g, b, lcd_clk, hsync, vsync, de);
 
         // Run the simulation for a certain time
         #(CLK_PERIOD * 1000000); // Simulate for 1,000,000 clock cycles. Apprx 100k ~= 1 frame

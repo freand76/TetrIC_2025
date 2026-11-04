@@ -14,10 +14,12 @@ intervals must follow WAITCLK. The mix replays the logged channel writes.
 
   sound_ref.py <audio log> <program .bin> [--wav out.wav]
 """
+
 import argparse
 import struct
 import sys
 import wave
+
 
 MASK20 = 0xFFFFF
 
@@ -67,7 +69,7 @@ class Sound:
             ch.vol = data & 0x7F
         elif kind == 3:
             ch.fend = data & MASK20
-            if ch.fend == 0:                     # stop now
+            if ch.fend == 0:  # stop now
                 ch.cur_v = ch.nxt_v = ch.playing = False
         elif kind == 4:
             ch.lstart = data & MASK20
@@ -125,11 +127,11 @@ class Sound:
 
 
 def nclamp(n):
-    return 108 if n < 108 else 907 if n > 907 else n
+    return 108 if n < 108 else min(n, 907)
 
 
 def vclamp(v):
-    return 0 if v < 0 else 64 if v > 64 else v
+    return 0 if v < 0 else min(v, 64)
 
 
 def vslide(v, prm):
@@ -144,6 +146,7 @@ class ModChannel:
 
 class Seq:
     """sound_seq.v: returns the channel writes (ch, reg, data) per event"""
+
     R_START, R_VOL, R_END, R_LSTART, R_LEND, R_FREQ = 4, 8, 12, 16, 20, 24
 
     def __init__(self, mem):
@@ -230,7 +233,9 @@ class Seq:
                 h_start = (base + ((h[0] >> 2) & MASK20)) & MASK20
                 h_vol, h_end = (h[1] >> 24) & 127, (base + ((h[1] >> 2) & MASK20)) & MASK20
                 h_ls = (base + ((h[2] >> 2) & MASK20)) & MASK20
-                h_le = 0 if (h[3] >> 2) & 0xFFFFFF == 0 else (base + ((h[3] >> 2) & MASK20)) & MASK20
+                h_le = (
+                    0 if (h[3] >> 2) & 0xFFFFFF == 0 else (base + ((h[3] >> 2) & MASK20)) & MASK20
+                )
             if note and not porta:
                 c.note = note
             if inst:
@@ -264,9 +269,8 @@ class Seq:
                     c.vol = vclamp(c.vol + lo)
                 elif hi == 0xB:
                     c.vol = vclamp(c.vol - lo)
-            elif fx == 0x0F:
-                if 0 < prm < 32:
-                    self.speed = prm
+            elif fx == 0x0F and 0 < prm < 32:
+                self.speed = prm
             c.fx, c.param = fx, prm
             if hdr:
                 out += [(n, self.R_END, h_end), (n, self.R_LSTART, h_ls), (n, self.R_LEND, h_le)]
@@ -297,8 +301,8 @@ def check_seq(events, mem):
     """the sequencer writes and tick timing; returns the number of errors"""
     seq = Seq(mem)
     expected, got = [], []
-    ticks = []          # pass of each tick (None: song (re)started / stopped)
-    paused = []         # paused samples before each tick
+    ticks = []  # pass of each tick (None: song (re)started / stopped)
+    paused = []  # paused samples before each tick
     pause_at, pause_n = None, 0
     errors = 0
     for e in events:
@@ -324,7 +328,7 @@ def check_seq(events, mem):
                 paused.append(pause_n)
                 pause_n = 0
                 expected += seq.tick()
-                if not seq.playing:      # song end: stop (no E stop for it here)
+                if not seq.playing:  # song end: stop (no E stop for it here)
                     pass
             elif e[1] == "stop":
                 if seq.playing:
@@ -336,11 +340,13 @@ def check_seq(events, mem):
     for n, (a, b) in enumerate(zip(expected, got)):
         if a != b:
             if errors < 10:
-                print("SEQ MISMATCH write %d: sim ch %d reg %d data %d, ref ch %d reg %d data %d"
-                      % ((n,) + b + a))
+                print(
+                    f"SEQ MISMATCH write {n}: sim ch {b[0]} reg {b[1]} data {b[2]}, "
+                    f"ref ch {a[0]} reg {a[1]} data {a[2]}"
+                )
             errors += 1
     if len(expected) != len(got):
-        print("SEQ MISMATCH: %d writes in the simulation, %d in the model" % (len(got), len(expected)))
+        print(f"SEQ MISMATCH: {len(got)} writes in the simulation, {len(expected)} in the model")
         errors += 1
     # tick intervals: +525 per sample, a tick when WAITCLK is passed
     acc, last, n_ticks = 0, None, 0
@@ -359,7 +365,7 @@ def check_seq(events, mem):
                     break
             if t - last != n:
                 if errors < 10:
-                    print("SEQ TICK interval %d samples, expected %d (tick at %d)" % (t - last, n, t))
+                    print(f"SEQ TICK interval {t - last} samples, expected {n} (tick at {t})")
                 errors += 1
             acc = a
             t += p
@@ -367,7 +373,7 @@ def check_seq(events, mem):
             acc = 0
         last = t
         n_ticks += 1
-    print("sequencer: %d ticks, %d channel writes" % (n_ticks, len(got)))
+    print(f"sequencer: {n_ticks} ticks, {len(got)} channel writes")
     return errors
 
 
@@ -382,14 +388,17 @@ def main():
     ap.add_argument("--wav")
     args = ap.parse_args()
 
-    data = open(args.bin, "rb").read()
+    with open(args.bin, "rb") as file:
+        data = file.read()
     data += b"\0" * (-len(data) % 4)
-    mem = list(struct.unpack(">%dI" % (len(data) // 4), data))
+    mem = list(struct.unpack(f">{len(data) // 4}I", data))
 
-    writes = {}      # (pass, phase) -> [("W", reg, data) / ("C", ch, reg, data)]
+    writes = {}  # (pass, phase) -> [("W", reg, data) / ("C", ch, reg, data)]
     sim = []
     events = []
-    for line in open(args.log):
+    with open(args.log) as file:
+        lines = file.readlines()
+    for line in lines:
         f = line.split()
         if f[0] == "W":
             w = ("W", int(f[3]), int(f[4]))
@@ -431,24 +440,25 @@ def main():
     for n, (a, b) in enumerate(zip(sim, ref)):
         if a != b:
             if errors < 10:
-                print("MISMATCH sample %d: sim %s ref %s" % (n, a, b))
+                print(f"MISMATCH sample {n}: sim {a} ref {b}")
             errors += 1
     nz = sum(1 for l, r in sim if l or r)
     peak = max([max(abs(l), abs(r)) for l, r in sim] + [0])
-    print("%d samples (%.1f ms), %d non-silent, peak %d, %d register writes"
-          % (len(sim), len(sim) / 48.0, nz, peak,
-             sum(1 for v in writes.values() for w in v if w[0] == "W")))
+    n_writes = sum(1 for v in writes.values() for w in v if w[0] == "W")
+    print(
+        f"{len(sim)} samples ({len(sim) / 48.0:.1f} ms), {nz} non-silent, peak {peak}, "
+        f"{n_writes} register writes"
+    )
     if snd.underruns:
-        print("reference model underruns: %d" % snd.underruns)
+        print(f"reference model underruns: {snd.underruns}")
     if args.wav:
-        w = wave.open(args.wav, "wb")
-        w.setnchannels(2)
-        w.setsampwidth(2)
-        w.setframerate(48000)
-        w.writeframes(b"".join(struct.pack("<hh", l, r) for l, r in sim))
-        w.close()
+        with wave.open(args.wav, "wb") as w:
+            w.setnchannels(2)
+            w.setsampwidth(2)
+            w.setframerate(48000)
+            w.writeframes(b"".join(struct.pack("<hh", l, r) for l, r in sim))
     if errors or not sim or nz == 0:
-        print("FAIL: %d mismatches" % errors)
+        print(f"FAIL: {errors} mismatches")
         sys.exit(1)
     print("PASS: simulation matches the reference model bit exact")
 

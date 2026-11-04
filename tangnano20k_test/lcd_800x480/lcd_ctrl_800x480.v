@@ -3,16 +3,16 @@
 // TODO: generics to do either 480x272 or 800x480
 module rgb_lcd_ctrl_800x480(
 
-                    input            clk, // System clock
-                    input            rst_n, // Active low reset
-                    output reg [7:0] r, // Red output
-                    output reg [7:0] g, // Green output
-                    output reg [7:0] b, // Blue output
-                    output reg       hsync, // Horizontal sync signal
-                    output reg       vsync, // Vertical sync signal
-                    output reg       de, // Data enable signal
-                    output reg       enabled  // inhibit DE & SYNC for the first few frames
-                    );
+    input            clk, // System clock
+    input            rst_n, // Active low reset
+    output reg [7:0] r, // Red output
+    output reg [7:0] g, // Green output
+    output reg [7:0] b, // Blue output
+    output reg       hsync, // Horizontal sync signal
+    output reg       vsync, // Vertical sync signal
+    output reg       de, // Data enable signal
+    output reg       enabled  // inhibit DE & SYNC for the first few frames
+);
 
     // Parameters for display (Fpix = 27 / 31,5 / 50 MHz [min/typ/max])
     // Fpix = 31.5MHz = 126/4, 1000x525 -> 60.000 FPS
@@ -35,8 +35,8 @@ module rgb_lcd_ctrl_800x480(
     reg [9:0]                        v_count   = 0;  // Vertical counter
     reg [9:0]                        frame_cnt = 0;  // Signal 'enabled' after a few frames...
 
-   wire [9:0]                        dyn_hc = frame_cnt + h_count;
-   wire [9:0]                        dyn_vc = frame_cnt + v_count;
+    wire [9:0]                        dyn_hc = frame_cnt + h_count;
+    wire [9:0]                        dyn_vc = frame_cnt + v_count;
 
     // Frame generation at 60 FPS
     always @(posedge clk or negedge rst_n) begin
@@ -86,7 +86,7 @@ module rgb_lcd_ctrl_800x480(
                 r <= dyn_hc[8] ? ~dyn_hc[7:0] : dyn_hc[7:0];            // Red channel
                 g <= dyn_vc[8] ? ~dyn_vc[7:0] : dyn_vc[7:0];            // Green channel
                 b <= dyn_vc[8] ? dyn_hc[8:1] : ~dyn_vc+dyn_hc;
-           // Blue channel
+                // Blue channel
             end else begin
                 r <= 8'b0;                    // No color outside active area
                 g <= 8'b0;

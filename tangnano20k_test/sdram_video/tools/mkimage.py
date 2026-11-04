@@ -12,9 +12,11 @@ Outputs:
                         (with an @address directive for FLASH_START)
   --hexwords FILE       the image as 32-bit words ($readmemh) for the test bench
 """
+
 import argparse
 import random
 import struct
+
 
 W, H = 320, 240
 SIZE = 1 << 20
@@ -26,8 +28,16 @@ def rgb565(r, g, b):
 
 def test_pattern():
     """Colour bars, gradients, a 1-pixel border and a grid."""
-    bars = [(255, 255, 255), (255, 255, 0), (0, 255, 255), (0, 255, 0),
-            (255, 0, 255), (255, 0, 0), (0, 0, 255), (0, 0, 0)]
+    bars = [
+        (255, 255, 255),
+        (255, 255, 0),
+        (0, 255, 255),
+        (0, 255, 0),
+        (255, 0, 255),
+        (255, 0, 0),
+        (0, 0, 255),
+        (0, 0, 0),
+    ]
     px = []
     for y in range(H):
         for x in range(W):
@@ -50,6 +60,7 @@ def test_pattern():
 
 def from_picture(path):
     from PIL import Image  # pip install pillow
+
     img = Image.open(path).convert("RGB").resize((W, H))
     return [rgb565(*img.getpixel((x, y))) for y in range(H) for x in range(W)]
 
@@ -80,14 +91,17 @@ def main():
 
     if a.memtxt:
         with open(a.memtxt, "w") as f:
-            f.write("@%x\n" % a.flash_start)
-            for i in range(0, SIZE, 16):
-                f.write(" ".join("%02x" % b for b in data[i:i + 16]) + "\n")
+            f.write(f"@{a.flash_start:x}\n")
+            f.writelines(
+                " ".join(f"{b:02x}" for b in data[i : i + 16]) + "\n" for i in range(0, SIZE, 16)
+            )
 
     if a.hexwords:
         with open(a.hexwords, "w") as f:
-            for i in range(0, SIZE, 4):
-                f.write("%08x\n" % struct.unpack(">I", data[i:i + 4])[0])
+            f.writelines(
+                "{:08x}\n".format(struct.unpack(">I", data[i : i + 4])[0])
+                for i in range(0, SIZE, 4)
+            )
 
 
 if __name__ == "__main__":

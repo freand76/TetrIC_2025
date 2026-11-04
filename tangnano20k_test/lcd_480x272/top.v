@@ -1,18 +1,17 @@
 // GW2AR-LV18QN88C8/I7
 
 module top(input wire  sys_clk,
-           input logic rst,
-           output wire p77_LCD_CLK,
-           output wire p25_LCD_HSYNC,
-           output wire p26_LCD_VSYNC,
-           output wire [4:0] LCD_R,
-           output wire [5:0] LCD_G,
-           output wire [4:0] LCD_B,
-           output wire p48_LCD_DEN,
-           output wire p49_LCD_BL,
-           output wire [5:0] led
-           );
-
+    input logic rst,
+    output wire p77_LCD_CLK,
+    output wire p25_LCD_HSYNC,
+    output wire p26_LCD_VSYNC,
+    output wire [4:0] LCD_R,
+    output wire [5:0] LCD_G,
+    output wire [4:0] LCD_B,
+    output wire p48_LCD_DEN,
+    output wire p49_LCD_BL,
+    output wire [5:0] led
+);
 
     // CLOCKS & RESET
     wire               pll_lock;
@@ -40,32 +39,30 @@ module top(input wire  sys_clk,
     logic [23:0] led_blink;
     assign led[0] = ~led_blink[22];
 
-
     always @(posedge clk_pixel)
-    begin
-        if (!rst_n) begin
-            led_blink     <= 24'd0;
-        end else begin
-            led_blink <= led_blink + 1;
-        end
-    end // always @ (posedge clk_pixel)
-
+        begin
+            if (!rst_n) begin
+                led_blink     <= 24'd0;
+            end else begin
+                led_blink <= led_blink + 1;
+            end
+        end // always @ (posedge clk_pixel)
 
     PLL126_9 lcd_pll(.clkin_27mhz(sys_clk),
-                     .clkout_126mhz(clk_126M_dummy),
-                     .clkout_9M(clk_pixel),  // bypass 27M clki to clkout_p & use /3-output
-                     .lock(pll_lock)
-                     );
+        .clkout_126mhz(clk_126M_dummy),
+        .clkout_9M(clk_pixel),  // bypass 27M clki to clkout_p & use /3-output
+        .lock(pll_lock)
+    );
 
     rgb_lcd_ctrl lcd_ctrl(.clk(clk_pixel),
-                          .rst_n(rst_n),
-                          .r(pix_red),
-                          .g(pix_green),
-                          .b(pix_blue),
-                          .hsync(lcd_hs /*p25_LCD_HSYNC*/),
-                          .vsync(lcd_vs /*p26_LCD_VSYNC*/),
-                          .de(lcd_de /*p48_LCD_DEN*/),
-                          .enabled(lcd_inited)
-                          );
+        .rst_n(rst_n),
+        .r(pix_red),
+        .g(pix_green),
+        .b(pix_blue),
+        .hsync(lcd_hs /*p25_LCD_HSYNC*/),
+        .vsync(lcd_vs /*p26_LCD_VSYNC*/),
+        .de(lcd_de /*p48_LCD_DEN*/),
+        .enabled(lcd_inited)
+    );
 
 endmodule  // top
