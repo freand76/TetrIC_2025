@@ -1,4 +1,4 @@
-// MOD sequencer for sound channels 0..3 (old_vhdl/mainunit.vhd, the "MOD"
+// MOD sequencer for sound channels 0..3 (mainunit.vhd of the original VHDL, the "MOD"
 // part of the TetrIC sound unit). Runs in clk_cpu next to the channel
 // engine in sound.v: it reads the song through the engine's memory port
 // and changes channels 0..3 with the same writes the CPU uses for the

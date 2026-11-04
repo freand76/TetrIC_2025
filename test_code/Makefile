@@ -1,4 +1,4 @@
-ASM ?= python3 ../tools/abnasm.py
+ASM ?= uv run --script ../tools/abnasm.py
 
 # program to write to flash: make program-flash-code PRG=video_test
 PRG ?= prg

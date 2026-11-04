@@ -11,7 +11,7 @@ module regbank(clk, n_reset, r1_sel, r2_sel, rd_sel, w_enable, w_data, r1_data, 
     reg [31:0]        register_bank[32];
 
     // write-through: a register written this cycle (WB) reads as the new value
-    // (as the register file of the original VHDL design, old_vhdl/reg.vhd)
+    // (as the register file of the original VHDL design, reg.vhd)
     assign r1_data = (r1_sel == 0) ? 0 :
         (w_enable && rd_sel == r1_sel) ? w_data : register_bank[r1_sel];
     assign r2_data = (r2_sel == 0) ? 0 :

@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Test song for the MOD sequencer: the effects the game music does not use.
 
   fxmod.py <game Lut.raw> <out prefix>

@@ -15,6 +15,7 @@ RTL      = $(ROOT)/rtl
 MODELS   = $(ROOT)/sim/models
 TESTCODE = $(ROOT)/test_code
 TOOLS    = $(ROOT)/tools
+PYTHON  ?= uv run --script
 
 BUILD_DIR = out
 TB = $(BUILD_DIR)/tb_system
@@ -91,7 +92,7 @@ sound: $(TB)
 	$(MAKE) -C $(TESTCODE) sound_test.bin
 	$(call memtxt,$(TESTCODE)/sound_test.bin,$(BUILD_DIR)/sound)
 	cd $(BUILD_DIR)/sound && vvp -n ../tb_system +audio=audio.log +run_ns=16000000 | $(FILTER)
-	python3 $(TOOLS)/sound_ref.py $(BUILD_DIR)/sound/audio.log $(TESTCODE)/sound_test.bin \
+	$(PYTHON) $(TOOLS)/sound_ref.py $(BUILD_DIR)/sound/audio.log $(TESTCODE)/sound_test.bin \
 	  --wav $(BUILD_DIR)/sound/sound.wav
 
 # ---- forwarding test: test_code/fwd_test.s ----

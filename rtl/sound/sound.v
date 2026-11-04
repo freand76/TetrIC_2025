@@ -1,6 +1,6 @@
 // Sound: 8 channel sample player, mixed to 16 bit stereo at 48 kHz for HDMI.
 //
-// Register set follows the old TetrIC sound unit (old_vhdl/mainunit.vhd) so
+// Register set follows the old TetrIC sound unit (mainunit.vhd of the original VHDL) so
 // game_code/TLib/Sound.s and FXMusic.s work unchanged. Processor address
 // 0x4xxxxx, register = addr[5:0], write only:
 //

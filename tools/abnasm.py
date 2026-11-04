@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Tiny M*PS assembler for the TetrIC processor.
 
 Python port of abnasm.pl, (C) Anders Berkeman 2002, with additions by the

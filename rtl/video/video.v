@@ -2,7 +2,7 @@
 // (with the 48 kHz audio from the sound unit).
 // Every image pixel is 2x2 DVI pixels, so the screen is 320x240 "pixels".
 //
-// Register set and control follow the old TetrIC gfxbox (old_vhdl/gfxbox.vhd).
+// Register set and control follow the old TetrIC gfxbox (gfxbox.vhd of the original VHDL).
 // Registers, processor address 0xExxxxx, offset = addr[3:0], write only:
 //
 //   0 TOPPOS      first screen line of the image (0..239)            default 0

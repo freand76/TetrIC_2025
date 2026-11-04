@@ -22,7 +22,7 @@ IVERILOG_FILES = \
 TANGNANO_FILES = \
 	$(RTL)/uart_tx/uart_tx.v
 
-all: iverilog synth
+all: iverilog $(BUILD_DIR)/top.fs
 
 .PHONY: synth
 synth: $(BUILD_DIR)/top_synth.json

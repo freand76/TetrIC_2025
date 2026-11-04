@@ -11,7 +11,7 @@
 // pads cannot handle the nominal 250 kHz). Without a pad (or with a bad
 // response) all buttons read as released.
 //
-// joy: TetrIC joystick bits as old_vhdl/joyctrl.vhd + TLib/Joy.s, active low
+// joy: TetrIC joystick bits as joyctrl.vhd of the original VHDL + TLib/Joy.s, active low
 //   0 UP, 1 A (SQUARE), 2 DOWN, 3 RIGHT, 4 B (CROSS), 5 LEFT, 6 START, 7 C (CIRCLE)
 
 module gamepad

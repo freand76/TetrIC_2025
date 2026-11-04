@@ -1,7 +1,7 @@
 YOSYS ?= yosys
 NEXTPNR = nextpnr-himbaechel
 GOWIN_PACK = gowin_pack
-PYTHON ?= python3
+PYTHON ?= uv run --script
 
 CST=tangnano20k.cst
 

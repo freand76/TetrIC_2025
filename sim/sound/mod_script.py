@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Write the register script of the MOD test (InitSound + StartMusic(1) of
 game_code) with the addresses from the assembler listing.
 

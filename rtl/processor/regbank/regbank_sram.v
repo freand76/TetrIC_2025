@@ -42,7 +42,7 @@ module regbank(clk, n_reset, r1_sel, r2_sel, rd_sel, w_enable, w_data, r1_data, 
     RAM16SDP4 #(.INIT_0(16'h0000), .INIT_1(16'h0000), .INIT_2(16'h0000), .INIT_3(16'h0000)) r1_03_00_hi(.DI(w_data[3:0]), .WRE(wr_en_hi), .CLK(clk), .WAD(rd_sel[3:0]), .RAD(r1_sel[3:0]), .DO(r1_data_hi[3:0]));
 
     // write-through: a register written this cycle (WB) reads as the new value
-    // (as the register file of the original VHDL design, old_vhdl/reg.vhd)
+    // (as the register file of the original VHDL design, reg.vhd)
     wire w_r1 = w_enable && (rd_sel == r1_sel);
     wire w_r2 = w_enable && (rd_sel == r2_sel);
 

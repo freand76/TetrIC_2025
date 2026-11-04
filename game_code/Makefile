@@ -3,7 +3,7 @@
 ## make                 assemble (out/TetrIC.bin)
 ## make program-flash   write it to the SPI flash at 0x500000 (copied to SDRAM at start)
 
-ASM ?= python3 ../tools/abnasm.py
+ASM ?= uv run --script ../tools/abnasm.py
 FLASH_START = 0x500000
 
 OUT    = out

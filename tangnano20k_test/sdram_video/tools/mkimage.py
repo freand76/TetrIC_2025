@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pillow"]  # only for --src
+# ///
 """Create the 1 MByte flash image for sdram_video.
 
 Layout: 320x240 RGB565 frame buffer at offset 0, packed (640 bytes per line),

@@ -27,7 +27,7 @@ The frame buffer is packed at 640 bytes per line. Pixels are RGB565, stored big 
 |--------|-------------|
 | `make` / `make SDRAM_CLK=pixel` | bitstream in `out/pll50/top.fs` or `out/pixel/top.fs` |
 | `make program-sram-top` / `program-flash-top` | load the bitstream |
-| `make image` | build the 1 MByte flash image `out/image.bin` with a test pattern (`IMAGE_SRC=pic.png` converts a picture, needs Pillow) |
+| `make image` | build the 1 MByte flash image `out/image.bin` with a test pattern (`IMAGE_SRC=pic.png` converts a picture; uv installs Pillow for the script) |
 | `make program-image` | write the image to external flash at 0x600000 |
 | `make sim` | iverilog simulation, SDRAM controller at 50.4 MHz (see below) |
 | `make sim-pixel` | same, with the SDRAM controller at 25.2 MHz |

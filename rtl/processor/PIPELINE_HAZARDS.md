@@ -37,7 +37,7 @@ Do **not** put a branch or jump in any delay slot (see [Control flow](#control-f
 1. `lw` at d = 1 forwards the **address** instead of the loaded data.
 2. In the `jal` delay slot, `$ra` reads as **0** (the ALU result of `jal`).
 
-d = 1 and 2 are forwarded. d = 3 is covered by the register file write-through, as in the original VHDL design (`old_vhdl/reg.vhd`).
+d = 1 and 2 are forwarded. d = 3 is covered by the register file write-through, as in the original VHDL design (`reg.vhd`).
 
 ### Practical rules (safe and simple)
 
@@ -107,7 +107,7 @@ prg.s: 78 of 135 nops can be removed (52 nops are in delay slots and are kept; 2
 * **Forwarding unit** (`fwunit`): during ID it compares the source registers with the destination of the instruction in EX (d=1) and in MEM (d=2). In EX, `fwmux1/2` then select `s_mem_res` (d=1) or `s_wb_data` (d=2).
   * The d=1 path forwards the **ALU result**. For `lw` that is the address, and for `jal` it is 0.
   * The d=2 path forwards the final WB value, so load data and link address are both correct there.
-* **d = 3.** The producer is in WB while the consumer is in ID. `regbank_sram` writes its RAM16SDP4 cells on the clock edge, but a read of the register that is written in the same cycle returns `w_data` directly (write-through, as `old_vhdl/reg.vhd`). Without it, the ID/EX register latched the old value, unless a pipeline stall happened to let the write land first, which made d = 3 an intermittent bug.
+* **d = 3.** The producer is in WB while the consumer is in ID. `regbank_sram` writes its RAM16SDP4 cells on the clock edge, but a read of the register that is written in the same cycle returns `w_data` directly (write-through, as `reg.vhd` of the original VHDL). Without it, the ID/EX register latched the old value, unless a pipeline stall happened to let the write land first, which made d = 3 an intermittent bug.
 * **`sw` data** (`rt`) goes to memory through `exmem_data2 <= s_ex_data2`, the value read in ID, **without forwarding**. Only the base address (`rs`) is forwarded. With the write-through, d = 3 reads the right value.
 
 ## How this was verified

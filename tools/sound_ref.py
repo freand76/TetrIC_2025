@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """Reference model of the sound unit (rtl/sound/sound.v, sound_seq.v).
 
 Replays the register writes logged by sim/system/tb_system.v / sim/sound/tb_sound.v

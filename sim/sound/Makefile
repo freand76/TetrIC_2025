@@ -13,6 +13,7 @@ ROOT = ../..
 RTL = $(ROOT)/rtl
 MODELS = $(ROOT)/sim/models
 TOOLS = $(ROOT)/tools
+PYTHON ?= uv run --script
 OUT = out
 GAME_BIN = $(ROOT)/game_code/out/TetrIC.bin
 
@@ -44,7 +45,7 @@ $(OUT)/vl/tb_sound_vl: $(SOURCES)
 
 $(OUT)/mod.txt: mod_script.py $(GAME_LST)
 	mkdir -p $(OUT)
-	python3 mod_script.py $(GAME_LST) $@
+	$(PYTHON) mod_script.py $(GAME_LST) $@
 
 $(OUT)/game.hex: $(GAME_BIN)
 	mkdir -p $(OUT)
@@ -53,21 +54,21 @@ $(OUT)/game.hex: $(GAME_BIN)
 .PHONY: beat
 beat: $(TB) $(OUT)/game.hex
 	$(RUN) +mem=$(OUT)/game.hex +script=beat.txt +samples=24000 +audio=$(OUT)/beat.log
-	python3 $(TOOLS)/sound_ref.py $(OUT)/beat.log $(GAME_BIN) --wav $(OUT)/beat.wav
+	$(PYTHON) $(TOOLS)/sound_ref.py $(OUT)/beat.log $(GAME_BIN) --wav $(OUT)/beat.wav
 
 .PHONY: mod
 mod: $(TB) $(OUT)/game.hex $(OUT)/mod.txt
 	$(RUN) +mem=$(OUT)/game.hex +script=$(OUT)/mod.txt +samples=$$(($(MOD_MS) * 48)) +audio=$(OUT)/mod.log | grep -v '^- '
-	python3 $(TOOLS)/sound_ref.py $(OUT)/mod.log $(GAME_BIN) --wav $(OUT)/mod.wav
+	$(PYTHON) $(TOOLS)/sound_ref.py $(OUT)/mod.log $(GAME_BIN) --wav $(OUT)/mod.wav
 
 $(OUT)/fxmod.hex: fxmod.py $(ROOT)/game_code/TLib/Data/Lut.raw
 	mkdir -p $(OUT)
-	python3 fxmod.py $(ROOT)/game_code/TLib/Data/Lut.raw $(OUT)/fxmod
+	$(PYTHON) fxmod.py $(ROOT)/game_code/TLib/Data/Lut.raw $(OUT)/fxmod
 
 .PHONY: fxmod
 fxmod: $(TB) $(OUT)/fxmod.hex
 	$(RUN) +mem=$(OUT)/fxmod.hex +script=$(OUT)/fxmod.txt +samples=153600 +audio=$(OUT)/fxmod.log | grep -v '^- '
-	python3 $(TOOLS)/sound_ref.py $(OUT)/fxmod.log $(OUT)/fxmod.bin --wav $(OUT)/fxmod.wav
+	$(PYTHON) $(TOOLS)/sound_ref.py $(OUT)/fxmod.log $(OUT)/fxmod.bin --wav $(OUT)/fxmod.wav
 
 .PHONY: clean
 clean:
