@@ -14,6 +14,10 @@ prg.bin: prg.s HelloWorld.txt
 %.bin: %.s
 	$(ASM) $<
 
+# deliberate hazard (see the file)
+fwd_test.bin: fwd_test.s
+	$(ASM) --hazards=off $<
+
 MEM.TXT: prg.bin
 	hexdump -v -e '4/1 "%02x " "\n"' $< > $@
 

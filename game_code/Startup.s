@@ -19,7 +19,7 @@ ScoreBKG	= StatBKG+SCORE_SIZE		; 8kB
 SilentMod	= ScoreBKG+SCORE_SIZE		; 1.6kB
 TempMem		= SilentMod+EMPTYMOD_SIZE	; 512kB-160kB-160kB-25kB-3*8kb-1.6kB=141kB
 SfxBase		= 0x400000
-GfxBase		= 0xe00000			; video registers (src/top/video/video.v)
+GfxBase		= 0xe00000			; video registers (rtl/video/video.v)
 
 ######################
 # Global Definitions #

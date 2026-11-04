@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Reference model of the sound unit (src/top/sound/sound.v, sound_seq.v).
+"""Reference model of the sound unit (rtl/sound/sound.v, sound_seq.v).
 
-Replays the register writes logged by iverilog_top.v / soundsim/tb_sound.v
+Replays the register writes logged by sim/system/tb_system.v / sim/sound/tb_sound.v
 (+audio=<file>) on the program image and compares every 48 kHz output
 sample with the simulation. Sample words are fetched instantly here (the
 hardware has 4..8 samples of buffer), so the output must match exactly as

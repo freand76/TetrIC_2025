@@ -1,4 +1,4 @@
-; Video test for the gfxbox style video registers (src/top/video/video.v)
+; Video test for the gfxbox style video registers (rtl/video/video.v)
 ;
 ; Draws 8 colour bars (white top and bottom line) into a 320x240 frame buffer
 ; at FB and then switches every 2 seconds (120 frames, timed with MFC1) between

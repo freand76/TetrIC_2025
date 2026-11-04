@@ -19,7 +19,7 @@ macro), and negative .dc/.pad values are stored correctly (a 64-bit Perl
 stored them as -1).
 
 After assembly the code is checked for pipeline hazards (missing nops, see
-src/top/processor/PIPELINE_HAZARDS.md). Violations are errors and no .bin is
+rtl/processor/PIPELINE_HAZARDS.md). Violations are errors and no .bin is
 written; use --hazards=warn or --hazards=off to relax this.
 --suggest-nops lists nops that can be removed without breaking the rules,
 --remove-nops OUT.s also writes a copy of the source without them.
@@ -667,7 +667,7 @@ class Assembler:
                 if os.path.exists(self.name3):
                     os.remove(self.name3)
                 raise AsmError("%s: %d pipeline hazard error(s), no %s written "
-                               "(see src/top/processor/PIPELINE_HAZARDS.md, "
+                               "(see rtl/processor/PIPELINE_HAZARDS.md, "
                                "--hazards=warn to override)" % (self.namei, len(errors), self.name3))
         with open(self.name3, "wb") as f:
             f.write(self.pass3(hex_text))
@@ -676,7 +676,7 @@ class Assembler:
 
 
 # ------------------------------------------------------------ hazard checker
-# Rules from src/top/processor/PIPELINE_HAZARDS.md:
+# Rules from rtl/processor/PIPELINE_HAZARDS.md:
 #   * branches, jr, jalr: 3 delay slots; j, jal: 1 delay slot (always executed)
 #   * no branch/jump in a delay slot
 #   * a register written by instruction P and read by C, d instructions later

@@ -4,44 +4,44 @@ GOWIN_PACK = gowin_pack
 
 BUILD_DIR=out
 
-SRC_TOP=../src/top
+RTL=../rtl
 
 PROCESSOR_FILES = \
-	$(SRC_TOP)/processor/processor.v \
-	$(SRC_TOP)/processor/alu/alu.v \
-	$(SRC_TOP)/processor/alu/lshifter.v \
-	$(SRC_TOP)/processor/alu/rshifter.v \
-	$(SRC_TOP)/processor/branchlogic/branchlogic.v \
-	$(SRC_TOP)/processor/ctrl/ctrl.v \
-	$(SRC_TOP)/processor/fwunit/fwunit.v \
-	$(SRC_TOP)/processor/instr_or_nop/instr_or_nop.v \
-	$(SRC_TOP)/processor/mux2/mux2.v \
-	$(SRC_TOP)/processor/mux4/mux4.v \
-	$(SRC_TOP)/processor/pipereg/pipereg.v \
-	$(SRC_TOP)/processor/signext/signext.v
+	$(RTL)/processor/processor.v \
+	$(RTL)/processor/alu/alu.v \
+	$(RTL)/processor/alu/lshifter.v \
+	$(RTL)/processor/alu/rshifter.v \
+	$(RTL)/processor/branchlogic/branchlogic.v \
+	$(RTL)/processor/ctrl/ctrl.v \
+	$(RTL)/processor/fwunit/fwunit.v \
+	$(RTL)/processor/instr_or_nop/instr_or_nop.v \
+	$(RTL)/processor/mux2/mux2.v \
+	$(RTL)/processor/mux4/mux4.v \
+	$(RTL)/processor/pipereg/pipereg.v \
+	$(RTL)/processor/signext/signext.v
 
-#PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank.v
-PROCESSOR_FILES += $(SRC_TOP)/processor/regbank/regbank_sram.v
+#PROCESSOR_FILES += $(RTL)/processor/regbank/regbank.v
+PROCESSOR_FILES += $(RTL)/processor/regbank/regbank_sram.v
 
 VERILOG_FILES = \
 	$(PROCESSOR_FILES) \
-	$(SRC_TOP)/cdc/cdc.v \
-	$(SRC_TOP)/sdram/sdram_ctrl.v \
-	$(SRC_TOP)/memory_controller/memory_controller.v \
-	$(SRC_TOP)/memory_controller/memory_arbiter.v \
-	$(SRC_TOP)/icache/icache.v \
-	$(SRC_TOP)/icache/icache_mem.v \
-	$(SRC_TOP)/uart_tx/uart_tx.v \
-	$(SRC_TOP)/flash_reader/flash_reader.v \
-	$(SRC_TOP)/gamepad/gamepad.v \
-	$(SRC_TOP)/video/video.v \
-	$(SRC_TOP)/video/video_dma.v \
-	$(SRC_TOP)/video/line_mem.v \
-	$(SRC_TOP)/sound/sound.v \
-	$(SRC_TOP)/sound/sound_seq.v \
-	$(SRC_TOP)/video/dvi/hdmi_generator.v \
-	$(SRC_TOP)/video/dvi/tmds_channel.v \
-	$(SRC_TOP)/top.v
+	$(RTL)/cdc/cdc.v \
+	$(RTL)/sdram/sdram_ctrl.v \
+	$(RTL)/memory_controller/memory_controller.v \
+	$(RTL)/memory_controller/memory_arbiter.v \
+	$(RTL)/icache/icache.v \
+	$(RTL)/icache/icache_mem.v \
+	$(RTL)/uart_tx/uart_tx.v \
+	$(RTL)/flash_reader/flash_reader.v \
+	$(RTL)/gamepad/gamepad.v \
+	$(RTL)/video/video.v \
+	$(RTL)/video/video_dma.v \
+	$(RTL)/video/line_mem.v \
+	$(RTL)/sound/sound.v \
+	$(RTL)/sound/sound_seq.v \
+	$(RTL)/video/dvi/hdmi_generator.v \
+	$(RTL)/video/dvi/tmds_channel.v \
+	$(RTL)/top.v
 
 TANGNANO20K_FILES = \
 	tangnano20k_top.v \

@@ -1,6 +1,22 @@
 # TetrIC 2025
 
-A future port of TetrIC to the Tang Nano 20k
+A port of TetrIC to the Tang Nano 20k
+
+## Layout
+
+| Folder | |
+|---|---|
+| `rtl/` | the system RTL (`rtl/top.v`: CPU, SDRAM, memory controller, video, sound, gamepad, flash reader) |
+| `tangnano20k/` | the Tang Nano 20K top level, PLLs and pins of the system |
+| `tangnano20k_test/` | FPGA test projects: `hdmi` (HDMI 4 kHz tone), `sdram`, `sdram_video`, `lcd_480x272`, `lcd_800x480` |
+| `sim/models/` | simulation models: SPI flash, SDRAM, PS2 gamepad, Gowin primitives |
+| `sim/system/` | full-system simulation (iverilog) |
+| `sim/sound/` | sound unit simulation (Verilator) against `tools/sound_ref.py` |
+| `sim/pytest/` | module testbenches (digsim) |
+| `game_code/` | the TetrIC game |
+| `test_code/` | test programs |
+| `tools/` | assembler (`abnasm.py`), sound reference model |
+| `old_vhdl/` | the original TetrIC VHDL, for reference |
 
 ## Setup
 
@@ -31,13 +47,22 @@ pip3 install "digsim-logic-simulator==1.10.0" ruff pytest
 ### Install needed apt packages
 
 ```
-sudo apt install iverilog
+sudo apt install iverilog verilator
 ```
 
-## Build and execute iverilog simulation
+## Simulation
+
+Full system (iverilog): `run` (test_code/prg.s), `sound` (audio bit exact),
+`fwd` (register forwarding), or `check` for all three:
 
 ```
-make -C iverilog all run
+make -C sim/system check
+```
+
+Sound unit alone (Verilator; `beat`, `mod`, `fxmod`):
+
+```
+make -C sim/sound fxmod
 ```
 
 ## Build and Flash code
@@ -76,7 +101,7 @@ make -C tangnano20k program-flash-top
 
 ## Module Testing
 
-The module testbenches (`src/**/test_*_tb.py`) use digsim 1.10.0. Run them in
+The module testbenches (`sim/pytest/**/test_*_tb.py`, testing `rtl/`) use digsim 1.10.0. Run them in
 a temporary uv environment (Python 3.12, digsim 1.10.0, pytest):
 
 ```
@@ -84,7 +109,7 @@ a temporary uv environment (Python 3.12, digsim 1.10.0, pytest):
 ```
 
 or with the packages above installed: `pytest`. Arguments go to pytest, e.g.
-`./uv_run_pytest.sh src/top/processor/alu -k overflow`.
+`./uv_run_pytest.sh sim/pytest/processor/alu -k overflow`.
 
 ## Code Formatting
 
@@ -97,3 +122,5 @@ ruff format
 
  * The program counter is word based
  * BGT / BGE only handles unsigned values
+ * Forwarding from WB was lost when the instruction in EX did not write a
+   register but named the same one (fixed, `make -C sim/system fwd`)

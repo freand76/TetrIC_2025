@@ -1,7 +1,12 @@
 *__pycache__/
 *~
 out/
-*/MEM.TXT
+out_*/
+MEM.TXT
 *.1
 *.2
 *.bin
+*.vcd
+*.vcd.gz
+a.out
+.test_venv/

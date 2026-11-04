@@ -1,7 +1,7 @@
 #!/bin/bash
-# Run the digsim pytest testbenches (src/**/test_*_tb.py) in a temporary uv
+# Run the digsim pytest testbenches (sim/pytest/**/test_*_tb.py) in a temporary uv
 # environment with digsim 1.10.0; arguments go to pytest, e.g.
-#   ./uv_run_pytest.sh src/top/processor/alu -k overflow
+#   ./uv_run_pytest.sh sim/pytest/processor/alu -k overflow
 set -e
 cd "$(dirname "$0")"
 exec uv run --no-project --python 3.12 \

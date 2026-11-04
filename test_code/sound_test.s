@@ -1,4 +1,4 @@
-; Sound test for the sound unit (src/top/sound/sound.v), effect channels 4..7
+; Sound test for the sound unit (rtl/sound/sound.v), effect channels 4..7
 ;
 ; Writes the sound registers the same way as game_code/FXMusic.s and runs
 ; through a few cases, about 3 ms apart (video DMA runs all the time):
@@ -9,7 +9,7 @@
 ;   2: unmute, restart ch4 while it plays (11025 Hz)
 ;   3: stop the looping ch6 with END = 0, MASTERVOL ch5 7 -> 6
 ;   4: print DONE
-; The testbench (iverilog_top.v +audio=...) logs every register write and
+; The testbench (sim/system/tb_system.v +audio=...) logs every register write and
 ; every 48 kHz output sample, tools/sound_ref.py checks them bit exact.
 ;
 ; Registers: $s0 = sound registers, $gp = uart
