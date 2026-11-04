@@ -101,6 +101,13 @@ make -C tangnano20k program-sram-top
 make -C tangnano20k program-flash-top
 ```
 
+A built bitstream is in `tangnano20k/bitstream/tetric.fs`, to flash it without building:
+
+```
+openFPGALoader -btangnano20k -f tangnano20k/bitstream/tetric.fs
+make -C game_code program-flash
+```
+
 ## Module Testing
 
 The module testbenches (`sim/pytest/**/test_*_tb.py`, testing `rtl/`) use digsim 1.10.0. Run them in
