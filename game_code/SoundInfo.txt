@@ -1,0 +1,4 @@
+.raw sound filer gjorde från winamp har 0x80 som nollpunkt
+
+TetrIC vill ha 0x00 som nollpunkt
+
