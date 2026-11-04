@@ -47,8 +47,7 @@ def dut_tester(current_path):
         ],
         "signext",
     )
-    yosys_netlist = YosysNetlist()
-    yosys_netlist.from_dict(dut_synthesis.synth_to_dict())
+    yosys_netlist = YosysNetlist(**dut_synthesis.synth_to_dict())
     dut.create_from_netlist(yosys_netlist)
 
     circuit.init()

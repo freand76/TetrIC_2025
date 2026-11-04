@@ -70,8 +70,7 @@ def dut_tester(current_path):
         ],
         "fwunit",
     )
-    yosys_netlist = YosysNetlist()
-    yosys_netlist.from_dict(dut_synthesis.synth_to_dict())
+    yosys_netlist = YosysNetlist(**dut_synthesis.synth_to_dict())
     dut.create_from_netlist(yosys_netlist)
 
     circuit.init()
@@ -135,7 +134,7 @@ def test_forward_r1_wb(dut_tester):
 
     dut_tester.r1_sel(4)
     dut_tester.r2_sel(5)
-    dut_tester.mem_rd_sel(4)
+    dut_tester.wb_rd_sel(4)
 
     assert 1 == dut_tester.sel1()
     assert 0 == dut_tester.sel2()
@@ -149,7 +148,7 @@ def test_forward_r2_wb(dut_tester):
 
     dut_tester.r1_sel(4)
     dut_tester.r2_sel(5)
-    dut_tester.mem_rd_sel(5)
+    dut_tester.wb_rd_sel(5)
 
     assert 0 == dut_tester.sel1()
     assert 1 == dut_tester.sel2()

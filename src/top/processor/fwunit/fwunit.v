@@ -28,10 +28,10 @@ module fwunit(r1_sel, r2_sel, mem_rd_sel, wb_rd_sel, mem_w_enable, wb_w_enable, 
         if (mem_w_enable & r2_is_mem_sel)
           sel2 <= 2'b10;
 
-        if ((wb_w_enable & r1_is_wb_sel & !r1_is_mem_sel) || (wb_w_enable & r1_is_wb_sel & r1_is_mem_sel & !wb_w_enable))
+        if ((wb_w_enable & r1_is_wb_sel & !r1_is_mem_sel) || (wb_w_enable & r1_is_wb_sel & r1_is_mem_sel & !mem_w_enable))
           sel1 <=  2'b01;
 
-        if ((wb_w_enable & r2_is_wb_sel & !r2_is_mem_sel) || (wb_w_enable & r2_is_wb_sel & r2_is_mem_sel & !wb_w_enable))
+        if ((wb_w_enable & r2_is_wb_sel & !r2_is_mem_sel) || (wb_w_enable & r2_is_wb_sel & r2_is_mem_sel & !mem_w_enable))
           sel2 <=  2'b01;
      end
 

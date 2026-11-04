@@ -25,7 +25,7 @@ source <my_special_venv_folder>/bin/activate
 ### Install needed python packages
 
 ```
-pip3 install digsim-logic-simulator ruff pytest
+pip3 install "digsim-logic-simulator==1.10.0" ruff pytest
 ```
 
 ### Install needed apt packages
@@ -76,9 +76,15 @@ make -C tangnano20k program-flash-top
 
 ## Module Testing
 
+The module testbenches (`src/**/test_*_tb.py`) use digsim 1.10.0. Run them in
+a temporary uv environment (Python 3.12, digsim 1.10.0, pytest):
+
 ```
-pytest
+./uv_run_pytest.sh
 ```
+
+or with the packages above installed: `pytest`. Arguments go to pytest, e.g.
+`./uv_run_pytest.sh src/top/processor/alu -k overflow`.
 
 ## Code Formatting
 
