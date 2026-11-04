@@ -147,7 +147,7 @@ PrintHighScoreList_BlackText:
 	mov	$s0,$v0
 	mov	$s1,$v1
 	_JAL	GetFrameCount
-	clr	$v0				; fade every frame (every 2nd at 50 Hz)
+	sll	$v0,$v0,31			; fade every 2nd 50 Hz tick
 	_BNEZ	$v0,PrintHighScoreList_DontFade
 	_STA	$s0,HighScoreListTextColor
 PrintHighScoreList_DontFade:
@@ -215,6 +215,9 @@ ColorTitle:
 
 	; Update color
 	_JAL	GetFrameCount
+	_BGEZ	$v0,ColorTitle_Tick
+	_J	ColorTitle_NoNewColor		; no 50 Hz tick in this frame
+ColorTitle_Tick:
 	movi	$t0,0x0f
 	and	$t0,$t0,$v0
 	_LI	$s1,HighScoreTitleTarget
@@ -261,7 +264,10 @@ ColorTitle_WordLoop:
 	_LW	$a0,0($s1)
 	_LW	$a1,0($s2)
 	_JAL	FadeSourceToDest
+	_LDA	$t0,Tick50		; fade per 50 Hz tick
+	_BEQZ	$t0,ColorTitle_NoFade
 	_SW	$v0,0($s1)
+ColorTitle_NoFade:
 
 	addi	$s1,$s1,1
 	addi	$s2,$s2,1

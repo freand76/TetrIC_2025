@@ -4,8 +4,8 @@ VEC_SURFACE_COUNT = 10
 MIDPOINT_X = 70
 MIDPOINT_Y = 128
 
-FRAMESBEFOREMORPH = 120		; 200 at 50 Hz
-ROTATESPEED = 0x280		; 0x180 at 50 Hz
+FRAMESBEFOREMORPH = 240		; 200 at 50 Hz
+ROTATESPEED = 0x140		; 0x180 at 50 Hz
 
 VEC_COLOR = 0x01e0
 
@@ -488,9 +488,11 @@ MorphFrame:
 	_BEQZ	$a0,MorphFrame_DontChangeTarget
 	_STA	$zero,Target_Color
 MorphFrame_DontChangeTarget:
-	_JAL	MorphPoints		; 3 morph steps per frame at 30 Hz
-	_JAL	MorphPoints		; (2 at 50 Hz): a morph takes about
-	_JAL	MorphPoints		; the same time as before
+	_JAL	MorphPoints		; 2 morph steps per frame at 50 Hz,
+	_LDA	$t0,HalfStep		; 2,2,1,2,2,1 at 60 Hz
+	_BNEZ	$t0,MorphFrame_HalfStep
+	_JAL	MorphPoints
+MorphFrame_HalfStep:
 
 	_LI	$t0,Angle_Y
 	_LW	$t1,0($t0)
@@ -512,7 +514,7 @@ MorphFrame_DontMorphNext:
 
 	movi	$v1,1
 	_JAL	GetFrameCount
-	sll	$v0,$v0,30			; fade every 4th frame (every 8th at 50 Hz)
+	sll	$v0,$v0,29			; fade every 8th 50 Hz tick
 	_BNEZ	$v0,MorphFrame_DontFade
 	_LDA	$a0,Current_Color
 	_LDA	$a1,Target_Color

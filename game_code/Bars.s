@@ -325,7 +325,7 @@ BarList:	.dc	0xf800f800,0xffe0ffe0,0x07e007e0
 
 BarZ:		.pad	NOF_BARS,0
 
-BAR_ANGLE_DELTA = -0x1ab		; -0x100 at 50 Hz
+BAR_ANGLE_DELTA = -0xd5		; -0x100 at 50 Hz
 
 ANGLE_BETWEEN_BAR = 0x10000/NOF_BARS
 

@@ -77,7 +77,10 @@ Stars:
 	movi	$s7,NOF_STARS
 Stars_Loop:
 	_LW	$s6,0($s2)
-	add	$t0,$s6,$s3
+	_LDA	$t1,Tick50		; speed up per 50 Hz tick only
+	sub	$t1,$zero,$t1
+	and	$t1,$t1,$s3
+	add	$t0,$s6,$t1
 	_SW	$t0,0($s2)
 
 	sll	$a0,$s6,SPEED_SHIFT
@@ -89,7 +92,9 @@ Stars_Loop:
 	_JAL	SetColor
 
 	_LW	$a0,0($s0)
-	sub	$a0,$a0,$s6
+	_LDA	$t0,HalfStep		; speed is per 50 Hz frame: move it on 4
+	srlv	$t0,$s6,$t0		; of 6 frames and half of it on 2
+	sub	$a0,$a0,$t0
 	slt	$t0,$a0,$zero
 	_BEQZ	$t0,Stars_StarStillOnScreen
 	addi	$v0,$v0,-1

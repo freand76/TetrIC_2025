@@ -120,7 +120,7 @@ ScreenFadeOut:
 
 LEFTRIGHT_ROWS = 256
 LEFTRIGHT_COLS = 160
-LEFTRIGHT_FRAMES = 30		; 50 at 50 Hz
+LEFTRIGHT_FRAMES = 60		; 50 at 50 Hz
 LEFTRIGHT_STEP = LEFTRIGHT_COLS/LEFTRIGHT_FRAMES+1
 LEFTRIGHT_HEIGHT = 8
 
@@ -191,7 +191,7 @@ FadeOutLeftRight_OutsideScreen:
 
 TOPDOWN_ROWS = 256
 TOPDOWN_COLS = 160
-TOPDOWN_FRAMES = 30		; 50 at 50 Hz
+TOPDOWN_FRAMES = 60		; 50 at 50 Hz
 TOPDOWN_STEP = TOPDOWN_ROWS/TOPDOWN_FRAMES+1
 TOPDOWN_WIDTH = 4
 
@@ -882,10 +882,16 @@ Line_Done:
 # Wait for next frame #
 #######################
 
-; The game runs at 30 Hz: one game frame is FRAME_STEP DVI frames (60 Hz).
-; The time base is the frame counter in MFC1[31:20], which steps at the end
-; of the visible picture (start of the vertical blank). On PAL the game ran
-; once per field (50 Hz); frame based timings have been scaled to 30 Hz.
+; The game runs at 60 Hz, one game frame per DVI frame. The time base is
+; the frame counter in MFC1[31:20], which steps at the end of the visible
+; picture (start of the vertical blank). On PAL the game ran once per field
+; (50 Hz), so the frame based timings have been scaled by 60/50:
+;  - frame counts * 6/5, per frame steps * 5/6
+;  - FrameCount (GetFrameCount) counts 50 Hz ticks: it steps on 5 of 6
+;    frames. Tick50 = 0 on the 6th frame (FramePhase 5), there GetFrameCount
+;    returns -1 so "every Nth frame" tests (low bits zero) do not fire.
+;  - HalfStep = 1 on frames 2 and 5 of 6: steps of 2 units per 50 Hz frame
+;    become 2,2,1,2,2,1 per 60 Hz frame (5/6 of the speed)
 ;
 ; The screens are 320x256 (old PAL layout), the DVI picture shows 240 lines:
 ; ScrOffset words are skipped at the top (8 lines, set to match the width).
@@ -900,10 +906,16 @@ FrameCount:
 	.dc	0
 NextFrameTick:
 	.dc	0
+FramePhase:
+	.dc	0
+Tick50:
+	.dc	1
+HalfStep:
+	.dc	0
 ScrOffset:
 	.dc	8*160
 
-FRAME_STEP = 2
+FRAME_STEP = 1
 
 WaitNextFrame:
 	_LDA	$t0,WorkScreen
@@ -928,7 +940,7 @@ WaitNextFrame:
 WaitNextFrameNoSwap:
 	_J	WaitFrameTick
 
-; Wait for the next 30 Hz tick and count the game frame
+; Wait for the next 60 Hz tick and count the game frame
 WaitFrameTick:
 	_LDA	$t6,NextFrameTick
 ; ... and until DVI frame $t6 (mod 4096) has been reached
@@ -958,10 +970,31 @@ WaitFrameTick_OnTime:
 	addi	$t1,$t1,FRAME_STEP
 	_STA	$t1,NextFrameTick
 
+	; 50 Hz tick bookkeeping, see above
+	_LDA	$t0,FramePhase
+	addi	$t0,$t0,1
+	slti	$t1,$t0,6
+	_BNEZ	$t1,WaitFrameTick_PhaseOk
+	clr	$t0
+WaitFrameTick_PhaseOk:
+	_STA	$t0,FramePhase
+	slti	$t1,$t0,5		; Tick50: phase 0..4
+	_STA	$t1,Tick50
+	movi	$t2,2
+	_BEQ	$t0,$t2,WaitFrameTick_Half
+	movi	$t2,5
+	_BEQ	$t0,$t2,WaitFrameTick_Half
+	clr	$t2
+	_B	WaitFrameTick_SetHalf
+WaitFrameTick_Half:
+	movi	$t2,1
+WaitFrameTick_SetHalf:
+	_STA	$t2,HalfStep
+
 	_LI	$t0, FrameCount
-	_LW	$t1, 0($t0)
-	addi	$t1,$t1,1
-	_SW	$t1, 0($t0)
+	_LW	$t2, 0($t0)
+	add	$t2,$t2,$t1
+	_SW	$t2, 0($t0)
 
 	_RTS
 
@@ -998,6 +1031,11 @@ GetActiveScreen:
 	_LDA	$v0,ViewScreen
 	_RTS
 
+; FrameCount in 50 Hz ticks, -1 on the frame without a tick
 GetFrameCount:
 	_LDA	$v0,FrameCount
+	_LDA	$t0,Tick50
+	_BNEZ	$t0,GetFrameCount_Tick
+	movi	$v0,-1
+GetFrameCount_Tick:
 	_RTS

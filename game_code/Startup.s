@@ -55,7 +55,7 @@ start:
 	mov	$a0,$v0
 	_JAL	ClearScreen
 
-	movi	$a0,15			; 25 at 50 Hz
+	movi	$a0,30			; 25 at 50 Hz
 	_JAL	WaitFrames
 
 	_JAL	WaitNextFrameNoSwap

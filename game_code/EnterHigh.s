@@ -13,7 +13,7 @@ StartEnterHigh:
 	_BEQZ	$v0,StartEnterHigh_Done
 
 	_LI	$t0,JoyRepeatWait
-	_LI	$t1,0x000600			; Filter = 00, RepeatVal = 06, Accelerate = 0 (0a at 50 Hz)
+	_LI	$t1,0x000c00			; Filter = 00, RepeatVal = 0c, Accelerate = 0 (0a at 50 Hz)
 	nop
 	nop
 	sw	$t1,JOY_UP($t0)
@@ -179,7 +179,7 @@ DrawEnterHighText_BlackText:
 	mov	$s0,$v0
 	mov	$s1,$v1
 	_JAL	GetFrameCount
-	clr	$v0				; fade every frame (every 2nd at 50 Hz)
+	sll	$v0,$v0,31			; fade every 2nd 50 Hz tick
 	_BNEZ	$v0,DrawEnterHighText_DontFade
 	_STA	$s0,EnterHighTextColor
 DrawEnterHighText_DontFade:
@@ -235,7 +235,7 @@ DrawEnterHighName_BlackText:
 	mov	$s0,$v0
 	mov	$s1,$v1
 	_JAL	GetFrameCount
-	clr	$v0				; fade every frame (every 2nd at 50 Hz)
+	sll	$v0,$v0,31			; fade every 2nd 50 Hz tick
 	_BNEZ	$v0,DrawEnterHighName_DontFade
 	_STA	$s0,EnterHighNameColor
 DrawEnterHighName_DontFade:
@@ -248,7 +248,7 @@ DrawEnterHighName_DontFade:
 
 NOF_DOTS = 64
 CIRCLE_STEP = -0x9000/NOF_DOTS
-CIRCLE_SPEED = 0x6ab		; 0x400 at 50 Hz
+CIRCLE_SPEED = 0x355		; 0x400 at 50 Hz
 
 CIRCLE_COLOR = 0x07e0
 CIRCLE_COLOR_STEP = 0x0020
@@ -336,7 +336,7 @@ DrawSelectionBox_Done:
 	mov	$s0,$v0
 	mov	$s1,$v1
 	_JAL	GetFrameCount
-	clr	$v0				; fade every frame (every 2nd at 50 Hz)
+	sll	$v0,$v0,31			; fade every 2nd 50 Hz tick
 	_BNEZ	$v0,DrawSelectionBox_DontFade
 	_STA	$s0,EnterHighCircleColor
 DrawSelectionBox_DontFade:

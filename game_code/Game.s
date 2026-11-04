@@ -23,19 +23,19 @@ StartGame:
 	_JAL	InitBoard			; Init Board
 
 	_LI	$t0,JoyRepeatWait
-	; LEFT, RIGHT , SOFTDROP (DOWN) , ROTATE
-	_LI	$t1,0x000500	; Filter = 00, RepeatVal = 05, Accelerate = 0 (08 at 50 Hz)
-	; HARDDROP (UP)
-	_LI	$t2,0x03ff00	; Filter = 03, RepeatVal = ff, Accelerate = 0 (05 at 50 Hz)
+	; LEFT, RIGHT , SOFTDROP (UP) , ROTATE
+	_LI	$t1,0x000a00	; Filter = 00, RepeatVal = 0a, Accelerate = 0 (08 at 50 Hz)
+	; HARDDROP (DOWN)
+	_LI	$t2,0x06ff00	; Filter = 06, RepeatVal = ff, Accelerate = 0 (05 at 50 Hz)
 	nop
-	sw	$t1,JOY_DOWN($t0)
+	sw	$t1,JOY_UP($t0)
 	sw	$t1,JOY_LEFT($t0)
 	sw	$t1,JOY_RIGHT($t0)
 	sw	$t1,JOY_BUTA($t0)
 	sw	$t1,JOY_BUTB($t0)
 	sw	$t1,JOY_BUTC($t0)
 	sw	$t1,JOY_START($t0)
-	sw	$t2,JOY_UP($t0)
+	sw	$t2,JOY_DOWN($t0)
 
 	_JAL	DrawGameBackground		; Draw background
 
@@ -92,6 +92,7 @@ StartGame_Loop:
 	_JAL	WaitGameNextFrame		; Wait for next frame
 	_JAL	WaitGameNextFrame		; Wait for next frame
 	_JAL	WaitGameNextFrame		; Wait for next frame
+	_JAL	WaitGameNextFrame		; (7 frames at 50 Hz)
 
 	movi	$a0,FX_GAMEOVER_LAUGH
 	_JAL	PlaySampleCh2
@@ -118,10 +119,10 @@ PrintGameOver:
 	movi	$a3,0xffff
 	_JAL	PrintLargeString
 	_JAL	WaitNextFrame
-	movi	$a0,30			; 50 at 50 Hz
+	movi	$a0,60			; 50 at 50 Hz
 	_JAL	WaitFrames
 PrintGameOver_Loop:
-	movi	$s0,30			; 50 at 50 Hz
+	movi	$s0,60			; 50 at 50 Hz
 PrintGameOver_InnerLoop:
 	_JAL	WaitNextFrameNoSwap
 	_JAL	CheckButton
@@ -165,6 +166,18 @@ WaitGameNextFrame:
 	POP	$ra
 	_RTS
 
+; The row remove animations step per 50 Hz frame: the frame without a
+; 50 Hz tick is shown twice (the screens are drawn and faded in turn)
+WaitGameNextFrame50:
+	PUSH	$ra
+	_JAL	WaitGameNextFrame
+	_LDA	$t0,Tick50
+	_BNEZ	$t0,WaitGameNextFrame50_Done
+	_JAL	WaitNextFrameNoSwap
+WaitGameNextFrame50_Done:
+	POP	$ra
+	_RTS
+
 GameJoystick:
 	PUSH	$ra				; Store to stack
 	PUSH	$s0
@@ -176,7 +189,7 @@ GameJoystick:
 	andi	$t0,$s0,1			; LSB to t0
 	srl	$s0,$s0,1			; Shift out LSB
 	_BEQZ	$t0,noGameUp			; Check LSB
-	_JAL	HardDrop			; Up: drop (gamepad; was soft drop)
+	_JAL	SoftDrop			; Up: move down
 noGameUp:
 	andi	$t0,$s0,1			; LSB to t0
 	srl	$s0,$s0,1			; Shift out LSB
@@ -186,7 +199,7 @@ noButA:
 	andi	$t0,$s0,1			; LSB to t0
 	srl	$s0,$s0,1			; Shift out LSB
 	_BEQZ	$t0,noGameDown			; Check LSB
-	_JAL	SoftDrop			; Down: move down (gamepad; was drop)
+	_JAL	HardDrop			; Down: drop
 noGameDown:
 	andi	$t0,$s0,1			; LSB to t0
 	srl	$s0,$s0,1			; Shift out LSB
@@ -224,7 +237,7 @@ noGameButC:
 # TetrIC Game Snd #
 ###################
 
-WARNING_TIME = 60		; 100 at 50 Hz
+WARNING_TIME = 120		; 100 at 50 Hz
 
 WarningCount:	.dc	WARNING_TIME
 
@@ -617,7 +630,7 @@ QuadGfx:
 	movi	$s0,0			; Start with zero delta
 	movi	$s1,0			; Start with zero total
 QuadGfx_Loop:
-	_JAL	WaitGameNextFrame		; WaitGameNextFrame
+	_JAL	WaitGameNextFrame50		; 50 Hz animation
 	mov	$a0,$s1			; Set DeltaY
 	_JAL	FixTopLines		; FixTopLines
 	mov	$a0,$s2			; Set Number of Lines
@@ -708,7 +721,7 @@ RemoveRowsGfx:
 	_JAL	DrawBoard	; Draw board
 
 RemoveRowsGfx_Loop:
-	_JAL	WaitGameNextFrame
+	_JAL	WaitGameNextFrame50		; 50 Hz animation
 	_LI	$s0,RemoveRow_Array
 	clr	$s1		; Clear row counter
 	clr	$s4		; Clear done flags
@@ -1600,6 +1613,8 @@ ShakeBoard:
 	_LI	$t1,ShakePointer
 	_LW	$t2,0($t1)
 	slti	$t3,$t2,63
+	_LDA	$t4,Tick50		; one step per 50 Hz tick
+	and	$t3,$t3,$t4
 	add	$t2,$t2,$t3
 	_SW	$t2,0($t1)
 	add	$t0,$t0,$t2
@@ -2259,7 +2274,7 @@ NextPieceNumber:	.dc	0
 ShowNextPiece:		.dc	0
 RemoveRow_Array:	.dc	0,0,0,0
 
-Level_FallSpeed_Array:	.dc	15,14,12,11,9,8,6,5,4,2 ; frames at 30 Hz (50 Hz: 25,23,20,18,15,13,10,8,6,4)
+Level_FallSpeed_Array:	.dc	30,28,24,22,18,16,12,10,7,5 ; frames at 60 Hz (50 Hz: 25,23,20,18,15,13,10,8,6,4)
 BlockPointer_Array:	.dc	BlockGfx1,BlockGfx2,BlockGfx7,BlockGfx5,BlockGfx6,BlockGfx3,BlockGfx4
 
 Piece_Pos:		.dc	0,0

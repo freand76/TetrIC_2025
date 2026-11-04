@@ -4,8 +4,8 @@ InitScroll:
 	_STA	$t0,Scroll_Slide
 	movi	$t0,-1
 	_STA	$t0,Scroll_LastChar
-	movi	$t0,-4			; pixels per frame (-2 at 50 Hz); must be even:
-					; the edge fade colour is x<<10, an odd x sets a green bit
+	movi	$t0,-4			; 4 pixels every frame: 240 px/s, 1.3 s across
+					; the screen (2 per 50 Hz frame on the original)
 	_STA	$t0,Scroll_Speed
 
 	_RTS
@@ -61,6 +61,8 @@ Scroll_LeftNoFade:
 	sll	$a3,$t0,10
 Scroll_RightNoFade:
 Scroll_Print:
+	moviu	$t0,0xf800		; edge fade colour is x<<10: keep red only,
+	and	$a3,$a3,$t0		; an odd x would set a green bit
 	_BEQZ	$s2,Scroll_DontEndEarly
 	_LDA	$t2,Scroll_LastChar
 	_BNE	$t2,$s1,Scroll_DontEndEarly
@@ -96,7 +98,7 @@ Scroll_SlideOn:
 	_LDA	$t1,Scroll_LastChar
 	_BNE	$t0,$t1,Scroll_DontSetLastChar
 	_STA	$s1,Scroll_LastChar
-	movi	$t0,-6			; (-4 at 50 Hz; even, see InitScroll)
+	movi	$t0,-8			; twice the speed when fading out
 	_STA	$t0,Scroll_Speed
 Scroll_DontSetLastChar:
 

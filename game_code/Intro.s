@@ -26,7 +26,7 @@ StartIntro:
 	_JAL	StartMorph
 
 	_LI	$t0,JoyRepeatWait
-	_LI	$t1,0x000601			; Filter = 00, RepeatVal = 06, Accelerate = 1 (0a, 2 at 50 Hz)
+	_LI	$t1,0x000c02			; Filter = 00, RepeatVal = 0c, Accelerate = 2 (0a at 50 Hz)
 	nop
 	nop
 	sw	$t1,JOY_UP($t0)
