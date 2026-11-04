@@ -13,9 +13,10 @@ The assembler is a simple two-pass design, implemented in three passes:
 
 The output is intended to be identical to the Perl version, including the
 quirks (see the comments marked "Perl:"). Differences: an unknown register
-name is an error (Perl silently used register 0), $R0/$r0 is accepted, and
+name is an error (Perl silently used register 0), $R0/$r0 is accepted,
 macros can use other macros (Perl silently dropped the rest of the outer
-macro).
+macro), and negative .dc/.pad values are stored correctly (a 64-bit Perl
+stored them as -1).
 
 After assembly the code is checked for pipeline hazards (missing nops, see
 src/top/processor/PIPELINE_HAZARDS.md). Violations are errors and no .bin is
@@ -162,9 +163,10 @@ def isnum(v):
 
 
 def _hex(v, width):
-    v = perl_num(v)
-    if v < 0:
-        v &= MASK64
+    # 32-bit two's complement. Perl: on a 64-bit Perl, %x of a negative
+    # number has 16 digits and pack("H8") then keeps "ffffffff", so every
+    # negative .dc/.pad value became -1. The original 32-bit Perl did this.
+    v = perl_num(v) & 0xffffffff
     return "%x" % v if len("%x" % v) >= width else ("%x" % v).rjust(width, "0")
 
 
