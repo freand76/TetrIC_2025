@@ -47,19 +47,38 @@ module tb_system;
     wire [1:0] led;
     wire       ds_clk, ds_cs, ds_mosi, pad_miso;
 
-    // gamepad: nothing pressed, unless +press_ns=<t> +release_ns=<t> (START)
+    // gamepad: nothing pressed, unless +press_ns=<t> +release_ns=<t> (START);
+    // +press2_ns / +release2_ns and +press3_ns / +release3_ns press it again,
+    // or CROSS with +press2_cross / +press3_cross
     ps2pad_model pad(.clk(ds_clk), .cs(ds_cs), .mosi(ds_mosi), .miso(pad_miso));
+    task press_start;
+        input real t_press, t_release;
+        input      use_cross;               // CROSS (TetrIC button B) instead of START
+        begin
+            #(t_press - $realtime);
+            if (use_cross)
+                pad.buttons2 = ~8'h40;
+            else
+                pad.buttons1 = ~8'h08;
+            $display("%t gamepad: %0s pressed", $realtime, use_cross ? "CROSS" : "START");
+            #(t_release - t_press);
+            pad.buttons1 = 8'hff;
+            pad.buttons2 = 8'hff;
+            $display("%t gamepad: released", $realtime);
+        end
+    endtask
     real pad_press_ns, pad_release_ns;
     initial
-        if ($value$plusargs("press_ns=%f", pad_press_ns) &&
-            $value$plusargs("release_ns=%f", pad_release_ns))
         begin
-            #(pad_press_ns);
-            pad.buttons1 = ~8'h08;          // START
-            $display("%t gamepad: START pressed", $realtime);
-            #(pad_release_ns - pad_press_ns);
-            pad.buttons1 = 8'hff;
-            $display("%t gamepad: START released", $realtime);
+            if ($value$plusargs("press_ns=%f", pad_press_ns) &&
+                $value$plusargs("release_ns=%f", pad_release_ns))
+                press_start(pad_press_ns, pad_release_ns, 0);
+            if ($value$plusargs("press2_ns=%f", pad_press_ns) &&
+                $value$plusargs("release2_ns=%f", pad_release_ns))
+                press_start(pad_press_ns, pad_release_ns, $test$plusargs("press2_cross"));
+            if ($value$plusargs("press3_ns=%f", pad_press_ns) &&
+                $value$plusargs("release3_ns=%f", pad_release_ns))
+                press_start(pad_press_ns, pad_release_ns, $test$plusargs("press3_cross"));
         end
     wire       uart_tx;
     wire       mspi_cs, mspi_clk, mspi_di, mspi_do;
@@ -182,11 +201,170 @@ module tb_system;
                 end
         end
 
+    // ---- game_code comparison (e.g. before / after a code change) ----
+    //   +fix_beam        MFC1 reads the beam position (bits 19:0) as 0, so a
+    //                    random seed taken from it (TLib/Math.s Randomize)
+    //                    does not depend on the CPU timing
+    //   +swaplog=<file>  one line per GFXADDR write (screen swap): a hash of
+    //                    the picture the video unit shows from it, with the
+    //                    video registers. Game frame k can then be compared
+    //                    whatever the timing.
+    initial
+        if ($test$plusargs("fix_beam"))
+        force top.video_status[19:0] = 20'd0;
+
+    reg [8*256-1:0] swaplog_file;
+    integer         swap_fd = 0, swap_n = 0, sy, sx;
+    reg             swap_pend = 0;
+    real            swap_t;
+    reg [19:0]      swap_addr;
+    reg [31:0]      swap_hash;
+    initial
+        if ($value$plusargs("swaplog=%s", swaplog_file))
+        swap_fd = $fopen(swaplog_file, "w");
+
+    always @(posedge top.video.clk_cpu)
+        if (swap_fd)
+        begin
+            if (top.video.sel && top.video.wr && top.video.addr_in[3:0] == 4'd5)
+                begin
+                    swap_pend = 1;
+                    swap_addr = top.video.data_in[19:0];
+                    swap_t = $realtime;
+                end
+            else if (swap_pend && $realtime - swap_t > 20000.0)
+                begin
+                    // 20 us later: the posted SDRAM writes have landed
+                    swap_pend = 0;
+                    swap_hash = 32'h811c9dc5;
+                    for (sy = 0; sy < top.video.r_lineperimg; sy = sy + 1)
+                        for (sx = 0; sx < (top.video.r_pixperline + 1) / 2; sx = sx + 1)
+                        swap_hash = (swap_hash ^ sdram.mem[swap_addr + sy * ((top.video.r_pixperline + 1) / 2
+                            + top.video.r_deltaaddr) + sx]) * 32'd16777619;
+                    $fwrite(swap_fd, "%0d %08x top %0d left %0d ppl %0d lines %0d pixread %0d\n", swap_n, swap_hash,
+                        top.video.r_toppos, top.video.r_leftpos, top.video.r_pixperline, top.video.r_lineperimg,
+                        top.video.r_pixread);
+                    swap_n = swap_n + 1;
+                end
+        end
+
+    // ---- CPU statistics (+stats) ----
+    //   counts the executed instructions, the executed nops (word 0) and the
+    //   instructions in the PC range +idle_lo=<hex> .. +idle_hi=<hex> (word
+    //   addresses, e.g. the frame wait loop), from the end of the flash copy
+    integer    st_instr = 0, st_nops = 0, st_idle = 0, st_idle_nops = 0;
+    reg        stats_on = 0;
+    reg [31:0] idle_lo = 32'hffffffff, idle_hi = 0;
+    initial
+        begin
+            stats_on = $test$plusargs("stats");
+            if ($value$plusargs("idle_lo=%h", idle_lo)) ;
+            if ($value$plusargs("idle_hi=%h", idle_hi)) ;
+        end
+
+    //   +profile=<file>  executed instructions per word address (first 512K
+    //                    words), written at the end: "<hex address> <count>"
+    reg [8*256-1:0] profile_file;
+    reg             profile_on = 0;
+    integer         prof [0:(1<<19)-1];
+    integer         pi, prof_fd;
+    initial
+        if ($value$plusargs("profile=%s", profile_file))
+        begin
+            for (pi = 0; pi < (1 << 19); pi = pi + 1)
+                prof[pi] = 0;
+            profile_on = 1;
+        end
+
+    //   +profile_cycles  count clock cycles (stalls included) at the fetch
+    //                    address instead of executed instructions
+    reg prof_cycles = 0;
+    initial prof_cycles = $test$plusargs("profile_cycles");
+
+    always @(posedge top.clk_cpu)
+        if (profile_on && top.copy_done && (prof_cycles || top.processor.imem_ack))
+        prof[top.processor.imem_addr_out[18:0]] = prof[top.processor.imem_addr_out[18:0]] + 1;
+
+    always @(posedge top.clk_cpu)
+        if (stats_on && top.copy_done && top.processor.imem_ack)
+        begin
+            st_instr = st_instr + 1;
+            if (top.processor.imem_data_in == 32'd0)
+                st_nops = st_nops + 1;
+            if (top.processor.imem_addr_out >= idle_lo && top.processor.imem_addr_out <= idle_hi)
+                begin
+                    st_idle = st_idle + 1;
+                    if (top.processor.imem_data_in == 32'd0)
+                        st_idle_nops = st_idle_nops + 1;
+                end
+        end
+
+    // ---- CPU trace (+cputrace=<file>) for the emulator (emulator/) ----
+    //   one line per pipeline step (processor imem_ack), from the flash copy:
+    //   R <rd> <data>          register write (WB), rd != 0
+    //   S <addr> <data>        store (MEM)
+    //   M <cycle> <value>      MFC0..3 result (EX), with the clk_cpu cycle
+    //                          number, so the emulator can replay the values
+    //   all values hex. Stall cycles are counted under +stats.
+    reg [8*256-1:0] cputrace_file;
+    integer         ct_fd = 0;
+    integer         cyc = 0;
+    initial
+        if ($value$plusargs("cputrace=%s", cputrace_file))
+        ct_fd = $fopen(cputrace_file, "w");
+
+    always @(posedge top.clk_cpu)
+        if (top.copy_done)
+        begin
+            cyc = cyc + 1;
+            if (ct_fd && top.processor.imem_ack)
+                begin
+                    if (top.processor.s_wb_wb_ctrl[0] && top.processor.s_wb_regdest2 != 0)
+                        $fwrite(ct_fd, "R %0d %08x\n", top.processor.s_wb_regdest2, top.processor.s_wb_data);
+                    if (top.processor.s_mem_mem_ctrl[0])
+                        $fwrite(ct_fd, "S %06x %08x\n", top.processor.s_mem_res[23:0], top.processor.s_mem_data2);
+                    if (top.processor.s_ex_ex_ctrl[4:2] == 3'b111)
+                        $fwrite(ct_fd, "M %0d %08x\n", cyc, top.processor.s_ex_res);
+                end
+        end
+
+    // stall statistics (+stats): cycles without a pipeline step, by cause
+    integer st_cycles = 0, st_ic_stall = 0, st_ic_miss = 0;
+    integer st_lw = 0, st_lw_stall = 0, st_sw = 0, st_sw_stall = 0, st_pw = 0, st_pw_stall = 0;
+    reg     ic_filling_d = 0;
+    always @(posedge top.clk_cpu)
+        if (stats_on && top.copy_done)
+        begin
+            st_cycles = st_cycles + 1;
+            ic_filling_d <= top.icache.filling;
+            if (top.icache.filling && !ic_filling_d)
+                st_ic_miss = st_ic_miss + 1;
+            if (!top.icache_imem_ack)
+                st_ic_stall = st_ic_stall + 1;
+            else if (top.processor.dmem_req)
+                begin
+                    if (!top.processor.dmem_wr)
+                        begin
+                            if (top.arbiter_proc_stall_n) st_lw = st_lw + 1; else st_lw_stall = st_lw_stall + 1;
+                        end
+                    else if (top.proc_dmem_addr_out[23:20] == 4'h0)
+                        begin
+                            if (top.arbiter_proc_stall_n) st_sw = st_sw + 1; else st_sw_stall = st_sw_stall + 1;
+                        end
+                    else
+                        begin
+                            if (top.arbiter_proc_stall_n) st_pw = st_pw + 1; else st_pw_stall = st_pw_stall + 1;
+                        end
+                end
+        end
+
     // ---- sound log (+audio=<file>) for tools/sound_ref.py ----
     //   W <pass> <phase> <reg> <data>   register write, when the sound unit
     //                                   applies it; phase = mixer channel in
     //                                   that clock, 8 = between passes
     //   S <left> <right>                one 48 kHz output sample
+    //   C <pass> <phase> <ch> <reg> <data>  MOD sequencer channel write
+    //   E start|tick|stop <pass>        MOD sequencer event
     reg [8*256-1:0] audio_file;
     integer         audio_fd = 0, audio_samples = 0;
     initial
@@ -199,6 +377,14 @@ module tb_system;
             if (top.sound.op == top.sound.OP_WRITE)
                 $fwrite(audio_fd, "W %0d %0d %0d %0d\n", top.sound.tick_count,
                     top.sound.mixing ? top.sound.mch : 8, top.sound.q_reg, top.sound.q_data);
+            // MOD sequencer channel writes and events (as sim/sound/tb_sound.v)
+            if (top.sound.op == top.sound.OP_SEQW)
+                $fwrite(audio_fd, "C %0d %0d %0d %0d %0d\n", top.sound.tick_count,
+                    top.sound.mixing ? top.sound.mch : 8, top.sound.seq_w_ch, top.sound.seq_w_reg,
+                    top.sound.seq_w_data);
+            if (top.sound.seq_ev_start) $fwrite(audio_fd, "E start %0d\n", top.sound.tick_count);
+            if (top.sound.seq_ev_tick)  $fwrite(audio_fd, "E tick %0d\n", top.sound.tick_count);
+            if (top.sound.seq_ev_stop)  $fwrite(audio_fd, "E stop %0d\n", top.sound.tick_count);
             if (top.audio_valid)
                 begin
                     $fwrite(audio_fd, "S %0d %0d\n", $signed(top.audio_l), $signed(top.audio_r));
@@ -294,6 +480,27 @@ module tb_system;
                     $fclose(audio_fd);
                     $display("sound: %0d output samples, %0d mix passes, %0d underruns",
                         audio_samples, top.sound.tick_count, top.sound.underruns);
+                end
+            if (profile_on)
+                begin
+                    prof_fd = $fopen(profile_file, "w");
+                    for (pi = 0; pi < (1 << 19); pi = pi + 1)
+                        if (prof[pi] != 0)
+                        $fwrite(prof_fd, "%05x %0d\n", pi, prof[pi]);
+                    $fclose(prof_fd);
+                end
+            if (stats_on)
+                $display("stats: %0d instructions, %0d nops; idle range: %0d instructions, %0d nops",
+                    st_instr, st_nops, st_idle, st_idle_nops);
+            if (stats_on)
+                $display("stalls: %0d cycles, icache %0d misses %0d stall cycles, lw %0d (+%0d stall), sw %0d (+%0d stall), peripheral sw %0d (+%0d stall)",
+                    st_cycles, st_ic_miss, st_ic_stall, st_lw, st_lw_stall, st_sw, st_sw_stall, st_pw, st_pw_stall);
+            if (ct_fd)
+                $fclose(ct_fd);
+            if (swap_fd)
+                begin
+                    $fclose(swap_fd);
+                    $display("swaplog: %0d screen swaps", swap_n);
                 end
             if (top.sound.underruns != 0)           $display("ERROR: sound underrun");
             if (top.sound.wq_overflow)              $display("ERROR: sound register write queue overflow");

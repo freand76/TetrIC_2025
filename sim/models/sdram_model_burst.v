@@ -97,8 +97,18 @@ module sdram_model_burst
     reg           p_valid[0:3];
     reg [3:0]     dqm_d1 = 4'hF, dqm_d2 = 4'hF;
 
+    `ifdef VERILATOR
+    // for Verilator (no delayed tristate assignments): drive per byte with an enable
+    reg [31:0]    dq_v = 0;
+    reg [3:0]     dq_oe = 0;
+    assign dq[31:24] = dq_oe[3] ? dq_v[31:24] : 8'bz;
+    assign dq[23:16] = dq_oe[2] ? dq_v[23:16] : 8'bz;
+    assign dq[15:8]  = dq_oe[1] ? dq_v[15:8]  : 8'bz;
+    assign dq[7:0]   = dq_oe[0] ? dq_v[7:0]   : 8'bz;
+    `else
     reg [31:0]    dq_r = 32'bz;
     assign dq = dq_r;
+    `endif
 
     integer       i;
     initial
@@ -167,10 +177,16 @@ module sdram_model_burst
     integer    k;
     reg [31:0] wmask;
 
+    // commands count after the first NOP (power-up: the controller drives NOP
+    // while it waits; before reset its outputs can look like any command)
+    reg        powered_up = 0;
+
     always @(posedge clk)
         begin
             clk_cnt = clk_cnt + 1;
-            if (cke && !cs_n)
+            if (cke && !cs_n && cmd == C_NOP)
+                powered_up = 1;
+            if (cke && !cs_n && powered_up)
                 begin
                     case (cmd)
                         C_MRS:
@@ -314,6 +330,15 @@ module sdram_model_burst
             p_valid[0] = wvalid;
 
             // word to put on the bus now (valid at the next edge)
+            `ifdef VERILATOR
+            if (p_valid[cas_lat-1])
+                begin
+                    dq_v <= #(TAC) p_data[cas_lat-1];
+                    dq_oe <= #(TAC) ~dqm_d1;
+                end
+            else
+                dq_oe <= #(TOH) 4'b0000;
+            `else
             if (p_valid[cas_lat-1])
                 begin
                     dq_r <= #(TOH) 32'bx;
@@ -324,6 +349,7 @@ module sdram_model_burst
                 end
             else
                 dq_r <= #(TOH) 32'bz;
+            `endif
 
             // DQM read latency 2: value sampled at edge k masks data valid at edge k+2
             dqm_d2 = dqm_d1;

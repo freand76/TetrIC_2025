@@ -7,6 +7,8 @@
 ## make fwd     test_code/fwd_test.s: register forwarding, UART must print
 ##              00000005 00000005 0000000A
 ## make check   all three
+## make game    game_code in a Verilator build of the same test bench
+##              (about 5 ms of game per second), see below
 ##
 ## Each test runs in out/<test>/ (MEM.TXT, logs).
 
@@ -107,6 +109,34 @@ fwd: $(TB)
 
 .PHONY: check
 check: run sound fwd
+
+# ---- the game (game_code/out/TetrIC.bin) in a Verilator build ----
+# GAME_ARGS are test bench options, the default runs 5 s with START at 2 s:
+#   +fix_beam         random seed independent of the CPU timing
+#   +swaplog=<file>   one line (hash, video registers) per screen swap
+#   +stats            executed instructions and nops (+idle_lo/+idle_hi=<hex>)
+#   +profile=<file>   instructions per address (+profile_cycles: cycles)
+#   +press_ns/+release_ns, +press2_ns/+release2_ns (+press2_cross), ...
+#   +run_ns=<ns> +frames=<n> +ppm   frames at the end (frame0.ppm, ...)
+#   +trace            CPU / register / peripheral trace
+VL_TB = $(BUILD_DIR)/vl/tb_system
+GAME_DIR = $(BUILD_DIR)/game
+GAME_ARGS ?= +fix_beam +swaplog=swaps.txt +stats \
+	+press_ns=2000000000 +release_ns=2300000000 +run_ns=5000000000
+
+$(VL_TB): $(RTL_FILES) $(SIM_FILES)
+	mkdir -p $(BUILD_DIR)/vl
+	verilator --binary --timing -j 8 -O3 -Wno-fatal -Wno-lint -Wno-style -Wno-TIMESCALEMOD \
+	  -DIVERLOG --top-module tb_system -Mdir $(BUILD_DIR)/vl -o tb_system \
+	  $^ > $(BUILD_DIR)/vl/verilator.log 2>&1
+
+.PHONY: game
+game: $(VL_TB)
+	$(MAKE) -C $(ROOT)/game_code
+	mkdir -p $(GAME_DIR)
+	xxd -p -c4 $(ROOT)/game_code/out/TetrIC.bin > $(GAME_DIR)/game.hex
+	hexdump -v -e '4/1 "%02x " "\n"' $(ROOT)/game_code/out/TetrIC.bin > $(GAME_DIR)/MEM.TXT
+	cd $(GAME_DIR) && ../vl/tb_system +preload=game.hex $(GAME_ARGS) | tee sim.log | $(FILTER)
 
 .PHONY: clean
 clean:

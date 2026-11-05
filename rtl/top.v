@@ -257,9 +257,12 @@ module top(
         .mfc2({8'h00, pad_buttons2, pad_buttons1, pad_joy}));
 
     `ifdef IVERLOG
+    // simulation trace (+trace); a write to 0x8xxxxx ends the simulation
+    reg trace_on = 0;
+    initial trace_on = $test$plusargs("trace");
     always@(posedge clk_cpu)
         begin
-            if (arbiter_write_strobe)
+            if (trace_on && arbiter_write_strobe)
                 $display("PERIPHERAL_WRITE: (%d:%d) %x == %x (%d:%d)", proc_dmem_req, proc_dmem_wr,
                     proc_dmem_data_out, proc_dmem_addr_out,
                     arbiter_uart_sel, arbiter_video_sel);

@@ -47,28 +47,19 @@ module spi_flash_model
     localparam AW = $clog2(SIZE);
 
     reg [7:0]  mem [0:SIZE-1];
-    integer         i, fd, load_addr, new_addr;
-    reg [7:0]       b_in;
-    reg [8*16-1:0]  tok;
+    integer         i, fd;
     initial
         begin
             for (i = 0; i < SIZE; i = i + 1)
                 mem[i] = 8'hff;
-            load_addr = 0;
             fd = $fopen(MEM_FILE, "r");
             if (fd == 0)
                 $display("spi_flash_model: no %0s, the flash is erased", MEM_FILE);
             else
                 begin
-                    while ($fscanf(fd, "%s", tok) == 1)
-                        if ($sscanf(tok, "@%h", new_addr) == 1)
-                        load_addr = new_addr;
-                    else if ($sscanf(tok, "%h", b_in) == 1 && load_addr < SIZE)
-                        begin
-                            mem[load_addr] = b_in;
-                            load_addr = load_addr + 1;
-                        end
+                    // $readmemh handles @address lines; bytes not in the file stay erased
                     $fclose(fd);
+                    $readmemh(MEM_FILE, mem);
                 end
         end
 

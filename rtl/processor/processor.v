@@ -149,9 +149,12 @@ module processor(clk, n_reset,
         .Q(s_id_instr));
 
     `ifdef IVERLOG
+    // simulation trace, +trace to turn it on
+    reg trace_on = 0;
+    initial trace_on = $test$plusargs("trace");
     always@(posedge clk)
         begin
-            if (imem_ack)
+            if (trace_on && imem_ack)
                 $display("DBG PC=%x IMEM_D=%x DMEM_A=%x MEM_RA=%x MEM_DO=%x DR=%d DW=%d",
                     imem_addr_out, imem_data_in,
                     dmem_addr_out, dmem_data_in, dmem_data_out, dmem_req, dmem_wr);

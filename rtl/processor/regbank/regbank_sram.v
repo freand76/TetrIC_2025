@@ -18,8 +18,11 @@ module regbank(clk, n_reset, r1_sel, r2_sel, rd_sel, w_enable, w_data, r1_data, 
     assign wr_en_hi = w_enable & rd_sel[4];
 
     `ifdef IVERLOG
+    // simulation trace, +trace to turn it on
+    reg trace_on = 0;
+    initial trace_on = $test$plusargs("trace");
     always @ (posedge clk)
-        if (w_enable && (rd_sel != 0))
+        if (trace_on && w_enable && (rd_sel != 0))
         $display("REGDATA %x ==> %d", w_data, rd_sel);
     `endif
 
