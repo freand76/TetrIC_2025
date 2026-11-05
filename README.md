@@ -19,7 +19,7 @@ The game was written in assembler for that processor.
 
 In 2025–2026 the design was converted to Verilog for the Tang Nano 20K, using Sipeed's Retro
 Game kit: the board, two gamepads and the gamepad adapter. The original VHDL is in the git
-history up to commit `f2ab06c` (`old_vhdl/`).
+history up to commit `39a567d` (`old_vhdl/`).
 
 The conversion moved the system onto the board's hardware:
 
@@ -48,7 +48,8 @@ Images: [Sipeed wiki](https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/nan
 | `sim/pytest/` | module testbenches ([digsim](https://github.com/freand76/digsim)) |
 | `game_code/` | the TetrIC game |
 | `test_code/` | test programs |
-| `tools/` | assembler (`abnasm.py`), sound reference model (`sound_ref.py`) |
+| `tools/` | assembler (`abnasm.py`), sound reference model (`sound_ref.py`), MOD converter (`mod2tetric.py`) |
+| `emulator/` | TetrIC emulator in Rust (Linux / Windows), checked against the RTL simulation |
 
 ## Install the tools
 
@@ -174,6 +175,19 @@ make -C game_code program-flash
 
 Plug the gamepad and HDMI back in and power the board up again.
 
+### Without the board: the emulator
+
+`emulator/` is an emulator of the whole system in Rust, with picture, sound,
+MOD music and keyboard or USB gamepad, for Linux and Windows. Its CPU runs
+instruction for instruction like the RTL simulation. See
+[emulator/README.md](emulator/README.md).
+
+```
+make -C emulator run        # or: emulator/target/release/tetric_emu --flash game_code/out/TetrIC.bin
+```
+
+![The emulator](doc/images/emulator.png)
+
 ### Controls
 
 | Gamepad | In the game |
@@ -270,6 +284,32 @@ make -C sim/system check    # all three
 Each test runs in `sim/system/out/<test>/`, with its logs there. The sound test also writes
 `sound.wav`.
 
+### The game in simulation (`sim/system`, Verilator)
+
+`make -C sim/system game` runs `game_code` in a Verilator build of the same testbench, at about
+5 ms of game per second, so a few seconds of game take 15–20 minutes. By default it runs 5 s and
+presses START at 2 s. `GAME_ARGS` sets the testbench options:
+
+```
+make -C sim/system game GAME_ARGS="+fix_beam +swaplog=swaps.txt +stats +run_ns=5000000000"
+```
+
+| Option | |
+|---|---|
+| `+press_ns=<t> +release_ns=<t>` | press START; `+press2_ns`/`+release2_ns` and `+press3_*` press again, CROSS with `+press2_cross` |
+| `+fix_beam` | MFC1 reads the beam position as 0, so the random seed doesn't depend on the CPU timing |
+| `+swaplog=<file>` | one line per screen swap: a hash of the shown picture and the video registers |
+| `+stats` | executed instructions and nops; `+idle_lo=<hex> +idle_hi=<hex>` counts a PC range (the frame wait loop) |
+| `+profile=<file>` | executed instructions per address; `+profile_cycles` counts clock cycles |
+| `+run_ns=<ns> +frames=<n> +ppm` | stop time, and the last frames as `frame0.ppm`, ... |
+| `+trace` | CPU, register and peripheral trace (off by default) |
+
+The `UART` output shows an `L` for every game frame that was not ready in time.
+
+Two versions of the game can be compared frame by frame: with `+fix_beam`, game frame k has the
+same `swaplog` hash in both, whatever the timing. That holds until a menu choice, because the
+random seed also uses the video frame number.
+
 ### Sound unit (`sim/sound`, Verilator)
 
 The sound unit runs on its own, driven by a register script. The output is checked bit exact
@@ -347,6 +387,31 @@ only the first 8.
   [Processor caveats](#processor-caveats-delay-slots-and-nops). Load a 32-bit constant with
   `lui reg, VAL.H` + `ori reg, reg, VAL.L`.
 * **Division** in expressions rounds down: `7/2` is `3`.
+
+## Music: `tools/mod2tetric.py`
+
+Converts a 4 channel ProTracker MOD to the song format of the sound unit's MOD player
+(`rtl/sound/sound_seq.v`), and can render a preview with the sound unit model:
+
+```
+tools/mod2tetric.py song.mod game_code/Data/mod_song.raw --wav preview.wav --seconds 30
+```
+
+* **Using it in the game:** include the file in place of `Data/mod_gamemusic.raw` in
+  `game_code/FXMusic.s` (`TetricMod: .file Data/mod_song.raw`).
+* **Memory:** the program, with the song, is loaded at word 0, and work RAM starts at word
+  0x20000. So the whole program must stay below 512 KB.
+* **Tempo:** a song tempo (`Fxx` >= 32) is not played. The tick is `WAITCLK`, which
+  `TLib/Sound.s` sets to 50 Hz (125 BPM). The converter prints the value for the song's tempo.
+* **Effects that are dropped:** arpeggio, vibrato, tremolo, sample offset, and the `E`
+  effects other than `E1`/`E2`/`EA`/`EB`. The converter counts them.
+* **Finetune:** put into the note periods.
+* **Loops:** kept exact. `--loops round` rounds them to whole words instead, which uses less
+  memory, as the 2001 converter did.
+
+The game music (`Data/mod_gamemusic.raw`) is "Tetris mania". Converting that MOD with
+`--no-finetune --loops round` gives the same song: 99.99 % of the samples of a 30 s preview
+are identical.
 
 ## Processor caveats: delay slots and nops
 

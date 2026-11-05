@@ -10,3 +10,5 @@ MEM.TXT
 *.vcd.gz
 a.out
 .test_venv/
+emulator/target/
+emulator/out/
