@@ -18,8 +18,7 @@ University of Technology (LTH), 2000–2001. The whole system was designed in VH
 The game was written in assembler for that processor.
 
 In 2025–2026 the design was converted to Verilog for the Tang Nano 20K, using Sipeed's Retro
-Game kit: the board, two gamepads and the gamepad adapter. The original VHDL is in the git
-history up to commit `39a567d` (`old_vhdl/`).
+Game kit: the board, two gamepads and the gamepad adapter.
 
 The conversion moved the system onto the board's hardware:
 
