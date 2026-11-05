@@ -6,6 +6,7 @@ OnHighScoreList:
 	; v0 - 1 if the score should be in highscorelist
 	_LI	$t0,HighScoreScores
 	_LW	$t1,9($t0)
+	nop			; hazard
 	slt	$v0,$t1,$a0
 	_RTS
 
@@ -25,6 +26,7 @@ AddToHighScoreList:
 	_LI	$t2,HighScoreLevels
 AddToHighScoreList_FindPosition:
 	_LW	$t3,0($t1)
+	nop			; hazard
 	addi	$t3,$t3,1
 	slt	$t8,$a1,$t3
 	add	$t0,$t0,$t8
@@ -42,8 +44,12 @@ AddToHighScoreList_FindPosition:
 	_LW	$t7,0($t2)
 
 	_LW	$t3,0($a0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t3,0($t0)
 	_LW	$t3,1($a0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t3,1($t0)
 	_SW	$zero,2($t0)
 	_SW	$a1,0($t1)

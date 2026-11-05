@@ -136,19 +136,14 @@ Rotate:	PUSH	$ra
 Rotate_Point_Loop:
 	; Get original positions
 	lw	$s3,Vec_Points_X($s0)
-	nop
 	lw	$s4,Vec_Points_Y($s0)
-	nop
 	lw	$s5,Vec_Points_Z($s0)
-	nop
 
 	; Get Cos and Sin for Z-angle
 	lw	$a0,Angle_Z($zero)
-	nop
 	_JAL	Sin
 	mov	$s1,$v0
 	lw	$a0,Angle_Z($zero)
-	nop
 	_JAL	Cos
 	mov	$s2,$v0
 	; Rotate around Z-axis ( Z-pos unaffected )
@@ -172,11 +167,9 @@ Rotate_Point_Loop:
 
 	; Get Cos and Sin for Y-angle
 	lw	$a0,Angle_Y($zero)
-	nop
 	_JAL	Sin
 	mov	$s1,$v0
 	lw	$a0,Angle_Y($zero)
-	nop
 	_JAL	Cos
 	mov	$s2,$v0
 	; Rotate around Y-axis ( Y-pos unaffected )
@@ -200,11 +193,9 @@ Rotate_Point_Loop:
 
 	; Get Cos and Sin for X-angle
 	lw	$a0,Angle_X($zero)
-	nop
 	_JAL	Sin
 	mov	$s1,$v0
 	lw	$a0,Angle_X($zero)
-	nop
 	_JAL	Cos
 	mov	$s2,$v0
 	; Rotate around X-axis ( X-pos unaffected )
@@ -272,7 +263,7 @@ Draw:	PUSH	$ra
 	clr	$s6
 	clr	$s3	; temp
 
-	li	$t0,LineDrawnTable
+	_LI	$t0,LineDrawnTable
 	movi	$t1,VEC_POINTS
 Draw_ClearLineDrawnTable:
 	sw	$zero,0($t0)
@@ -284,11 +275,8 @@ Draw_Surface_Loop:
 	lw	$s7,Vec_Surface_List($s6)
 	nop
 	lw	$s0,0($s7)
-	nop
 	lw	$s1,1($s7)
-	nop
 	lw	$s2,2($s7)
-	nop
 
 Draw_Line_Loop:
 	mov	$t0,$s0
@@ -299,7 +287,6 @@ Draw_Line_Loop:
 	mov	$t1,$s0
 Draw_NoSwitch:
 	lw	$t2,LineDrawnTable($t0)
-	nop
 	movi	$t3,1
 	sllv	$t4,$t3,$t1
 	and	$t3,$t4,$t2
@@ -320,7 +307,6 @@ Draw_LineAlreadyDrawn:
 	addi	$s7,$s7,1
 	mov	$s0,$s1
 	lw	$s1,1($s7)
-	nop
 	movi	$t1,-1
 	_BNE	$s1,$t1,Draw_Line_Loop
 
@@ -345,9 +331,9 @@ SetupMorph:
 
 	clr	$s0
 
-	li	$t1,Morph_Points
-	li	$t2,Vector_Points
-	li	$t3,Morph_Delta
+	_LI	$t1,Morph_Points
+	_LI	$t2,Vector_Points
+	_LI	$t3,Morph_Delta
 	movi	$t9,3
 SetupMorph_Loop:
 	lw	$t0,0($a0)
@@ -378,7 +364,7 @@ SetupMorph_LessThan:
 	addi	$t9,$t9,-1
 	_BNEZ	$t9,SetupMorph_Loop
 
-	li	$s2,Morph_Delta
+	_LI	$s2,Morph_Delta
 	movi	$s1,VEC_POINTS*3
 SetupMorph_Normalize_Loop:
 	lw	$a0,0($s2)
@@ -403,9 +389,9 @@ SetupMorph_Normalize_Loop:
 
 MorphPoints:
 	clr	$v0
-	li	$t0,Vector_Points
-	li	$t1,Morph_Points
-	li	$t2,Morph_Delta
+	_LI	$t0,Vector_Points
+	_LI	$t1,Morph_Points
+	_LI	$t2,Morph_Delta
 	movi	$t9,VEC_POINTS*3
 MorphPoints_Loop:
 	lw	$t3,0($t0)
@@ -433,7 +419,7 @@ MorphPoints_NotDone:
 
 SimpleMorphPoints:
 	clr	$v0
-	li	$t1,Vector_points
+	_LI	$t1,Vector_points
 	movi	$t9,3
 SimpleMorphPoints_Loop:
 	lw	$t0,0($a0)
@@ -460,7 +446,7 @@ SimpleMorphPoints_Inner_Loop:
 	_RTS
 
 CopyPoints:
-	li	$t1,Vector_points
+	_LI	$t1,Vector_points
 	movi	$t9,3
 CopyPoints_Loop:
 	lw	$t0,0($a0)
@@ -490,17 +476,22 @@ MorphFrame:
 MorphFrame_DontChangeTarget:
 	_JAL	MorphPoints		; 2 morph steps per frame at 50 Hz,
 	_LDA	$t0,HalfStep		; 2,2,1,2,2,1 at 60 Hz
+	nop			; hazard
 	_BNEZ	$t0,MorphFrame_HalfStep
 	_JAL	MorphPoints
 MorphFrame_HalfStep:
 
 	_LI	$t0,Angle_Y
 	_LW	$t1,0($t0)
+	nop			; hazard
 	addi	$t1,$t1,ROTATESPEED
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t0)
 
 	_LI	$s0,Vec_FrameCount
 	_LW	$s1,0($s0)
+	nop			; hazard
 	addi	$s1,$s1,-1
 	_BNEZ	$s1,MorphFrame_DontMorphNext
 	movi	$s1,FRAMESBEFOREMORPH
@@ -531,6 +522,8 @@ StartMorph:
 
 	_LI	$t0,Angle_X
 	movi	$t1,0x1234
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t0)
 	_SW	$zero,1($t0)
 	_SW	$zero,2($t0)
@@ -560,6 +553,7 @@ MorphNext:
 	PUSH	$ra
 
 	_LDA	$t0,Current_ObjectNbr
+	nop			; hazard
 	addi	$t0,$t0,1
 	movi	$t1,NOFOBJECTS
 	_BNE	$t0,$t1,MorphNext_NoOverflow

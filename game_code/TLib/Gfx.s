@@ -16,6 +16,7 @@ GFX_VSYNC = 10
 
 ClearScreen:
 	_LDA	$t0,WorkScreen
+	nop			; hazard
 	addiu	$t1,$t0,0xa000
 Clear_loop:
 	sw	$zero,0($t0)
@@ -44,19 +45,12 @@ CopyActiveToWork:
 	addiu	$t2,$t0,0xa000
 CopyActiveToWork_Loop:
 	lw	$t3,0($t0)
-	nop
 	lw	$t4,1($t0)
-	nop
 	lw	$t5,2($t0)
-	nop
 	lw	$t6,3($t0)
-	nop
 	lw	$t7,4($t0)
-	nop
 	lw	$t8,5($t0)
-	nop
 	lw	$t9,6($t0)
-	nop
 	sw	$t3,0($t1)
 	sw	$t4,1($t1)
 	sw	$t5,2($t1)
@@ -65,19 +59,12 @@ CopyActiveToWork_Loop:
 	sw	$t8,5($t1)
 	sw	$t9,6($t1)
 	lw	$t3,7($t0)
-	nop
 	lw	$t4,8($t0)
-	nop
 	lw	$t5,9($t0)
-	nop
 	lw	$t6,10($t0)
-	nop
 	lw	$t7,11($t0)
-	nop
 	lw	$t8,12($t0)
-	nop
 	lw	$t9,13($t0)
-	nop
 	sw	$t3,7($t1)
 	sw	$t4,8($t1)
 	sw	$t5,9($t1)
@@ -86,7 +73,6 @@ CopyActiveToWork_Loop:
 	sw	$t8,12($t1)
 	sw	$t9,13($t1)
 	lw	$t3,14($t0)
-	nop
 	lw	$t4,15($t0)
 	nop
 	sw	$t3,14($t1)
@@ -109,10 +95,6 @@ ScreenFadeOut:
 	movi	$a1,SCREENFADELIST_SIZE
 	_JAL	Divu16
 	_LDO	$t0,ScreenFadeList,$v1
-	nop
-	nop
-	nop
-	nop
 	nop
 	_JALR	$t0,$ra
 	POP	$ra
@@ -448,7 +430,6 @@ FilledRect:
 
 	_LI	$t0,WorkScreen
 	lw	$t0,0($t0)
-	nop
 	_LI	$t7,theColor
 	lw	$t7,0($t7)
 	moviu	$t3,0xffff	; LeftMask
@@ -456,7 +437,6 @@ FilledRect:
 	sll	$t5,$t7,16	; LeftPix
 	srl	$t6,$t5,16	; RightPix
 	or	$t7,$t5,$t6	; BothPix
-	nop
 	srl	$t1,$a0,1
 	add	$t0,$t0,$t1
 	sll	$t1,$a1,7
@@ -471,8 +451,11 @@ FilledRect:
 	mov	$t8,$a3
 FilledRect_LeftOddLoop:
 	_LW	$t1,0($t9)
+	nop			; hazard
 	and	$t1,$t1,$t4
 	or	$t1,$t1,$t6
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t9)
 	addi	$t9,$t9,160
 	addi	$t8,$t8,-1
@@ -493,8 +476,11 @@ FilledRect_LeftEven:
 	mov	$t8,$a3
 FilledRect_RightOddLoop:
 	_LW	$t1,0($t9)
+	nop			; hazard
 	and	$t1,$t1,$t3
 	or	$t1,$t1,$t5
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t9)
 	addi	$t9,$t9,160
 	addi	$t8,$t8,-1
@@ -542,7 +528,6 @@ Line:	PUSH	$s0
 
 	_LI	$t7,theColor
 	lw	$t7,0($t7)
-	nop
 
 	_BGE	$a2,$a0,Line_dont_swap_X	; Make
 	mov	$t0,$a0				; a0
@@ -924,7 +909,10 @@ WaitNextFrame:
 	_STA	$t0,ViewScreen
 	_STA	$t0,CurrentScreen
 	_LDA	$t1,ScrOffset
+	nop			; hazard
 	add	$t0,$t0,$t1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,GFX_SCRADDR($gfx)	; used from the next frame start
 	; The old screen is shown until the next frame boundary: also wait for
 	; that (frame counter + 1), even if this game frame is late
@@ -946,8 +934,8 @@ WaitFrameTick:
 ; ... and until DVI frame $t6 (mod 4096) has been reached
 WaitFrameTickMin:
 	_LDA	$t2,NextFrameTick
-	li	$t3,0x0fff		; the DVI frame counter has 12 bits
-	li	$t5,0x0800
+	_LI	$t3,0x0fff		; the DVI frame counter has 12 bits
+	_LI	$t5,0x0800
 WaitFrameTick_Loop:
 	mfc1	$t1,$zero
 	srl	$t1,$t1,20
@@ -961,7 +949,7 @@ WaitFrameTick_Loop:
 	sub	$t4,$t1,$t2
 	and	$t4,$t4,$t3
 	_BEQZ	$t4,WaitFrameTick_OnTime
-	li	$t4,0x00f00000		; uart
+	_LI	$t4,0x00f00000		; uart
 	movi	$t5,76			; 'L'
 	nop
 	nop
@@ -972,6 +960,7 @@ WaitFrameTick_OnTime:
 
 	; 50 Hz tick bookkeeping, see above
 	_LDA	$t0,FramePhase
+	nop			; hazard
 	addi	$t0,$t0,1
 	slti	$t1,$t0,6
 	_BNEZ	$t1,WaitFrameTick_PhaseOk
@@ -993,7 +982,10 @@ WaitFrameTick_SetHalf:
 
 	_LI	$t0, FrameCount
 	_LW	$t2, 0($t0)
+	nop			; hazard
 	add	$t2,$t2,$t1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t2, 0($t0)
 
 	_RTS
@@ -1035,6 +1027,7 @@ GetActiveScreen:
 GetFrameCount:
 	_LDA	$v0,FrameCount
 	_LDA	$t0,Tick50
+	nop			; hazard
 	_BNEZ	$t0,GetFrameCount_Tick
 	movi	$v0,-1
 GetFrameCount_Tick:

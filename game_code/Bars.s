@@ -6,16 +6,28 @@ Bars:
 	_JAL	WaitNextFrame
 	; DVI: 128 pixels stretched to the full width (PAL: 10 clocks/pixel)
 	movi	$t0, 0
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_TOPPOS($gfx)
 	movi	$t0, 0
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_LEFTPOS($gfx)
 	movi	$t0, 128
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_WIDTH($gfx)
 	movi	$t0, 240
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_HEIGHT($gfx)
 	movi	$t0, 5			; 128 x 5 = 640 DVI pixels
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_PIXREAD($gfx)
 	movi	$t0, 0
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_DELTA($gfx)
 
 	_LI	$t0,JoyRepeatWait
@@ -79,6 +91,7 @@ DrawBars:
 
 	_LI	$s0,BarList
 	_LDA	$s1,BarAngle
+	nop			; hazard
 	addi	$s1,$s1,BAR_ANGLE_DELTA
 	_STA	$s1,BarAngle
 
@@ -104,6 +117,7 @@ DrawBars_Loop:
 	clr	$s5
 DrawBars_FindMin:
 	_LW	$t9,0($t3)
+	nop			; hazard
 	slt	$t8,$t9,$t2
 	_BEQZ	$t8,DrawBars_NotSmaller
 	mov	$t2,$t9 ; min in t2

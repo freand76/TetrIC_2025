@@ -15,6 +15,7 @@ PreMain:
 Main:	_JAL	Randomize
 	_LDA	$t0,Mode
 	_LDO	$t0,ModeJumpTable,$t0
+	nop			; hazard
 	_JALR	$t0,$ra
 	_J	Main
 

@@ -138,6 +138,7 @@ DrawEnterHighText:
 	PUSH	$s5
 
 	_LDA	$t0,EnterHighTextColor
+	nop			; hazard
 	_BEQZ	$t0,DrawEnterHighText_BlackText
 
 	lui	$s5,0xffff
@@ -153,6 +154,7 @@ DrawEnterHighText_Loop:
 	mov	$a1,$s0
 	mov	$a2,$s1
 	_LDA	$a3,EnterHighTextColor
+	nop			; hazard
 	or	$a3,$a3,$s5
 	_JAL	PrintASCII
 	addi	$s0,$s0,ENTERHIGH_LETTERSPACEX
@@ -169,6 +171,7 @@ DrawEnterHighText_NoChangeLine:
 	mov	$a1,$s0
 	mov	$a2,$s1
 	_LDA	$a3,EnterHighTextColor
+	nop			; hazard
 	or	$a3,$a3,$s5
 	_JAL	PrintString
 
@@ -205,16 +208,19 @@ DrawEnterHighName:
 	PUSH	$s1
 
 	_LDA	$t0,EnterHighNameColor
+	nop			; hazard
 	_BEQZ	$t0,DrawEnterHighName_BlackText
 
 	clr	$s0
 	movi	$s1,160
 	_LDA	$t0,EnterHighPos
+	nop			; hazard
 	addi	$t0,$t0,1
 	sll	$t0,$t0,2
 	sub	$s1,$s1,$t0
 DrawEnterHighName_Loop:
 	_LDO	$a0,EnterHighName,$s0
+	nop			; hazard
 	_BEQZ	$a0,EnterHighName_Done
 	mov	$a1,$s1
 	sll	$t0,$s0,3
@@ -272,10 +278,12 @@ DrawSelectionBox:
 	movi	$s1,ENTERHIGH_TOP+8
 
 	_LDA	$t0,EnterHighValX
+	nop			; hazard
 	sll	$t1,$t0,4
 	add	$s0,$s0,$t1
 
 	_LDA	$t2,EnterHighValY
+	nop			; hazard
 	sll	$t3,$t2,2
 	add	$s1,$s1,$t3
 	sll	$t3,$t3,2
@@ -327,7 +335,10 @@ DrawSelectionBox_Loop:
 DrawSelectionBox_Done:
 	_LI	$t0,CircleAngle
 	_LW	$t1,0($t0)
+	nop			; hazard
 	addi	$t1,$t1,CIRCLE_SPEED
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t0)
 
 	_LDA	$a0,EnterHighCircleColor
@@ -481,6 +492,7 @@ noSpecialButUpDown2:
 	_BNE	$t0,$t1,NotDel
 Del:
 	_LDA	$t5,EnterHighPos
+	nop			; hazard
 	_BEQZ	$t5,ButtonEnd
 	addi	$t5,$t5,-1
 	_STA	$t5,EnterHighPos
@@ -500,6 +512,7 @@ Letter:
 	add	$t5,$t5,$t2
 	_LDO	$t7,EnterHighLetters,$t5
 	_LDA	$t5,EnterHighPos
+	nop			; hazard
 	slti	$t0,$t5,NOF_LETTERS
 	addi	$t0,$t0,-1
 	add	$t5,$t5,$t0

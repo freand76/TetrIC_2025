@@ -76,6 +76,7 @@ PrintHighScoreList:
 	PUSH	$s3
 
 	_LDA	$s2,HighScoreListTextColor
+	nop			; hazard
 	_BEQZ	$s2,PrintHighScoreList_BlackText
 
 	lui	$s3,0xffff
@@ -187,6 +188,8 @@ ColorTitleInit_Loop:
 	sll	$t0,$t0,5
 	moviu	$t1,0xf800
 	or	$t0,$t0,$t1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s2)
 	_SW	$zero,0($s1)
 	addi	$s1,$s1,1
@@ -223,6 +226,7 @@ ColorTitle_Tick:
 	_LI	$s1,HighScoreTitleTarget
 	add	$s1,$s1,$t0
 	_LW	$t1,0($s1)
+	nop			; hazard
 	_BEQZ	$t1,ColorTitle_NoNewColor
 	_JAL	Rnd
 	movi	$t0,0x3f
@@ -230,6 +234,8 @@ ColorTitle_Tick:
 	sll	$t0,$t0,5
 	movi	$t1,0xf800
 	or	$t0,$t0,$t1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s1)
 
 ColorTitle_NoNewColor:
@@ -258,6 +264,7 @@ ColorTitle_WordLoop:
 	mov	$a1,$s6
 	movi	$a2,HIGHSCORETITLE_TOP
 	_LW	$a3,0($s1)
+	nop			; hazard
 	or	$a3,$a3,$s7
 	_JAL	PrintASCII
 
@@ -265,6 +272,7 @@ ColorTitle_WordLoop:
 	_LW	$a1,0($s2)
 	_JAL	FadeSourceToDest
 	_LDA	$t0,Tick50		; fade per 50 Hz tick
+	nop			; hazard
 	_BEQZ	$t0,ColorTitle_NoFade
 	_SW	$v0,0($s1)
 ColorTitle_NoFade:

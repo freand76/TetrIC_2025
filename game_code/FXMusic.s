@@ -7,23 +7,32 @@ StartMusic:
 	; a1 - MUSICINDEX
 
 	_LI	$t0,0x77775555			; High volume for samples and lower for module
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,SFX_MASTERVOL($sfx)
 
 	; ModuleIndex
 	movi	$t0,0
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,SFX_SONGSTATUS($sfx)	; stop current song
 
 	_LI	$t0,SilentMod
 	_BEQZ	$a0,StartMusic_Silent
 
 	_LDA	$t1,Music_State
+	nop			; hazard
 	_BEQZ	$t1,StartMusic_Silent
 
 	_LI	$t0,TetricMod			; game music
 StartMusic_Silent:
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,SFX_OFFSET($sfx)		; offset to song
 
 	movi	$t0,SONG_LOOP|SONG_PLAY
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,SFX_SONGSTATUS($sfx)	; start playing (even if silent)
 
 	_RTS
@@ -78,10 +87,12 @@ PlaySampleCh1:
 	; a0 - sample index
 
 	_LDA	$t0,FX_State
+	nop			; hazard
 	_BEQZ	$t0,PlaySample_NoFX
 
 	movi	$t5,11025			; sample frequency
 	_LDO	$t0,SampleList,$a0
+	nop			; hazard
 	_LW	$t1,0($t0)
 	_LW	$t2,1($t0)
 	_LW	$t3,2($t0)
@@ -108,10 +119,12 @@ PlaySampleCh2:
 	; a0 - sample index
 
 	_LDA	$t0,FX_State
+	nop			; hazard
 	_BEQZ	$t0,PlaySample_NoFX
 
 	movi	$t5,11025			; sample frequency
 	_LDO	$t0,SampleList,$a0
+	nop			; hazard
 	_LW	$t1,0($t0)
 	_LW	$t2,1($t0)
 	_LW	$t3,2($t0)
@@ -139,6 +152,7 @@ PlayBeat:
 	; play the beat in FX channel 1
 	PUSH	$ra
 	_LDA	$t0,BeatTargetVolume
+	nop			; hazard
 	_BNEZ	$t0,PlayBeat_NoBeat		; already playing
 
 	movi	$a0,0				; silent during intro
@@ -169,6 +183,7 @@ PlayBeat:
 
 	clr	$t0
 	_LDA	$t1,Music_State
+	nop			; hazard
 	_BEQZ	$t1,PlayBeat_Silent
 	movi	$t0,BEAT_TARGETVOL
 PlayBeat_Silent:
@@ -185,6 +200,7 @@ FadeBeat:
 
 	_LDA	$t0,BeatVolume
 	_LDA	$t1,BeatTargetVolume
+	nop			; hazard
 	slt	$t2,$t0,$t1
 	add	$t0,$t0,$t2
 	slt	$t2,$t1,$t0

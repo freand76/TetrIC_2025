@@ -44,7 +44,7 @@ d = 1 and 2 are forwarded. d = 3 is covered by the register file write-through, 
 * After `beq/bne/bge/bgt/beqz/bnez/bgez/bgtz/b/jr/jalr`: 3 NOPs.
 * After `j`/`jal`: 1 NOP. After `jal`, the NOP also runs again on return. `prg.s` uses 3, which also works.
 * After `lw`: 1 NOP before using the loaded register.
-* Before `sw`: the stored register must be written ≥ 3 instructions earlier, so 2 NOPs. The old TetrIC `_SW` macro (`nop; nop; sw`) does exactly this.
+* Before `sw`: the stored register must be written ≥ 3 instructions earlier, so 2 NOPs. The old TetrIC `_SW` macro (`nop; nop; sw`) always added them. The game's load/store macros (`game_code/TLib/Macro.s`) now have no NOPs, and the NOPs are written only where the checker asks for them.
 * No branches or jumps in delay slots.
 
 ## Assembler check

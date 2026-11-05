@@ -233,6 +233,8 @@ Randomize:
 	mfc1	$t1, $t0	; get gfxregisters
 	xor	$v0,$v0,$t1	; Xor New seed with gfxregisterss
 
+	nop			; hazard
+	nop			; hazard
 	_SW	$v0, 0($s0)
 
 	POP	$s0
@@ -256,6 +258,8 @@ Rnd:
 	_LI	$a1,RANDOMMULTIPLIER
 	_JAL	Mulu16
 	addi	$v0,$v0,1
+	nop			; hazard
+	nop			; hazard
 	_SW	$v0,0($s0)
 
 	POP	$s0
@@ -277,7 +281,7 @@ Sin:	; $a0 input - 16 bit value
 	sll	$t1,$a0,28	; mask out odd (was $t9, only set by Cos)
 	srl	$t1,$t1,31	; or even value
 	sll	$t1,$t1,4	; and multiply it by 16
-	li	$t2,Sinus
+	_LI	$t2,Sinus
 	add	$t2,$t2,$t0
 	lw	$t0,0($t2)
 	nop
@@ -298,7 +302,7 @@ Cos:	; $a0 input - 16 bit value
 	sll	$t1,$t9,28	; mask out odd
 	srl	$t1,$t1,31	; or even value
 	sll	$t1,$t1,4	; and multiply it by 16
-	li	$t2,Sinus
+	_LI	$t2,Sinus
 	add	$t2,$t2,$t0
 	lw	$t0,0($t2)
 	nop

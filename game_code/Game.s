@@ -27,7 +27,6 @@ StartGame:
 	_LI	$t1,0x000a00	; Filter = 00, RepeatVal = 0a, Accelerate = 0 (08 at 50 Hz)
 	; HARDDROP (DOWN)
 	_LI	$t2,0x06ff00	; Filter = 06, RepeatVal = ff, Accelerate = 0 (05 at 50 Hz)
-	nop
 	sw	$t1,JOY_UP($t0)
 	sw	$t1,JOY_LEFT($t0)
 	sw	$t1,JOY_RIGHT($t0)
@@ -172,6 +171,7 @@ WaitGameNextFrame50:
 	PUSH	$ra
 	_JAL	WaitGameNextFrame
 	_LDA	$t0,Tick50
+	nop			; hazard
 	_BNEZ	$t0,WaitGameNextFrame50_Done
 	_JAL	WaitNextFrameNoSwap
 WaitGameNextFrame50_Done:
@@ -253,6 +253,7 @@ CheckWarning_RowLoop:
 	movi	$t8,10
 CheckWarning_ColLoop:
 	_LW	$t2,0($t1)
+	nop			; hazard
 	_BEQZ	$t2,CheckWarning_NotSet
 	addi	$t0,$t0,1
 CheckWarning_NotSet:
@@ -276,6 +277,7 @@ CheckWarning_NotSet:
 
 CheckWarning_NoSound:
 	_LDA	$t0,WarningCount
+	nop			; hazard
 	addi	$t0,$t0,-1
 	_STA	$t0,WarningCount
 	_BNEZ	$t0,CheckWarning_Exit
@@ -346,10 +348,15 @@ ExpandPalette:
 	moviu	$t3,0xffff	; Mask
 ExpandPal_Loop:
 	_LW	$t4,0($t0)	; Load 32 bits
+	nop			; hazard
 	srl	$t5,$t4,16	; Mask 16 high bits
+	nop			; hazard
+	nop			; hazard
 	_SW	$t5,0($t1)	; Store color
 	addi	$t1,$t1,1	; Add 1 to expanded palette pointer
 	and	$t4,$t4,$t3	; Mask 16 Low bits
+	nop			; hazard
+	nop			; hazard
 	_SW	$t4,0($t1)	; Store color
 	addi	$t1,$t1,1	; Add 1 to expanded palette pointer
 	addi	$t0,$t0,1	; Add 1 to packed palette pointer
@@ -370,13 +377,16 @@ ExpandPic_ByteLoop:
 	srl	$t6,$t5,24	; Get leftmost byte
 	add	$t7,$t2,$t6	; Add to palette pointer
 	_LW	$t8,0($t7)	; Get palette value
+	nop			; hazard
 	sll	$t9,$t8,16	; Left pixel in word
 	sll	$t5,$t5,8	; Shift out used byte
 	srl	$t6,$t5,24	; Get leftmost byte
 	add	$t7,$t2,$t6	; Add to palette pointer
 	_LW	$t8,0($t7)	; Get palette value
+	nop			; hazard
 	or	$t9,$t9,$t8	; Right pixel in word
 	sll	$t5,$t5,8	; SHift out used byte
+	nop			; hazard
 	_SW	$t9,0($t1)	; Store 2 pixels (2*16 bits)
 	addi	$t1,$t1,1	; Add 1 to screen pointer
 	addi	$t4,$t4,-1	; bytecount--
@@ -393,8 +403,11 @@ ShadePalette:
 	moviu	$t2,0b1111011111011110	; And Mask
 ShadePal_Loop:
 	_LW	$t3,0($t0)		; Get color value
+	nop			; hazard
 	and	$t3,$t3,$t2		; And with mask (remove LSB for each color)
 	srl	$t3,$t3,1		; Shift word 1 bit right (half the color values)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t3,0($t0)		; Store color value
 	addi	$t0,$t0,1		; Add 1 to palette pointer
 	addi	$t1,$t1,-1		; Color--
@@ -407,6 +420,7 @@ GreyPalette:
 	movi	$t1,256			; Color counter (256 colors)
 GreyPal_Loop:
 	_LW	$t3,0($t0)		; Get color value
+	nop			; hazard
 	sll	$t4,$t3,27
 	srl	$t4,$t4,27
 	sll	$t5,$t3,21
@@ -420,6 +434,8 @@ GreyPal_Loop:
 	or	$t4,$t4,$t5
 	sll	$t5,$t5,5
 	or	$t4,$t4,$t5
+	nop			; hazard
+	nop			; hazard
 	_SW	$t4,0($t0)		; Store color value
 	addi	$t0,$t0,1		; Add 1 to palette pointer
 	addi	$t1,$t1,-1		; Color--
@@ -453,13 +469,16 @@ Copy_To_BoardBKG_ByteLoop:
 	srl	$t4,$t3,24	; Get leftmost byte
 	add	$t5,$t2,$t4	; Add to palette pointer
 	_LW	$t6,0($t5)	; Get palette value
+	nop			; hazard
 	sll	$t7,$t6,16	; Left pixel in word
 	sll	$t3,$t3,8	; Shift out used byte
 	srl	$t4,$t3,24	; Get leftmost byte
 	add	$t5,$t2,$t4	; Add to palette pointer
 	_LW	$t6,0($t5)	; Get palette value
+	nop			; hazard
 	or	$t7,$t7,$t6	; Right pixel in word
 	sll	$t3,$t3,8	; Shift out used byte
+	nop			; hazard
 	_SW	$t7,0($t1)	; Store Pixel (2*16bits)
 	addi	$t1,$t1,1	; Add 1 to Screen pointer
 	addi	$s2,$s2,-1	; Byte--
@@ -501,13 +520,16 @@ Copy_To_NPBKG_ByteLoop:
 	srl	$t4,$t3,24	; Get leftmost byte
 	add	$t5,$t2,$t4	; Add to palette pointer
 	_LW	$t6,0($t5)	; Get palette value
+	nop			; hazard
 	sll	$t7,$t6,16	; Left pixel in word
 	sll	$t3,$t3,8	; Shift out used byte
 	srl	$t4,$t3,24	; Get leftmost byte
 	add	$t5,$t2,$t4	; Add to palette pointer
 	_LW	$t6,0($t5)	; Get palette value
+	nop			; hazard
 	or	$t7,$t7,$t6	; Right pixel in word
 	sll	$t3,$t3,8	; Shift out used byte
+	nop			; hazard
 	_SW	$t7,0($t1)	; Store Pixel (2*16bits)
 	addi	$t1,$t1,1	; Add 1 to Screen pointer
 	addi	$s2,$s2,-1	; Byte--
@@ -549,13 +571,16 @@ Copy_To_StatBKG_ByteLoop:
 	srl	$t4,$t3,24	; Get leftmost byte
 	add	$t5,$t2,$t4	; Add to palette pointer
 	_LW	$t6,0($t5)	; Get palette value
+	nop			; hazard
 	sll	$t7,$t6,16	; Left pixel in word
 	sll	$t3,$t3,8	; Shift out used byte
 	srl	$t4,$t3,24	; Get leftmost byte
 	add	$t5,$t2,$t4	; Add to palette pointer
 	_LW	$t6,0($t5)	; Get palette value
+	nop			; hazard
 	or	$t7,$t7,$t6	; Right pixel in word
 	sll	$t3,$t3,8	; Shift out used byte
+	nop			; hazard
 	_SW	$t7,0($t1)	; Store Pixel (2*16bits)
 	addi	$t1,$t1,1	; Add 1 to Screen pointer
 	addi	$s2,$s2,-1	; Byte--
@@ -597,13 +622,16 @@ Copy_To_ScoreBKG_ByteLoop:
 	srl	$t4,$t3,24	; Get leftmost byte
 	add	$t5,$t2,$t4	; Add to palette pointer
 	_LW	$t6,0($t5)	; Get palette value
+	nop			; hazard
 	sll	$t7,$t6,16	; Left pixel in word
 	sll	$t3,$t3,8	; Shift out used byte
 	srl	$t4,$t3,24	; Get leftmost byte
 	add	$t5,$t2,$t4	; Add to palette pointer
 	_LW	$t6,0($t5)	; Get palette value
+	nop			; hazard
 	or	$t7,$t7,$t6	; Right pixel in word
 	sll	$t3,$t3,8	; Shift out used byte
+	nop			; hazard
 	_SW	$t7,0($t1)	; Store Pixel (2*16bits)
 	addi	$t1,$t1,1	; Add 1 to Screen pointer
 	addi	$s2,$s2,-1	; Byte--
@@ -672,13 +700,9 @@ FixTopLines_RowLoop:
 	movi	$t8,10			; ColCount
 FixTopLines_ColLoop:
 	lw	$t0,0($s0)		; Load
-	nop
 	lw	$t1,1($s0)
-	nop
 	lw	$t2,2($s0)
-	nop
 	lw	$t3,3($s0)
-	nop
 	sw	$t0,0($s1)		; Store
 	sw	$t1,1($s1)
 	sw	$t2,2($s1)
@@ -832,6 +856,7 @@ DrawBoard_RowLoop:
 	movi	$s1,10			; Set number of cols
 DrawBoard_ColLoop:
 	_LW	$a2,0($s0)
+	nop			; hazard
 	_BNEZ	$a2,DrawBoard_ColorBox
 	_JAL	CopyBox
 	_J	DrawBoard_TestDone
@@ -911,6 +936,7 @@ DrawNextPiece_Copy_Bkg_Col_Loop:
 
 	_LI	$t0,ShowNextPiece
 	_LW	$t1,0($t0)		; Should we show next piece ?
+	nop			; hazard
 	_BEQZ	$t1,DontShowNextPiece	; No, then dont do it !
 	_LI	$t0,NextPieceNumber
 	_LW	$t1,0($t0)		; Get Next piece number
@@ -924,6 +950,7 @@ DrawNextPiece_Copy_Bkg_Col_Loop:
 	_LW	$s4,PIECE_VERDIFF($s2)	; Verdiff
 DrawNextPiece_Loop:
 	_LW	$t0,0($s2)		;
+	nop			; hazard
 	_BEQZ	$t0,NextPiece_BitNotSet	; Is bit set ? No, BitNotSet
 	mov	$a0,$s0			; a0 = X Count
 	sll	$a0,$a0,3		; a0 = a0 * 8
@@ -1016,6 +1043,7 @@ DrawStat_FindMax_Loop:
 	addi	$t0,$t0,1
 	addi	$t9,$t9,-1
 	_LW	$t1,0($t0)
+	nop			; hazard
 	slt	$t2,$t1,$s1
 	_BNEZ	$t2,DrawStat_NoMax
 	mov	$s1,$t1
@@ -1078,6 +1106,7 @@ DrawStatBar:
 
 	mov	$t9,$a0
 DrawStatBar_Loop:
+	nop			; hazard
 	_SW	$t8,0($t1)
 	_SW	$t8,1($t1)
 	_SW	$t8,2($t1)
@@ -1197,6 +1226,7 @@ DrawCurrentPiece:
 	movi	$s4,0			; Y = 0
 PieceLoop:
 	_LW	$t0,0($s2)		;
+	nop			; hazard
 	_BEQZ	$t0,BitNotSet		; Is bit set ? No, BitNotSet
 	mov	$a0,$s3			; a0 = X Count
 	add	$a0,$a0,$s0		; a0 = a0 + X pos
@@ -1284,13 +1314,9 @@ CopyBox:
 	movi	$t9,8			; RowCount = 8
 CopyBox_Loop:
 	lw	$t0,0($s0)
-	nop
 	lw	$t1,1($s0)
-	nop
 	lw	$t2,2($s0)
-	nop
 	lw	$t3,3($s0)
-	nop
 	sw	$t0,0($s1)		; Two pixels  X + 0 , X + 1
 	sw	$t1,1($s1)		; Two pixels  X + 2 , X + 3
 	sw	$t2,2($s1)		; Two pixels  X + 4 , X + 5
@@ -1322,13 +1348,9 @@ DrawPieceBox:
 	movi	$t8,8			; RowCount = 8
 DrawPieceBox_Loop:
 	lw	$t0,0($t7)
-	nop
 	lw	$t1,1($t7)
-	nop
 	lw	$t2,2($t7)
-	nop
 	lw	$t3,3($t7)
-	nop
 	sw	$t0,0($t6)		; Two pixels  X + 0 , X + 1
 	sw	$t1,1($t6)		; Two pixels  X + 2 , X + 3
 	sw	$t2,2($t6)		; Two pixels  X + 4 , X + 5
@@ -1425,6 +1447,7 @@ RowFill_Loop:
 	mov	$s3,$v1				; s3 = Rnd(0,9)
 	add	$s3,$s3,$s2
 	_LW	$t1,0($s3)			; Is this one set already ?
+	nop			; hazard
 	_BNEZ	$t1,RowFill_Loop		; Yes, get new rnadom value
 
 	_JAL	Rnd				; Get random number
@@ -1434,6 +1457,8 @@ RowFill_Loop:
 	_LI	$t0,BlockPointer_Array		; Rnd(0,6)
 	add	$t0,$t0,$v1
 	_LW	$t1,0($t0)			; Get block pointer
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($s3)			; Store in board
 
 	addi	$s1,$s1,-1			; Fill=Fill-1
@@ -1461,24 +1486,30 @@ AddScore:
 
 	_LI	$t2,Piece_Pos			; DropHeight Points (1 * DropHeight)
 	_LW	$t3,1($t2)			;
+	nop			; hazard
 	sub	$t4,$t4,$t3
 
 	_LI	$t2,Current_Piece_ScoreDiff
 	_LW	$t3,0($t2)
+	nop			; hazard
 	sub	$t4,$t4,$t3
 
 	_LI	$t2,Level			; Level Points (3 * Level)
 	_LW	$t3,0($t2)			; 1 * Level
+	nop			; hazard
 	sll	$t2,$t3,1			; + 2 * Level
 	add	$t3,$t3,$t2			; = 3 * Level
 	add	$t4,$t4,$t3
 
 	_LI	$t2,ShowNextPiece
 	_LW	$t3,0($t2)
+	nop			; hazard
 	_BNEZ	$t3,CheatModeOn
 	addi	$t4,$t4,5			; Cheat Mode OFF Points (5)
 CheatModeOn:					;
 	add	$t1,$t1,$t4
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t0)
 
 	_RTS
@@ -1508,6 +1539,8 @@ CheckLevel:
 	_BEQZ	$v1,NoHigherLevel
 
 	addi	$s1,$s1,1
+	nop			; hazard
+	nop			; hazard
 	_SW	$s1,0($s0)
 
 	movi	$a0,FX_GAME_CHANGELEVEL
@@ -1554,7 +1587,10 @@ NotThisRow:
 
 	_LI	$t0,LineCount	; Add one line to linecount
 	_LW	$t1,0($t0)
+	nop			; hazard
 	add	$t1,$t1,$s1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t0)
 
 	movi	$t0,4
@@ -1591,11 +1627,13 @@ TestWeight:
 
 	_LI	$t1,RemoveRow_Array
 	_LW	$t9,3($t1)		; Last Row Number
+	nop			; hazard
 	_BEQZ	$t9,TestWeight_NoWeight
 TestWeight_RowLoop:
 	movi	$t8,10
 TestWeight_ColLoop:
 	_LW	$t1,0($t0)
+	nop			; hazard
 	_BEQZ	$t1,TestWeight_NotSet
 	addi	$v0,$v0,1
 TestWeight_NotSet:
@@ -1612,13 +1650,19 @@ ShakeBoard:
 	_LI	$t0,ShakeSin
 	_LI	$t1,ShakePointer
 	_LW	$t2,0($t1)
+	nop			; hazard
 	slti	$t3,$t2,63
 	_LDA	$t4,Tick50		; one step per 50 Hz tick
+	nop			; hazard
 	and	$t3,$t3,$t4
 	add	$t2,$t2,$t3
+	nop			; hazard
+	nop			; hazard
 	_SW	$t2,0($t1)
 	add	$t0,$t0,$t2
 	_LW	$t1,0($t0)			; 0..10 lines down (PAL: + 30 top margin)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,GFX_TOPPOS($gfx)
 	_RTS
 
@@ -1636,6 +1680,7 @@ TestRow:
 	movi	$t1,10			; Check next 10
 TestRowLoop:
 	_LW	$t2,0($t0)		; What is this ?
+	nop			; hazard
 	_BEQZ	$t2,TestRowExit		; Zero ? Not full
 
 	addi	$t0,$t0,1		; Next
@@ -1654,6 +1699,7 @@ RemoveRows:
 	clr	$t9
 RemoveRows_RowLoop:
 	_LW	$t2,0($t0)		; Get First Row to dissapear
+	nop			; hazard
 	add	$t2,$t2,$t9		; Subtract already removed rows
 RemoveRows_CopyLoop:
 	_LI	$t1,Tetris_Board	; Get board
@@ -1667,6 +1713,8 @@ RemoveRows_CopyLoop:
 	movi	$t8,10			; 10 pieces
 RemoveRows_LineLoop:
 	_LW	$t3,0($t1)		; Copy from the row above
+	nop			; hazard
+	nop			; hazard
 	_SW	$t3,12($t1)		; And store on this row
 	addi	$t1,$t1,1		; Next piece
 	addi	$t8,$t8,-1		; One less to go
@@ -1693,6 +1741,7 @@ SetFallSpeed:
 	_LI	$t0,Level_FallSpeed_Array
 	_LI	$t1,Level
 	_LW	$t2,0($t1)
+	nop			; hazard
 	add	$t0,$t0,$t2
 	_LW	$t1,0($t0)
 	_LI	$t0,FallSpeed
@@ -1705,7 +1754,10 @@ PieceFall:
 
 	_LI	$s0,FallSpeed
 	_LW	$t0,0($s0)
+	nop			; hazard
 	addi	$t0,$t0,-1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s0)
 	_BNEZ	$t0,PieceFallExit
 	_JAL	SetFallSpeed
@@ -1732,13 +1784,18 @@ DropOne:
 	_LI	$s0,Piece_Pos
 	_LW	$a1,0($s0)
 	_LW	$a2,1($s0)
+	nop			; hazard
 	addi	$a2,$a2,1
+	nop			; hazard
+	nop			; hazard
 	_SW	$a2,1($s0)
 
 	_LI	$a0,Current_Piece
 	_JAL	TestPiece
 	_BNEZ	$v0,DropExit
 	addi	$a2,$a2,-1
+	nop			; hazard
+	nop			; hazard
 	_SW	$a2,1($s0)
 
 DropExit:
@@ -1778,6 +1835,7 @@ PutDown_OuterLoop:
 	movi	$s3,4
 PutDown_InnerLoop:
 	_LW	$t0,0($s0)
+	nop			; hazard
 	_BEQZ	$t0,PutDown_BitNotSet
 	_SW	$t1,0($s1)
 PutDown_BitNotSet:
@@ -1800,6 +1858,8 @@ PutDown_BitNotSet:
 
 	_LI	$t0,GameOver
 	movi	$t1,1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t0)
 PutDownExit:
 	POP	$s3
@@ -1833,6 +1893,7 @@ Test_OuterLoop:
 Test_InnerLoop:
 	_LW	$t6,0($t0)
 	_LW	$t5,0($t1)
+	nop			; hazard
 	_BEQZ	$t5,Test_BitNotSet
 
 	_BNEZ	$t6,Test_Exit
@@ -1877,7 +1938,10 @@ GetRandomPiece:
 	_LI	$t2,Stat
 	add	$t2,$t2,$t1		; Get current piece
 	_LW	$t3,0($t2)
+	nop			; hazard
 	addi	$t3,$t3,1		; Add 1 to the current piece count
+	nop			; hazard
+	nop			; hazard
 	_SW	$t3,0($t2)
 
 	_LI	$s0,Piece_Array		; Piece Array address
@@ -1888,6 +1952,7 @@ GetRandomPiece:
 
 	_LI	$t1,Current_Piece_Size		; Calc Piece start pos X
 	_LW	$t0,0($t1)			; Get Piece width
+	nop			; hazard
 	srl	$t0,$t0,1			; (Width / 2)
 	neg	$t0,$t0				; - (Width / 2)
 	addi	$t0,$t0,5			; 5 - (Width / 2)
@@ -1924,6 +1989,7 @@ CopyPiece:
 CopyLoop:
 	_LW	$s1,0($a0)		; Load from source
 	addi	$a0,$a0,1		; Inc source adddress
+	nop			; hazard
 	_SW	$s1,0($a1)		; Store to destination
 	addi	$a1,$a1,1		; Inc destination address
 
@@ -2098,6 +2164,8 @@ PrepareRotate:
 	movi	$s2,PIECE_SIZEEXTRADATA
 PrepareRotate_Loop:
 	_LW	$t0,0($s0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s1)
 	addi	$s0,$s0,1
 	addi	$s1,$s1,1
@@ -2108,16 +2176,24 @@ PrepareRotate_Loop:
 	_LI	$s1,Temp_Piece_ScoreDiff
 
 	_LW	$t0,1($s0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s1)
 	_LW	$t0,0($s0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,1($s1)
 
 	_LI	$s0,Current_Piece_Size		; Rotate PieceSize
 	_LI	$s1,Temp_Piece_Size
 
 	_LW	$t0,0($s0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,1($s1)
 	_LW	$t0,1($s0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s1)
 
 	POP	$s2
@@ -2138,6 +2214,7 @@ RotatePiece_CW:
 
 	_LI	$s0,Current_Piece_Size		; Get Piece height
 	_LW	$t0,1($s0)
+	nop			; hazard
 	mov	$s2,$t0
 
 	_LI	$s0,Temp_Piece
@@ -2178,6 +2255,8 @@ Row_Loop_CW:
 	add	$s1,$s1,$t0	; Add 4 * X
 
 	_LW	$t0,0($s0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s1)
 
 	_BNEZ	$s4,Row_Loop_CW
@@ -2204,6 +2283,7 @@ RotatePiece_CCW:
 
 	_LI	$s0,Current_Piece_Size	; Get Piece width
 	_LW	$t0,0($s0)
+	nop			; hazard
 	mov	$s2,$t0
 
 	_LI	$s0,Temp_Piece
@@ -2245,6 +2325,8 @@ Row_Loop_CCW:
 	add	$s1,$s1,$t0	; add 4*(width-X-1)
 
 	_LW	$t0,0($s0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s1)
 
 	_BNEZ	$s4,Row_Loop_CCW

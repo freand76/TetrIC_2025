@@ -23,17 +23,23 @@ InitStars_Loop:
 	srl	$t0,$v0,8
 	lui	$t1,320
 	add	$t0,$t0,$t1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s0)	; Xpos = Rnd(319,<(319+256)), Fp16+16
 
 	_JAL	Rnd
 	sll	$t0,$v0,24
 	srl	$t0,$t0,24
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s1)	; Ypos = Rnd(0,255), Int
 
 	_JAL	Rnd
 	srl	$t0,$v0,14
 	lui	$t1, 1
 	add	$t0,$t0,$t1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s2)	; Speed = Rnd(1,<5), Fp16+16
 
 	addi	$s0,$s0,1
@@ -78,9 +84,12 @@ Stars:
 Stars_Loop:
 	_LW	$s6,0($s2)
 	_LDA	$t1,Tick50		; speed up per 50 Hz tick only
+	nop			; hazard
 	sub	$t1,$zero,$t1
 	and	$t1,$t1,$s3
 	add	$t0,$s6,$t1
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,0($s2)
 
 	sll	$a0,$s6,SPEED_SHIFT
@@ -93,6 +102,7 @@ Stars_Loop:
 
 	_LW	$a0,0($s0)
 	_LDA	$t0,HalfStep		; speed is per 50 Hz frame: move it on 4
+	nop			; hazard
 	srlv	$t0,$s6,$t0		; of 6 frames and half of it on 2
 	sub	$a0,$a0,$t0
 	slt	$t0,$a0,$zero
@@ -101,6 +111,8 @@ Stars_Loop:
 	_BNEZ	$s3,Stars_SkipStar
 	lui	$a0,319
 Stars_StarStillOnScreen:
+	nop			; hazard
+	nop			; hazard
 	_SW	$a0,0($s0)
 	srl	$a0,$a0,16
 	_LW	$a1,0($s1)

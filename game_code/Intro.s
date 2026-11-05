@@ -246,6 +246,7 @@ DrawMenu:
 	_LI	$s3,MenuVal
 	_LW	$s4,0($s3)
 
+	nop			; hazard
 	slt	$t0,$s4,$zero
 	_BEQZ	$t0,Menu_ChoiceNotToLow
 	addi	$s4,$s4,1
@@ -254,6 +255,7 @@ Menu_ChoiceNotToLow:
 	sll	$t0,$s4,2
 	add	$s0,$s0,$t0
 	_LW	$t0,0($s0)
+	nop			; hazard
 	_BNEZ	$t0,Menu_ChoiceNotToHigh
 	addi	$s4,$s4,-1
 Menu_ChoiceNotToHigh:
@@ -267,6 +269,8 @@ Menu_ChoiceNotToHigh:
 	add	$s0,$s0,$t0
 
 	_LW	$t0,2($s0)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,1($s3)
 	_STA	$t0,MenuOldVal
 
@@ -276,15 +280,19 @@ Menu_ChoiceNotToHigh:
 
 Menu_SameRow:
 	_LW	$t1,1($s3)
+	nop			; hazard
 	slt	$t0,$t1,$zero
 	_BEQZ	$t0,Menu_ValNotToLow
 	addi	$t1,$t1,1
 Menu_ValNotToLow:
 	_LW	$t2,3($s0)
+	nop			; hazard
 	slt	$t0,$t2,$t1
 	_BEQZ	$t0,Menu_ValNotToHigh
 	addi	$t1,$t1,-1
 Menu_ValNotToHigh:
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,2($s0)
 	_SW	$t1,1($s3)
 	_LDA	$t0,MenuOldVal
@@ -307,6 +315,7 @@ DrawMenu_Draw:
 	add	$s4,$s4,$s0
 Menu_GetItem:
 	_LW	$t0,0($s0)
+	nop			; hazard
 	_BEQZ	$t0,Menu_Done
 	moviu	$a3,0x7bef
 	_BNE	$s4,$s0,Menu_NotHighlight
@@ -317,8 +326,10 @@ Menu_NotHighlight:
 	mov	$a2,$s2
 	_JAL	PrintString
 	_LW	$t0,1($s0)
+	nop			; hazard
 	_BEQZ	$t0,Menu_NextItem
 	_LW	$t1,2($s0)
+	nop			; hazard
 	add	$a0,$t0,$t1
 	addi	$a1,$a1,18*8
 	_JAL	PrintString
@@ -329,10 +340,12 @@ Menu_NextItem:
 
 Menu_Done:
 	_LDA	$t0, IntroDone
+	nop			; hazard
 	_BNEZ	$t0, Menu_NoNewMode
 
 	_LW	$t0,0($s3)
 	_LW	$t1,2($s3)
+	nop			; hazard
 	_BEQZ	$t1,Menu_NoButton
 
 	movi	$t1,PLAYGAMEROW
@@ -382,6 +395,7 @@ GameHeight:	.dc	0,4,10,14
 GetStartHeight:
 	_LI	$t1,Menu
 	_LW	$t1,MENU_STARTHEIGHT($t1)
+	nop			; hazard
 	_LW	$v0,GameHeight($t1)
 	_RTS
 

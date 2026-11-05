@@ -26,6 +26,7 @@ Scroll:
 	clr	$v1
 	_LDA	$t0,Scroll_Char
 	_LDA	$t1,Scroll_LastChar
+	nop			; hazard
 	_BEQ	$t0,$t1,Scroll_FadeDone
 
 	_LI	$s0,Scroll_Text
@@ -65,6 +66,7 @@ Scroll_Print:
 	and	$a3,$a3,$t0		; an odd x would set a green bit
 	_BEQZ	$s2,Scroll_DontEndEarly
 	_LDA	$t2,Scroll_LastChar
+	nop			; hazard
 	_BNE	$t2,$s1,Scroll_DontEndEarly
 	movi	$a0,'
 	_JAL	PrintASCII
@@ -85,17 +87,21 @@ Scroll_NoLoopOver:
 	_LI	$t0,Scroll_Slide
 	_LW	$t1,0($t0)
 	_LDA	$t2,Scroll_Speed
+	nop			; hazard
 	add	$t1,$t1,$t2
 	slt	$t2,$t1,$zero
 	_BEQZ	$t2,Scroll_SlideOn
 	movi	$t3,7
 	and	$t1,$t1,$t3
 Scroll_SlideOn:
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t0)
 
 	_BEQZ	$s2,Scroll_DontSetLastChar
 	movi	$t0,-1
 	_LDA	$t1,Scroll_LastChar
+	nop			; hazard
 	_BNE	$t0,$t1,Scroll_DontSetLastChar
 	_STA	$s1,Scroll_LastChar
 	movi	$t0,-8			; twice the speed when fading out
@@ -104,11 +110,14 @@ Scroll_DontSetLastChar:
 
 	_LI	$t0,Scroll_Char
 	_LW	$t1,0($t0)
+	nop			; hazard
 	add	$t1,$t1,$t2
 	movi	$t2,Scroll_Length+1
 	_BNE	$t1,$t2,Scroll_ScrollOn
 	clr	$t1
 Scroll_ScrollOn:
+	nop			; hazard
+	nop			; hazard
 	_SW	$t1,0($t0)
 
 	movi	$v1,1

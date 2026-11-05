@@ -33,8 +33,6 @@ FADE_DOWN = 1
 ##############
 
 start:
-	nop
-	nop
 	_LI	$sp,StackPointer		; Initiate StackPointer
 	_LI	$gfx,GfxBase			; Initiate GfxPointer
 
@@ -61,16 +59,28 @@ start:
 	_JAL	WaitNextFrameNoSwap
 	; DVI 640x480: 320x240 visible (no PAL sync settings needed)
 	movi	$t0, 0
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_TOPPOS($gfx)
 	movi	$t0, 0
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_LEFTPOS($gfx)
 	movi	$t0, 320
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_WIDTH($gfx)
 	movi	$t0, 240
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_HEIGHT($gfx)
 	movi	$t0, 2
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_PIXREAD($gfx)
 	movi	$t0, 0
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, GFX_DELTA($gfx)
 
 	_JAL	InitSound

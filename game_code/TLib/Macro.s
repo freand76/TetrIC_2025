@@ -2,11 +2,10 @@
 # M A C R O #
 #############
 
-	; load immidiate 32-bit integer
-	.macro li @reg0,@Imm0
-	lui	@reg0, @Imm0.H
-	ori	@reg0, @reg0, @Imm0.L
-	.endmacro
+	; The load/store macros have no nops of their own: abnasm checks the
+	; pipeline rules (rtl/processor/PIPELINE_HAZARDS.md) and the nops are
+	; written where the code needs them. The branch and jump macros keep
+	; their nops, those are the delay slots.
 
 	; load immidiate 32-bit integer
 	.macro _LI @reg0,@Imm0
@@ -17,14 +16,12 @@
 	; pop register from stack
 	.macro POP @reg0
 	lw	@reg0, 0($sp)
-	nop
 	addi	$sp,$sp, 1   # post-increment
 	.endmacro
 
 	; pop register to stack
 	.macro PUSH @reg0
 	addi	$sp,$sp, -1   # pre-decrement
-	nop
 	sw	@reg0, 0($sp)
 	.endmacro
 
@@ -55,14 +52,6 @@
 	; safe bgt
 	.macro _BGT @reg0,@reg1,@Imm0
 	bgt	@reg0,@reg1,@Imm0
-	nop
-	nop
-	nop
-	.endmacro
-
-	; safe bgtz
-	.macro _BGTZ @reg0,@Imm0
-	bgtz	@reg0,@Imm0
 	nop
 	nop
 	nop
@@ -112,14 +101,6 @@
 	nop
 	.endmacro
 
-	; safe jump register
-	.macro _JR @Reg0
-	jr	@Reg0
-	nop
-	nop
-	nop
-	.endmacro
-
 	; safe jump and link register
 	.macro _JALR @Reg0,@Reg1
 	jalr	@Reg0,@Reg1
@@ -139,13 +120,10 @@
 	; safe load word instruction
 	.macro _LW @reg0,@Imm0(@reg1)
 	lw	@reg0,@Imm0(@reg1)
-	nop
 	.endmacro
 
 	; safe store word instruction
 	.macro _SW @reg0,@Imm0(@reg1)
-	nop
-	nop
 	sw	@reg0,@Imm0(@reg1)
 	.endmacro
 
@@ -154,7 +132,6 @@
 	lui	$at, @Imm0.H
 	ori	$at, $at, @Imm0.L
 	lw	@reg0,0($at)
-	nop
 	.endmacro
 
 	; store register to address
@@ -170,7 +147,6 @@
 	ori	$at, $at, @Imm0.L
 	add	$at,$at,@reg1
 	lw	@reg0,0($at)
-	nop
 	.endmacro
 
 	; store register to address with offset from register

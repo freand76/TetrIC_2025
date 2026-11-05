@@ -59,12 +59,20 @@ C_E_clearloop:
 	addi	$t1, $t1, -1
 	_BNEZ	$t1, C_E_clearloop
 	moviu	$t0, 16		;make instr.1 a short silent sample, vol 0, no loop
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, 0($a0)
 	moviu	$t0, 64
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, 1($a0)
 	_LI	$t0, 0x01040000
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, 124($a0)	;set songinfo
 	_LI	$t0, 0x0AF40F06	;instrument 1, note 756, SetSpeed 6
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0, 157($a0)
 	_SW	$t0, 158($a0)
 	_SW	$t0, 159($a0)
@@ -78,10 +86,16 @@ InitSound:
 
 	_LI	$sfx,SfxBase
 	_LI	$t0,Lut-108
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,SFX_LUT($sfx)
 	_LI	$t0,504000			; MOD tick: 25.2 MHz / 50 Hz (480000 at 24 MHz)
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,SFX_WAITCLK($sfx)
 	movi	$t0,732
+	nop			; hazard
+	nop			; hazard
 	_SW	$t0,SFX_STEPCLK($sfx)
 	POP	$ra
 	_RTS

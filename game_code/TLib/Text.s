@@ -97,9 +97,9 @@ PrintASCII:
 
 	PUSH	$s0
 	PUSH	$s1
-	PUSH	$s2
 	PUSH	$s3
 	PUSH	$s4
+	PUSH	$s5
 
 	_LI	$s0,Font8x16		; Array Offset
 	mov	$t0,$a0			; ASCII value
@@ -129,44 +129,119 @@ PrintASCII:
 	add	$t0,$t0,$t1		; Y * 160
 	add	$s1,$s1,$t0		; Add Y Offset to workscreen
 
+	or	$s5,$t7,$t8		; color in both halves of a word
 	movi	$s3,16			; 16 Rows in total
-ASCII_RowLoop:
-	_LW	$t1,0($s0)		; Read font data
-	sllv	$t1,$t1,$s4		; Character offset in word (4 characters in each word)
-	movi	$s2,4			; 4 Words = 8 pixels on screen
-ASCII_ColLoop:
-	clr	$t0			; Clear $t0
-	_BEQZ	$t6,ASCII_NotTrans	; Should the character be transparent ?
-	_LW	$t0,0($s1)		; Get The word on screen
-ASCII_NotTrans:
-	slt	$t2,$t1,$zero		; Is pixel set in font ?
-	_BEQZ	$t2,ASCII_NoLeft	; If not continue
-	sll	$t0,$t0,16		; Mask away left pixel
-	srl	$t0,$t0,16
-	or	$t0,$t0,$t7		; Yes, set left part of word
-ASCII_NoLeft:
-	sll	$t1,$t1,1		; Next pixel
-	slt	$t2,$t1,$zero		; Is pixel set in font ?
-	_BEQZ	$t2,ASCII_NoRight	; If not continue
-	srl	$t0,$t0,16		; Mask away right pixel
-	sll	$t0,$t0,16
-	or	$t0,$t0,$t8		; Yes, set right part of word
-ASCII_NoRight:
-	_SW	$t0,0($s1)		; Store pixel
-	sll	$t1,$t1,1		; Next pixel
-	addi	$s1,$s1,1		; Next word on screen
-	addi	$s2,$s2,-1		; Word=Word-1
-	_BNEZ	$s2,ASCII_ColLoop	; Is this row done ?
-
-	addi	$s1,$s1,156		; Add number of words until next row on screen
-
+	; 8 pixels = 4 words per row, unrolled and without branches: the font
+	; bits give a mask per word, the transparent version keeps the screen
+	; pixels where the font pixel is clear
+	_BNEZ	$t6,ASCII_TransRow
+ASCII_OpaqueRow:
+	lw	$t1,0($s0)		; font row: 4 characters, 8 bits each
+	nop
+	sllv	$t1,$t1,$s4		; this character in bits 31:24
+	sra	$t2,$t1,31		; left pixel set: all ones
+	sll	$t1,$t1,1
+	sra	$t3,$t1,31		; right pixel set: all ones
+	sll	$t1,$t1,1
+	andi	$t2,$t2,0		; andi fills bits 31:16 with ones: left mask
+	srl	$t3,$t3,16		; right mask
+	or	$t2,$t2,$t3		; pixel mask
+	and	$t0,$t2,$s5		; color where the font pixel is set
+	sra	$t2,$t1,31		; left pixel set: all ones
+	sll	$t1,$t1,1
+	sra	$t3,$t1,31		; right pixel set: all ones
+	sll	$t1,$t1,1
+	andi	$t2,$t2,0		; andi fills bits 31:16 with ones: left mask
+	srl	$t3,$t3,16		; right mask
+	or	$t2,$t2,$t3		; pixel mask
+	and	$t6,$t2,$s5		; color where the font pixel is set
+	sra	$t2,$t1,31		; left pixel set: all ones
+	sll	$t1,$t1,1
+	sra	$t3,$t1,31		; right pixel set: all ones
+	sll	$t1,$t1,1
+	andi	$t2,$t2,0		; andi fills bits 31:16 with ones: left mask
+	srl	$t3,$t3,16		; right mask
+	or	$t2,$t2,$t3		; pixel mask
+	and	$t7,$t2,$s5		; color where the font pixel is set
+	sra	$t2,$t1,31		; left pixel set: all ones
+	sll	$t1,$t1,1
+	sra	$t3,$t1,31		; right pixel set: all ones
+	sll	$t1,$t1,1
+	andi	$t2,$t2,0		; andi fills bits 31:16 with ones: left mask
+	srl	$t3,$t3,16		; right mask
+	or	$t2,$t2,$t3		; pixel mask
+	and	$t8,$t2,$s5		; color where the font pixel is set
+	sw	$t0,0($s1)
+	sw	$t6,1($s1)
+	sw	$t7,2($s1)
+	sw	$t8,3($s1)
 	addi	$s3,$s3,-1		; Row=Row-1
-	addi	$s0,$s0,4		; Add number of words until next row in font
-	_BNEZ	$s3,ASCII_RowLoop	; Are we done with this character ?
-
+	bnez	$s3,ASCII_OpaqueRow
+	addi	$s1,$s1,160		; delay slot: next row on screen
+	addi	$s0,$s0,4		; delay slot: next row in font
+	nop
+	_J	ASCII_Done
+ASCII_TransRow:
+	lw	$t1,0($s0)		; font row: 4 characters, 8 bits each
+	nop
+	sllv	$t1,$t1,$s4		; this character in bits 31:24
+	lw	$t4,0($s1)		; screen word
+	sra	$t2,$t1,31		; left pixel set: all ones
+	sll	$t1,$t1,1
+	sra	$t3,$t1,31		; right pixel set: all ones
+	sll	$t1,$t1,1
+	andi	$t2,$t2,0		; andi fills bits 31:16 with ones: left mask
+	srl	$t3,$t3,16		; right mask
+	or	$t2,$t2,$t3		; pixel mask
+	xor	$t5,$t4,$s5
+	and	$t5,$t5,$t2
+	xor	$t0,$t4,$t5		; screen word with the set pixels in the color
+	lw	$t4,1($s1)		; screen word
+	sra	$t2,$t1,31		; left pixel set: all ones
+	sll	$t1,$t1,1
+	sra	$t3,$t1,31		; right pixel set: all ones
+	sll	$t1,$t1,1
+	andi	$t2,$t2,0		; andi fills bits 31:16 with ones: left mask
+	srl	$t3,$t3,16		; right mask
+	or	$t2,$t2,$t3		; pixel mask
+	xor	$t5,$t4,$s5
+	and	$t5,$t5,$t2
+	xor	$t6,$t4,$t5		; screen word with the set pixels in the color
+	lw	$t4,2($s1)		; screen word
+	sra	$t2,$t1,31		; left pixel set: all ones
+	sll	$t1,$t1,1
+	sra	$t3,$t1,31		; right pixel set: all ones
+	sll	$t1,$t1,1
+	andi	$t2,$t2,0		; andi fills bits 31:16 with ones: left mask
+	srl	$t3,$t3,16		; right mask
+	or	$t2,$t2,$t3		; pixel mask
+	xor	$t5,$t4,$s5
+	and	$t5,$t5,$t2
+	xor	$t7,$t4,$t5		; screen word with the set pixels in the color
+	lw	$t4,3($s1)		; screen word
+	sra	$t2,$t1,31		; left pixel set: all ones
+	sll	$t1,$t1,1
+	sra	$t3,$t1,31		; right pixel set: all ones
+	sll	$t1,$t1,1
+	andi	$t2,$t2,0		; andi fills bits 31:16 with ones: left mask
+	srl	$t3,$t3,16		; right mask
+	or	$t2,$t2,$t3		; pixel mask
+	xor	$t5,$t4,$s5
+	and	$t5,$t5,$t2
+	xor	$t8,$t4,$t5		; screen word with the set pixels in the color
+	sw	$t0,0($s1)
+	sw	$t6,1($s1)
+	sw	$t7,2($s1)
+	sw	$t8,3($s1)
+	addi	$s3,$s3,-1		; Row=Row-1
+	bnez	$s3,ASCII_TransRow
+	addi	$s1,$s1,160		; delay slot: next row on screen
+	addi	$s0,$s0,4		; delay slot: next row in font
+	nop
+ASCII_Done:
+	POP	$s5
 	POP	$s4
 	POP	$s3
-	POP	$s2
 	POP	$s1
 	POP	$s0
 
@@ -215,6 +290,7 @@ PrintLargeASCII:
 	movi	$s3,16			; 16 Rows in total
 Large_RowLoop:
 	_LW	$t1,0($s0)		; Read font data
+	nop			; hazard
 	sllv	$t1,$t1,$s4		; Character offset in word (4 characters in each word)
 	movi	$s2,8			; 4 Words = 8 pixels on screen
 Large_ColLoop:

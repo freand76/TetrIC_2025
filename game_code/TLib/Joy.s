@@ -26,6 +26,7 @@ CheckJoyStick_Loop:
 ClearRepeat:
 	_LW	$t4,0($t1)		; Load
 	_LW	$t6,8($t1)		; Load Filter | RepeatVal | Accellerate
+	nop			; hazard
 	sll	$t6,$t6,8
 	srl	$t7,$t6,24		; Filter in $t7
 	sll	$t6,$t6,8
@@ -55,6 +56,8 @@ SetRepeatCount:
 SetRepeatCount_Dont:
 	sll	$t5,$t5,16		; Shift up repeatval
 	or	$t4,$t4,$t5		; or with repeatcount
+	nop			; hazard
+	nop			; hazard
 	_SW	$t4,0($t1)		; Store until next time
 	sll	$t0,$t0,1		; Next joybit
 	addi	$t1,$t1,1		; Next mempos
