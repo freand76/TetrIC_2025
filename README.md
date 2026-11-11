@@ -17,6 +17,18 @@ University of Technology (LTH), 2000–2001. The whole system was designed in VH
 
 The game was written in assembler for that processor.
 
+The original project team:
+
+* Fredrik Andersson
+* Torbjörn Aronsson
+* Mats Christianson
+* Mathias Johansson
+* Jan-Peter Nilsson
+* Mattias Severson
+
+The ASIC was developed at the Department of Electroscience, with extensive help from Anders
+Berkeman and Martin Nilsson. The game was programmed by Fredrik Andersson.
+
 In 2025–2026 the design was converted to Verilog for the Tang Nano 20K, using Sipeed's Retro
 Game kit: the board, two gamepads and the gamepad adapter.
 
@@ -302,8 +314,6 @@ make -C sim/system game GAME_ARGS="+fix_beam +swaplog=swaps.txt +stats +run_ns=5
 | `+profile=<file>` | executed instructions per address; `+profile_cycles` counts clock cycles |
 | `+run_ns=<ns> +frames=<n> +ppm` | stop time, and the last frames as `frame0.ppm`, ... |
 | `+trace` | CPU, register and peripheral trace (off by default) |
-
-The `UART` output shows an `L` for every game frame that was not ready in time.
 
 Two versions of the game can be compared frame by frame: with `+fix_beam`, game frame k has the
 same `swaplog` hash in both, whatever the timing. That holds until a menu choice, because the
