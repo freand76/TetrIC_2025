@@ -15,7 +15,7 @@ University of Technology (LTH), 2000–2001. The whole system was designed in VH
 * a sound unit with a MOD player (the "ljudbox");
 * a joystick controller.
 
-The game was written in assembler for that processor.
+The game was written in assembler for that processor in 2002.
 
 The original project team:
 
@@ -74,6 +74,7 @@ The flow is fully open source:
 | openFPGALoader | programming the board | <https://github.com/trabucayre/openFPGALoader> |
 | Icarus Verilog, Verilator | simulation | <https://github.com/steveicarus/iverilog>, <https://github.com/verilator/verilator> |
 | uv | runs all Python code | <https://github.com/astral-sh/uv> |
+| Rust (rustup, cargo) | the emulator | <https://rustup.rs/> |
 | digsim | module testbenches, Verilog formatter | <https://github.com/freand76/digsim> |
 
 Tested with:
@@ -82,7 +83,8 @@ Tested with:
 * Yosys 0.52;
 * nextpnr 0.11.1 (git), Apicula 0.35;
 * openFPGALoader 1.2.0;
-* Icarus Verilog 14 (devel), Verilator 5.032.
+* Icarus Verilog 14 (devel), Verilator 5.032;
+* Rust 1.93.1.
 
 ### apt packages: Yosys, simulators and build dependencies
 
@@ -111,6 +113,16 @@ uv tool install apycula==0.35
 
 This puts `gowin_pack` in `~/.local/bin`. nextpnr builds its Gowin chip database with the same
 Apicula, so install Apicula first. Rebuild nextpnr if you change the Apicula version.
+
+### Rust (only for the emulator)
+
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+sudo apt install libasound2-dev libx11-dev libxkbcommon-dev libudev-dev
+```
+
+The apt packages are for sound, the window and gamepads on Linux. The Windows build is in
+[emulator/README.md](emulator/README.md).
 
 ### Building with CMake
 
@@ -497,7 +509,7 @@ formatter. The Python code is formatted and checked with ruff, using the rules o
 ./uv_ruff.sh                    # ruff format + ruff check
 ```
 
-# BUGS found
+## Bugs found
 
  * The program counter is word based
  * BGT / BGE only handles unsigned values
@@ -505,3 +517,11 @@ formatter. The Python code is formatted and checked with ruff, using the rules o
    in `abnasm.py`)
  * Forwarding from WB was lost when the instruction in EX did not write a
    register but named the same one (fixed, `make -C sim/system fwd`)
+
+## License
+
+The code is released into the public domain with the [Unlicense](LICENSE): anyone may copy,
+change, use and sell it, for any purpose, without asking.
+
+The game music in `game_code/Data/mod_gamemusic.raw` is converted from the MOD "Tetris mania",
+which was made by others, and is not covered by the Unlicense.
