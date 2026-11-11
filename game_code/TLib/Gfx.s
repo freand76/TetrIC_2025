@@ -945,16 +945,6 @@ WaitFrameTick_Loop:
 	sub	$t4,$t1,$t6
 	and	$t4,$t4,$t3
 	_BGE	$t4,$t5,WaitFrameTick_Loop	; screen swap not done yet
-	; debug: 'L' on the uart when this game frame was late
-	sub	$t4,$t1,$t2
-	and	$t4,$t4,$t3
-	_BEQZ	$t4,WaitFrameTick_OnTime
-	_LI	$t4,0x00f00000		; uart
-	movi	$t5,76			; 'L'
-	nop
-	nop
-	sw	$t5,0($t4)
-WaitFrameTick_OnTime:
 	addi	$t1,$t1,FRAME_STEP
 	_STA	$t1,NextFrameTick
 
