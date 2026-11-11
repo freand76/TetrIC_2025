@@ -112,17 +112,42 @@ uv tool install apycula==0.35
 This puts `gowin_pack` in `~/.local/bin`. nextpnr builds its Gowin chip database with the same
 Apicula, so install Apicula first. Rebuild nextpnr if you change the Apicula version.
 
+### Building with CMake
+
+nextpnr and openFPGALoader are built with CMake. The commands below use the newer CMake form,
+run from the source folder:
+
+```
+cmake -B build <options>            # configure into build/
+cmake --build build -j$(nproc)      # build
+sudo cmake --install build          # install
+```
+
+Use this form with CMake 3.15 or newer (Ubuntu 20.04 and later). It works with any generator
+(Make or Ninja).
+
+With an older CMake, which has no `-B` or `--install`, use the classic form:
+
+```
+mkdir build && cd build
+cmake .. <options>
+make -j$(nproc)
+sudo make install
+```
+
+The commands then run in `build/`, so files from the source folder need `../` (for example
+`../99-openfpgaloader.rules`).
+
 ### nextpnr-himbaechel
 
 ```
 git clone https://github.com/YosysHQ/nextpnr.git
 cd nextpnr
 git submodule update --init --recursive
-mkdir build && cd build
-cmake .. -DARCH=himbaechel -DHIMBAECHEL_UARCH=gowin -DHIMBAECHEL_GOWIN_DEVICES=GW2A-18C \
+cmake -B build -DARCH=himbaechel -DHIMBAECHEL_UARCH=gowin -DHIMBAECHEL_GOWIN_DEVICES=GW2A-18C \
     -DAPYCULA_INSTALL_PREFIX=$(uv tool dir)/apycula
-make -j$(nproc)
-sudo make install
+cmake --build build -j$(nproc)
+sudo cmake --install build
 ```
 
 ### openFPGALoader
@@ -130,11 +155,10 @@ sudo make install
 ```
 git clone https://github.com/trabucayre/openFPGALoader.git
 cd openFPGALoader
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-sudo make install
-sudo cp ../99-openfpgaloader.rules /etc/udev/rules.d/
+cmake -B build
+cmake --build build -j$(nproc)
+sudo cmake --install build
+sudo cp 99-openfpgaloader.rules /etc/udev/rules.d/
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
