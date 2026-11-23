@@ -61,6 +61,7 @@ Images: [Sipeed wiki](https://wiki.sipeed.com/hardware/en/tang/tang-nano-20k/nan
 | `test_code/` | test programs |
 | `tools/` | assembler (`abnasm.py`), sound reference model (`sound_ref.py`), MOD converter (`mod2tetric.py`) |
 | `emulator/` | TetrIC emulator in Rust (Linux / Windows), checked against the RTL simulation |
+| `wsl/` | setting up the tools on Windows with WSL2: how-to and setup script |
 
 ## Install the tools
 
@@ -85,6 +86,9 @@ Tested with:
 * openFPGALoader 1.2.0;
 * Icarus Verilog 14 (devel), Verilator 5.032;
 * Rust 1.93.1.
+
+On Windows, use WSL2: [wsl/README.md](wsl/README.md) sets up all of the tools below in a
+WSL distro of its own with one script (`wsl/setup_tetric.sh`), and connects the board with usbipd.
 
 ### apt packages: Yosys, simulators and build dependencies
 
